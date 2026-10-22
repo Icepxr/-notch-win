@@ -49,6 +49,7 @@ const els = {
   quit: document.getElementById('quit'),
   peekAi: document.getElementById('peek-ai'),
   closedAgent: document.getElementById('closed-agent'),
+  focusPicker: document.getElementById('focus-picker'),
   closedAgentTime: document.getElementById('closed-agent-time'),
   peekAiCount: document.getElementById('peek-ai-count'),
   closedTrigger: document.getElementById('closed-trigger'),
@@ -161,6 +162,7 @@ function refreshIdle() {
   document.body.dataset.focus = focus;
   // More than one live activity is what makes the notch worth cycling.
   document.body.classList.toggle('multi-activity', live.length > 1);
+  paintFocusPicker(live, focus);
   els.closedTrigger.dataset.live = String(live.length);
 }
 
@@ -169,10 +171,57 @@ function cycleFocus() {
   const live = liveActivities();
   if (live.length < 2) return false;
   const current = document.body.dataset.focus;
-  focusOverride = live[(live.indexOf(current) + 1) % live.length];
+  chooseFocus(live[(live.indexOf(current) + 1) % live.length]);
+  return true;
+}
+
+function chooseFocus(name) {
+  focusOverride = name;
   refreshIdle();
   renderAiSessions();
-  return true;
+}
+
+const ACTIVITY_GLYPH = {
+  transfer: '<path d="M12 17V5m-4 4 4-4 4 4M5 15v4h14v-4"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M9 2h6m-3 3V2m0 7v5l3 2"/>',
+  music: '<path d="M9 18V5l10-2v13M9 8l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>',
+};
+const ACTIVITY_NAME = { transfer: 'Transfer', timer: 'Timer', music: 'Music', agent: 'AI agent' };
+
+/**
+ * With more than one thing live, hovering the notch offers the choice
+ * directly: one small mark per activity, the current one lit. Picking is one
+ * movement from the hover the user is already making, which beats a hidden
+ * gesture or a button parked in a corner.
+ */
+function paintFocusPicker(live, focus) {
+  const picker = els.focusPicker;
+  picker.hidden = live.length < 2;
+  if (picker.hidden) { picker.replaceChildren(); return; }
+  const signature = live.join(',') + '|' + focus;
+  if (picker.dataset.signature === signature) return;
+  picker.dataset.signature = signature;
+  picker.replaceChildren(...live.map((name) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'focus-option';
+    button.dataset.activity = name;
+    button.setAttribute('aria-pressed', String(name === focus));
+    button.title = ACTIVITY_NAME[name];
+    button.setAttribute('aria-label', 'Show ' + ACTIVITY_NAME[name]);
+    if (name === 'agent') {
+      const running = aiSessions.find((session) => AiState.kindOf(session, Date.now()) === 'working');
+      button.append(ProviderMarks.markElement(running?.provider === 'codex' ? 'codex' : 'claude', document));
+      button.classList.add('is-mark');
+    } else {
+      button.append(icon(ACTIVITY_GLYPH[name]));
+    }
+    button.addEventListener('click', (event) => {
+      event.stopPropagation();
+      chooseFocus(name);
+    });
+    return button;
+  }));
 }
 
 function applyVisualState() {
@@ -857,9 +906,13 @@ els.closedTrigger.addEventListener('click', () => {
 // Several things live at once: the right button steps between them. The left
 // button keeps opening the panel, which is the gesture people already know.
 els.closedTrigger.addEventListener('contextmenu', (event) => {
-  if (!cycleFocus()) return;
+  // Always swallowed over the notch: a stray OS menu here would be worse
+  // than a gesture that sometimes has nothing to step to.
   event.preventDefault();
+  cycleFocus();
 });
+
+
 document.querySelector('.layer-peek').addEventListener('keydown', (event) => {
   if (event.target !== event.currentTarget) return;
   if (event.key !== 'Enter' && event.key !== ' ') return;

@@ -221,11 +221,24 @@ app.whenReady().then(async () => {
       && document.body.classList.contains('multi-activity')`),
       'with music and an agent both live the notch shows one of them, not both');
 
-    await js(`els.closedTrigger.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))`);
-    await delay(200);
-    check(await js(`document.body.dataset.focus === 'agent' && !document.getElementById('closed-agent').hidden
-      && getComputedStyle(document.getElementById('closed-art')).display === 'none'`),
-      'the right button steps to the next live activity');
+    // Hovering offers the choice: one mark per live activity, and picking one
+    // switches what the notch is showing.
+    await js(`pointerEntered()`); await settled();
+    check(await js(`(() => {
+      const picker = document.getElementById('focus-picker');
+      if (picker.hidden || getComputedStyle(picker).display === 'none') return false;
+      const names = [...picker.querySelectorAll('.focus-option')].map((b) => b.dataset.activity);
+      return names.join(',') === 'music,agent'
+        && picker.querySelector('[data-activity="music"]').getAttribute('aria-pressed') === 'true';
+    })()`), 'hovering a busy notch offers one mark per live activity');
+
+    await js(`document.querySelector('.focus-option[data-activity="agent"]').click()`);
+    await delay(220);
+    check(await js(`document.body.dataset.focus === 'agent'
+      && document.querySelector('.focus-option[data-activity="agent"]').getAttribute('aria-pressed') === 'true'`),
+      'picking an activity switches what the notch shows');
+    await snapshot('focus-picker');
+    await js(`collapseNotch()`); await settled();
 
     await pjsOrSkip(`{ const select = document.querySelector('[data-preference="notchFocus"]'); select.value = 'agent'; select.dispatchEvent(new Event('change')); }`);
     emit('now-playing', { type: 'state', session: false });
@@ -254,6 +267,17 @@ app.whenReady().then(async () => {
     await js(`pointerInside = true`);
     await js(`els.explore.click()`); await settled();
     check(await js(`document.body.classList.contains('is-exploring') && getComputedStyle(els.tabs).display === 'grid'`), 'Explore opens the module gallery');
+    await delay(300); // module colours fade in; let them land before capturing
+    // Eight grey glyphs make the user read eight captions; colour is faster.
+    const moduleHues = await js(`[...document.querySelectorAll('.tabs .tab')]
+      .map((t) => getComputedStyle(t.querySelector('svg')).color)`);
+    const saturation = moduleHues.map((c) => {
+      const [r, g, b] = c.match(/\d+/g).map(Number);
+      return (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
+    });
+    check(new Set(moduleHues).size === moduleHues.length && Math.min(...saturation) > 0.2,
+      'every module icon carries its own saturated hue (lowest '
+      + Math.min(...saturation).toFixed(2) + ')');
     await snapshot('explore');
     check(await js(`Math.round(document.querySelector('.tab').getBoundingClientRect().height) === 86 && document.querySelectorAll('#gallery-rail button').length === 2`), 'source-sized gallery tiles have whole-row pagination');
     await js(`document.querySelectorAll('#gallery-rail button')[1].click()`); await delay(450);
@@ -358,18 +382,18 @@ app.whenReady().then(async () => {
       buckets: [{ provider: 'codex', day: aiDay, model: 'Demo model', project: '<Demo project>', total: 125000, input: 25000, cached: 80000, write: 0, output: 20000, responses: 12 }, { provider: 'claude', day: aiDay, model: 'Demo Claude', project: 'Demo notes', total: 5000, input: 2000, cached: 2000, write: 0, output: 1000, responses: 3 }] });
     await settled();
     check(await js(`document.querySelector('[data-card="limits"]').textContent.includes('73%')
-      && document.querySelectorAll('.ai-limit-block[data-agent="codex"] .ai-window').length === 2`),
+      && document.querySelectorAll('.ai-agent[data-agent="codex"] .ai-win').length === 2`),
       'AI quota cards show remaining allowance and both reset windows');
     // An agent with no publishable quota gets the same card shape rather than
     // a bare sentence beside the other agent's full card.
     check(await js(`(() => {
-      const block = document.querySelector('.ai-limit-block[data-agent="claude"]');
-      return !!block && block.querySelectorAll('.ai-window').length === 2
+      const block = document.querySelector('.ai-agent[data-agent="claude"]');
+      return !!block && block.querySelectorAll('.ai-win').length === 2
         && block.textContent.includes('Not a plan allowance');
     })()`), 'an agent without a quota still reports its activity in the same shape');
     check(await js(`(() => {
-      const codex = getComputedStyle(document.querySelector('.ai-limit-block[data-agent="codex"] .ai-window strong')).color;
-      const claude = getComputedStyle(document.querySelector('.ai-limit-block[data-agent="claude"] .ai-window strong')).color;
+      const codex = getComputedStyle(document.querySelector('.ai-agent[data-agent="codex"] .ai-win-value')).color;
+      const claude = getComputedStyle(document.querySelector('.ai-agent[data-agent="claude"] .ai-win-value')).color;
       return codex !== claude;
     })()`), 'each agent reads in its own colour');
     check(await js(`document.querySelector('[data-card="projects"]').textContent.includes('<Demo project>') && !document.querySelector('demo')`), 'AI project names render as text, never HTML');

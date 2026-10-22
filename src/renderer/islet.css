@@ -528,9 +528,17 @@ body.has-media.has-files .equalizer { margin-left: 8px; }
 body.state-closed.is-idle .layer-closed > svg,
 body.state-closed.is-idle .closed-count { display: none; }
 
-/* The sensor is the grab hint, not information. An idle notch keeps its hit
-   region — the pointer still finds it — but paints nothing. */
-body.state-closed.is-idle .notch-sensor { background: transparent; }
+/* The bar in the middle was a grab hint for a notch that is already one big
+   target: it told nobody anything. It is gone as a resting shape, and keeps
+   only the one moment it carried meaning — the green flash on a completed
+   transfer — where it reads as a result rather than as furniture.
+
+   The working-agent dot it used to host is gone too: the agent chip on the
+   right now says which agent and for how long, which is the same fact with
+   the answer attached. */
+.notch-sensor { background: transparent; }
+body.ai-working:not(.ai-waiting).state-closed .notch-sensor::after { content: none; }
+body.transfer-done .notch-sensor { background: #74dba538; box-shadow: 0 0 10px #74dba514; }
 
 /* --- the working agent on the resting notch --------------------------------
 
@@ -594,17 +602,213 @@ body[data-focus="transfer"] .closed-agent { display: none !important; }
 body[data-focus="music"] .closed-agent,
 body[data-focus="timer"] .closed-agent { display: none !important; }
 
-/* With more than one thing live, a pair of dots says the notch has another
-   page behind it, and the right button turns it. */
-body.multi-activity.state-closed .layer-closed::after {
+/* Several things live at once: hovering offers the choice instead of hiding
+   it behind a gesture. One mark per activity, the current one lit, sitting in
+   the peek where the pointer already is. */
+.focus-picker { display: none; align-items: center; gap: 3px; margin-left: 6px; }
+body.multi-activity.state-peek .focus-picker:not([hidden]) { display: flex; }
+
+.focus-option {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #85858f;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.focus-option svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.focus-option.is-mark svg { fill: currentColor; stroke: none; }
+.focus-option:hover { background: #ffffff14; color: #e6e6ee; }
+
+.focus-option[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--accent);
+}
+
+.focus-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* --- the AI panel ----------------------------------------------------------
+
+   The old quota card was a label on the left, a status far right, and air in
+   between — which is what "floaty" means. An agent is now a row with weight:
+   its mark, its name, its plan, and both windows side by side with real bars.
+   The agent's colour is carried by a tinted wash and a left edge, not by a
+   single coloured word, so the colour anchors the block it belongs to. */
+
+.ai-agent {
+  --agent: #7fd1b9;
+  position: relative;
+  padding: 11px 13px 12px;
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--agent) 7%, #ffffff06);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--agent) 16%, transparent);
+  overflow: hidden;
+}
+
+.ai-agent + .ai-agent { margin-top: 8px; }
+.ai-agent[data-agent="codex"] { --agent: #7fd1b9; }
+.ai-agent[data-agent="claude"] { --agent: #e8a87c; }
+
+/* A hairline of the agent's colour down the edge: the block is theirs. */
+.ai-agent::before {
   content: '';
   position: absolute;
-  right: 7px;
-  bottom: 4px;
-  width: 9px;
-  height: 3px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, currentColor 0 3px, transparent 3px 6px, #ffffff2e 6px 9px);
-  color: #ffffff6e;
-  pointer-events: none;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--agent);
+  opacity: .7;
 }
+
+.ai-agent-head { display: flex; align-items: center; gap: 8px; margin-bottom: 11px; }
+
+.ai-agent-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--agent) 20%, transparent);
+  color: var(--agent);
+}
+
+.ai-agent-mark svg { width: 13px; height: 13px; fill: currentColor; }
+
+.ai-agent-name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -.2px;
+  color: #f2f2f6;
+}
+
+.ai-agent-plan {
+  font-size: 10px;
+  color: #a2a2ac;
+  /* Plan names arrive lowercase from the API; a sentence explaining why there
+     is no plan must not be title-cased along with them. */
+  text-transform: capitalize;
+}
+
+.ai-agent-plan.is-reason { text-transform: none; }
+
+.ai-agent-source {
+  margin-left: auto;
+  font-size: 9px;
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--agent) 18%, transparent);
+  color: var(--agent);
+}
+
+.ai-agent-source.is-stale { background: #ffffff0d; color: #a2a2ac; }
+
+.ai-agent-windows { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+
+.ai-win { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+
+.ai-win-label {
+  font-size: 9.5px;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: #9494a0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-win-value {
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -1.2px;
+  color: var(--agent);
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-win-value i { font-style: normal; font-size: 13px; font-weight: 500; letter-spacing: 0; margin-left: 1px; }
+
+.ai-win-bar {
+  display: block;
+  height: 4px;
+  margin-top: 3px;
+  border-radius: 3px;
+  background: #ffffff12;
+  overflow: hidden;
+}
+
+.ai-win-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--agent);
+  transition: width 520ms cubic-bezier(.3, .8, .3, 1);
+}
+
+.ai-win small { font-size: 9.5px; color: #85858f; }
+
+/* Nearly spent beats whose it is: running out is the more useful fact. */
+.ai-win.is-low .ai-win-value { color: #f0a868; }
+.ai-win.is-low .ai-win-bar i { background: #f0a868; }
+.ai-win.is-stale .ai-win-value { color: #8e8e99; }
+.ai-win.is-stale .ai-win-bar i { background: #6b6b74; }
+/* Counted, not granted: same shape, visibly not a quota. */
+.ai-win.is-measured .ai-win-value { color: #dcdce3; font-size: 21px; letter-spacing: -.8px; }
+
+.ai-agent-foot { display: flex; align-items: center; gap: 9px; margin-top: 10px; }
+.ai-agent-foot small { font-size: 9.5px; color: #9494a0; }
+.ai-agent-foot code { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 9.5px; color: #cfcfd8; }
+
+.ai-reset-credit { margin-top: 10px; font-size: 10px; color: #9494a0; }
+.ai-reset-credit b { color: #dcdce3; font-weight: 600; }
+
+@media (prefers-reduced-motion: reduce) { .ai-win-bar i { transition: none; } }
+
+
+/* --- colour in the gallery -------------------------------------------------
+
+   Eight identical grey glyphs make the user read eight captions. A module
+   that owns a colour is found by colour, which is faster than reading, and
+   the tiles stop looking like a disabled toolbar. The wash is on the icon
+   tile only; the card behind it stays neutral so the grid still reads as one
+   set rather than eight competing ones. */
+
+body.is-exploring .tab svg { color: var(--module, #cfcfd8); transition: color 180ms ease; }
+body.is-exploring .tab[data-tab="send"] { --module: #6fb2ff; }
+body.is-exploring .tab[data-tab="media"] { --module: #f2a2c0; }
+body.is-exploring .tab[data-tab="clipboard"] { --module: #f0c06a; }
+body.is-exploring .tab[data-tab="system"] { --module: #7fd1b9; }
+body.is-exploring .tab[data-tab="ai"] { --module: #c3a6ff; }
+body.is-exploring .tab[data-tab="timer"] { --module: #ff9f7a; }
+body.is-exploring .tab[data-tab="notes"] { --module: #9fd983; }
+body.is-exploring .tab[data-tab="settings"] { --module: #8cb6e6; }
+
+/* The colour pools behind the glyph on hover, so the tile lights up in its
+   own hue rather than the same white for every module. */
+body.is-exploring .tab {
+  position: relative;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+body.is-exploring .tab:hover,
+body.is-exploring .tab:focus-visible {
+  background: color-mix(in srgb, var(--module, #ffffff) 13%, #ffffff0a);
+  border-color: color-mix(in srgb, var(--module, #ffffff) 40%, transparent);
+  box-shadow: 0 6px 18px -10px color-mix(in srgb, var(--module, #000) 70%, transparent);
+}
+
+body.is-exploring .tab.is-active {
+  background: color-mix(in srgb, var(--module, #ffffff) 16%, #ffffff08);
+  border-color: color-mix(in srgb, var(--module, #ffffff) 45%, transparent);
+}
+
+body.is-exploring .tab.is-active::before { color: var(--module, #d8d8df); }

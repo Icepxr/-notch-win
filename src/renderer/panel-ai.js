@@ -41,43 +41,88 @@ window.AiPanel = (() => {
     const m = Math.ceil(delta / 60000);
     return 'Resets in ' + (m >= 1440 ? Math.floor(m / 1440) + 'd ' + Math.floor(m % 1440 / 60) + 'h' : m >= 60 ? Math.floor(m / 60) + 'h ' + m % 60 + ' min' : m + ' min');
   }
+  /** "5 hours", "Weekly" — the two windows people actually think in. */
+  function windowLabel(minutes, scope) {
+    const base = minutes >= 10080 ? 'Weekly'
+      : minutes >= 1440 ? Math.round(minutes / 1440) + ' days'
+        : minutes >= 60 ? Math.round(minutes / 60) + ' hours'
+          : minutes ? minutes + ' min' : 'Window';
+    return scope ? base + ' · ' + scope : base;
+  }
+
+  function agentMark(id) {
+    const mark = ProviderMarks.markFor(id);
+    return `<span class="ai-agent-mark" aria-hidden="true"><svg viewBox="${mark.viewBox}"><path d="${mark.path}"/></svg></span>`;
+  }
+
+  /** One window: its name, what is left, a bar, and when it comes back. */
+  function windowCell(id, w, now, stale) {
+    const expired = w.resetsAt && w.resetsAt <= now;
+    const left = expired ? null : Math.round(100 - w.used);
+    const label = windowLabel(w.minutes, w.scope);
+    const level = left !== null && left <= 20 ? ' is-low' : '';
+    return `<div class="ai-win${level}${expired || stale ? ' is-stale' : ''}">`
+      + `<span class="ai-win-label">${esc(label)}</span>`
+      + `<strong class="ai-win-value">${left === null ? '—' : left + '<i>%</i>'}</strong>`
+      + `<span class="ai-win-bar" role="progressbar" aria-label="${labels[id]} remaining · ${esc(label)}"`
+      + ` aria-valuemin="0" aria-valuemax="100" aria-valuenow="${left === null ? 0 : left}">`
+      + `<i data-fill="${left === null ? 0 : left}"></i></span>`
+      + `<small title="${w.resetsAt ? esc(new Date(w.resetsAt).toLocaleString('en-US')) : ''}">${resetText(w, now)}</small></div>`;
+  }
+
   /**
-   * An agent with no publishable quota still gets the shape of the quota card,
-   * filled with what this machine does know. Leaving one agent as a bare
-   * sentence beside the other's full card reads as broken rather than as
-   * "there is nothing to report here".
+   * An agent with no publishable quota keeps both window slots, so the two
+   * agents stay the same shape, and fills them with what this machine does
+   * know. An empty slot that is clearly an empty slot beats a missing row.
    */
-  function activityBlock(id, rows) {
+  function activityCells(id, rows) {
     const mine = (rows || []).filter((r) => r.provider === id);
-    if (!mine.length) return '';
     const sums = mine.reduce((a, r) => ({ total: a.total + (r.total || 0), responses: a.responses + (r.responses || 0) }),
       { total: 0, responses: 0 });
-    const window = period === 'today' ? 'Today' : period + ' days';
-    return `<div class="ai-limit-windows">`
-      + `<div class="ai-window"><div><span>Tokens · ${window}</span><strong>${count(sums.total)}</strong></div></div>`
-      + `<div class="ai-window"><div><span>Responses · ${window}</span><strong>${count(sums.responses)}</strong></div></div>`
-      + `</div><small class="ai-limit-note">Counted from this machine's logs. Not a plan allowance.</small>`;
+    const window = period === 'today' ? 'Today' : 'Last ' + period + ' days';
+    return `<div class="ai-win is-measured"><span class="ai-win-label">Tokens · ${window}</span>`
+      + `<strong class="ai-win-value">${mine.length ? count(sums.total) : '—'}</strong>`
+      + `<small>Counted on this machine</small></div>`
+      + `<div class="ai-win is-measured"><span class="ai-win-label">Responses · ${window}</span>`
+      + `<strong class="ai-win-value">${mine.length ? count(sums.responses) : '—'}</strong>`
+      + `<small>Not a plan allowance</small></div>`;
+  }
+
+  function agentBlock(id, now, rows) {
+    const limits = data.limits[id];
+    const status = id === 'claude' ? data.claudeAccountStatus : data.accountStatus;
+    if (!limits) {
+      const reason = id === 'claude'
+        ? { loading: 'Reading account limits…', missing: 'Claude Code CLI not found', signin: 'Not signed in',
+          'no-limits': 'This plan publishes no limits', outdated: 'Update Claude Code to read limits',
+          unavailable: 'Limits could not be read' }[status] || 'No account reading yet'
+        : { loading: 'Reading account limits…', missing: 'Codex CLI not found', signin: 'Not signed in',
+          unavailable: 'Quota temporarily unavailable' }[status] || 'No quota data yet';
+      const signin = id === 'claude' && status === 'signin'
+        ? '<div class="ai-agent-foot"><small>In Terminal: <code>claude auth login</code></small>'
+          + '<button type="button" class="ai-connect" data-ai-connect>Connect <span aria-hidden="true">↗</span></button></div>'
+        : '';
+      return `<div class="ai-agent" data-agent="${id}">`
+        + `<div class="ai-agent-head">${agentMark(id)}<span class="ai-agent-name">${labels[id]}</span>`
+        + `<span class="ai-agent-plan is-reason">${esc(reason)}</span></div>`
+        + `<div class="ai-agent-windows">${activityCells(id, rows)}</div>${signin}</div>`;
+    }
+    const stale = now - limits.observedAt > 600000 || limits.source !== 'account';
+    return `<div class="ai-agent" data-agent="${id}">`
+      + `<div class="ai-agent-head">${agentMark(id)}<span class="ai-agent-name">${labels[id]}</span>`
+      + `<span class="ai-agent-plan">${esc(limits.plan)}</span>`
+      + `<span class="ai-agent-source${stale ? ' is-stale' : ''}">${stale ? 'Log snapshot' : 'Live'}</span></div>`
+      + `<div class="ai-agent-windows">${limits.windows.map((w) => windowCell(id, w, now, stale)).join('')}</div></div>`;
   }
 
   function limitCard(now, rows) {
     const providers = provider === 'all' ? ['codex', 'claude'] : [provider];
-    return card('limits', `<div class="ai-card-head"><span>Remaining quota</span><span class="ai-soft">Account</span></div>` + providers.map((id) => {
-      const limits = data.limits[id];
-      if (!limits) {
-        const reason = id === 'claude' ? { loading: 'Reading Claude account limits…', missing: 'Claude Code CLI not found', signin: 'Sign in to Claude Code with a supported plan', 'no-limits': 'This Claude plan does not publish usage limits', outdated: 'Update Claude Code to read account limits', unavailable: 'Claude account limits could not be read. Try Refresh.' }[data.claudeAccountStatus] || 'No Claude account reading yet' : { loading: 'Reading account limits…', missing: 'Codex CLI not found', signin: 'Sign in to Codex with ChatGPT', unavailable: 'Account quota is temporarily unavailable' }[data.accountStatus] || 'No quota data yet';
-        const signin = id === 'claude' && data.claudeAccountStatus === 'signin'
-          ? '<small class="ai-signin-hint">In Terminal: <code>claude auth login</code>, then Refresh.</small><button type="button" class="ai-connect" data-ai-connect>Connect Claude <span aria-hidden="true">↗</span></button>'
-          : '';
-        return `<div class="ai-limit-block" data-agent="${id}"><div class="ai-limit-title"><b class="ai-provider-${id}">${labels[id]}</b><span>${reason}</span></div>${activityBlock(id, rows)}${signin}</div>`;
-      }
-      const stale = now - limits.observedAt > 600000 || limits.source !== 'account';
-      return `<div class="ai-limit-block" data-agent="${id}"><div class="ai-limit-title"><b class="ai-provider-${id}">${labels[id]}</b><span>${esc(limits.plan)} · ${stale ? 'Log snapshot · May be stale' : 'Latest account reading'}</span></div><div class="ai-limit-windows">${limits.windows.map((w) => {
-        const expired = w.resetsAt && w.resetsAt <= now;
-        const label = (w.minutes >= 1440 ? (w.minutes / 1440).toLocaleString('en', { maximumFractionDigits: 1 }) + 'd' : w.minutes >= 60 ? (w.minutes / 60).toLocaleString('en', { maximumFractionDigits: 1 }) + 'h' : w.minutes ? w.minutes + ' min' : 'Quota window') + (w.scope ? ' · ' + w.scope : '');
-        return `<div class="ai-window ${w.used >= 80 ? 'ai-low' : ''} ${expired || stale ? 'ai-stale' : ''}"><div><span>${label}</span><strong>${expired ? '—' : Math.round(100 - w.used) + '%'}</strong></div><progress max="100" value="${expired ? 0 : 100 - w.used}" aria-label="${labels[id]} remaining · ${label}"></progress><small title="${w.resetsAt ? esc(new Date(w.resetsAt).toLocaleString('en-US')) : ''}">${resetText(w, now)}</small></div>`;
-      }).join('')}</div></div>`;
-    }).join('') + (data.resets !== null && data.resets !== undefined && provider !== 'claude' ? `<div class="ai-reset-credit">Available Codex resets: ${data.resets.toLocaleString()}</div>` : ''), true);
+    const resets = data.resets !== null && data.resets !== undefined && provider !== 'claude'
+      ? `<div class="ai-reset-credit">Codex resets available <b>${data.resets.toLocaleString()}</b></div>` : '';
+    return card('limits', `<div class="ai-card-head"><span>Remaining quota</span><span class="ai-soft">Per account</span></div>`
+      + providers.map((id) => agentBlock(id, now, rows)).join('') + resets, true);
   }
+
   function ranking(rows, key, title) {
     const groups = new Map(); for (const r of rows) groups.set(r[key], (groups.get(r[key]) || 0) + r.total);
     const list = [...groups].sort((a, b) => b[1] - a[1]).slice(0, 4), max = list[0]?.[1] || 1;
@@ -107,6 +152,7 @@ window.AiPanel = (() => {
     // Preserve scroll and keyboard focus: controls remain mounted across polls.
     container.dataset.agent = provider;
     container.innerHTML = limitCard(now, rows) + tokenCard + liveCard + trend + ranking(rows, 'model', 'Models') + ranking(rows, 'project', 'Projects') + activity;
+    for (const fill of container.querySelectorAll('[data-fill]')) fill.style.width = fill.dataset.fill + '%';
     container.querySelectorAll('[data-height]').forEach((bar) => { bar.style.height = bar.dataset.height + 'px'; });
     if (hidden.length === Object.keys(cards).length) container.innerHTML = '<p class="ai-empty">Choose cards from the ⋯ menu.</p>';
   }

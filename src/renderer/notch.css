@@ -461,14 +461,17 @@ body.is-exploring .tab { position: relative; gap: 4px; border: 1px solid #ffffff
 body.is-exploring .tab:hover { border-color: #ffffff18; background: #202023; transform: translateY(-1px); }
 body.is-exploring .tab.is-active { background: #1c2230; border-color: #9ebcff28; }
 body.is-exploring .tab svg { width: 19px; height: 19px; margin-bottom: 2px; }
-body.is-exploring .tab[data-tab="send"] svg { color: #94baff; }
-body.is-exploring .tab[data-tab="media"] svg { color: #dba4b1; }
-body.is-exploring .tab[data-tab="clipboard"] svg { color: #bcb0df; }
-body.is-exploring .tab[data-tab="system"] svg { color: #8ebeb8; }
-body.is-exploring .tab[data-tab="ai"] svg { color: #d1bd8d; }
-body.is-exploring .tab[data-tab="timer"] svg { color: #c4b4a4; }
-body.is-exploring .tab[data-tab="notes"] svg { color: #c5c18c; }
-body.is-exploring .tab[data-tab="settings"] svg { color: #a5b0c2; }
+/* Each module owns a hue, saturated enough to be found by colour instead of
+   by reading its caption. The palette is kept on --module so the hover wash,
+   the active border and the tick all draw from the same value. */
+body.is-exploring .tab[data-tab="send"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="media"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="clipboard"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="system"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="ai"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="timer"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="notes"] svg { color: var(--module); }
+body.is-exploring .tab[data-tab="settings"] svg { color: var(--module); }
 .tab .module-caption { font-size: 8px; font-weight: 400; letter-spacing: .1px; color: #6f6f7a; }
 .shelf.is-empty { background: radial-gradient(ellipse at 50% 0, #9ebcff07, transparent 75%), #0e0e10; border-color: #ffffff16; }
 .empty-shelf-title { color: #d4d4df; }
