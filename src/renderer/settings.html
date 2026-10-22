@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:;" />
+  <title>Islet Settings</title>
+  <link rel="stylesheet" href="settings.css" />
+</head>
+<body>
+  <div class="titlebar">
+    <span class="titlebar-name">Settings</span>
+    <div class="titlebar-buttons">
+      <button id="win-minimize" class="win-btn" type="button" aria-label="Minimize">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 6h7" /></svg>
+      </button>
+      <button id="win-close" class="win-btn is-close" type="button" aria-label="Close">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path d="m3 3 6 6M9 3l-6 6" /></svg>
+      </button>
+    </div>
+  </div>
+
+  <main class="sheet">
+    <header class="identity">
+      <span class="monogram" aria-hidden="true">N</span>
+      <div class="identity-text">
+        <h1>Islet</h1>
+        <p id="identity-sub">A quieter corner of your desktop.</p>
+      </div>
+    </header>
+
+    <section class="group" aria-labelledby="group-appearance">
+      <h2 class="group-label" id="group-appearance">Appearance</h2>
+
+      <div class="row">
+        <div class="row-text">
+          <span class="row-title">Shape</span>
+          <span class="row-detail">Notch meets the screen edge. Capsule floats below it.</span>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Shape" data-preference="silhouette">
+          <button type="button" role="radio" data-value="notch" aria-checked="true">Notch</button>
+          <button type="button" role="radio" data-value="capsule" aria-checked="false">Capsule</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="row-text">
+          <span class="row-title">Glass</span>
+          <span class="row-detail" id="glass-detail">Layered translucency while the notch is open.</span>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Glass" data-preference="glass">
+          <button type="button" role="radio" data-value="high" aria-checked="true">Liquid</button>
+          <button type="button" role="radio" data-value="medium" aria-checked="false">Frosted</button>
+          <button type="button" role="radio" data-value="off" aria-checked="false">Solid</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="group" aria-labelledby="group-behavior">
+      <h2 class="group-label" id="group-behavior">Behaviour</h2>
+
+      <label class="row">
+        <div class="row-text">
+          <span class="row-title">Click away to collapse</span>
+          <span class="row-detail">Pin the notch whenever you need it to stay.</span>
+        </div>
+        <input type="checkbox" class="switch" role="switch" data-preference="autoDismiss" />
+      </label>
+
+      <label class="row">
+        <div class="row-text">
+          <span class="row-title">Music previews</span>
+          <span class="row-detail">A quick glance when a new track starts.</span>
+        </div>
+        <input type="checkbox" class="switch" role="switch" data-preference="musicPreview" />
+      </label>
+
+      <label class="row">
+        <div class="row-text">
+          <span class="row-title">Trackpad gestures</span>
+          <span class="row-detail">Scroll to expand, collapse or skip tracks.</span>
+        </div>
+        <input type="checkbox" class="switch" role="switch" data-preference="gestures" />
+      </label>
+    </section>
+
+    <section class="group" aria-labelledby="group-displays">
+      <h2 class="group-label" id="group-displays">Displays</h2>
+
+      <label class="row">
+        <div class="row-text">
+          <span class="row-title">Display behaviour</span>
+          <span class="row-detail">Place the notch where you work.</span>
+        </div>
+        <select data-preference="displayMode" aria-label="Display behaviour">
+          <option value="selected">Choose a display</option>
+          <option value="primary">Follow primary</option>
+          <option value="cursor">Follow cursor</option>
+        </select>
+      </label>
+
+      <label class="row" id="display-picker-row">
+        <div class="row-text">
+          <span class="row-title">Show on</span>
+        </div>
+        <select data-preference="displayId" aria-label="Show notch on display"></select>
+      </label>
+
+      <div class="display-card">
+        <span class="display-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 21h8m-4-5v5" /></svg>
+        </span>
+        <div class="row-text">
+          <span class="row-title" id="display-active">Your display</span>
+          <span class="row-detail" id="display-status">Connected displays update automatically.</span>
+        </div>
+        <span class="badge" id="display-count">1 display</span>
+      </div>
+    </section>
+
+    <section class="group" aria-labelledby="group-about">
+      <h2 class="group-label" id="group-about">About</h2>
+      <div class="row">
+        <div class="row-text">
+          <span class="row-title">Your data stays here</span>
+          <span class="row-detail">Clipboard history, notes and settings live in your own profile folder.</span>
+        </div>
+        <button id="reveal-data" class="ghost" type="button">Open folder</button>
+      </div>
+      <p class="about-line" id="about-line">Islet</p>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="status" role="status" aria-live="polite">Changes save as you make them.</span>
+  </footer>
+
+  <script src="settings.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Keep line endings stable across machines: LF in the repository, whatever the
+# checkout needs on disk. Without this, a Windows clone rewrites every file and
+# the first diff a contributor sees is the whole project.
+* text=auto eol=lf
+
+# PowerShell is happier with CRLF on Windows.
+*.ps1 text eol=crlf
+
+*.png binary
+*.ico binary

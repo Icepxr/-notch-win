@@ -1,0 +1,372 @@
+/* The control panel window.
+
+   This window is not transparent, so unlike the notch it can sit on a real
+   Windows backdrop material. Everything here is therefore built to work on
+   two surfaces: acrylic behind it on Windows 11, or the flat backgroundColor
+   main.js falls back to. Both want the same thing from the stylesheet — a
+   translucent dark sheet with its own light, rather than opaque panels. */
+
+:root {
+  --ink: rgba(255, 255, 255, 0.92);
+  --dim: rgba(255, 255, 255, 0.58);
+  --faint: rgba(255, 255, 255, 0.38);
+  --accent: #0a84ff;
+  --accent-soft: rgba(10, 132, 255, 0.22);
+  --ring: inset 0 0 0 0.7px rgba(255, 255, 255, 0.1);
+  --fill: rgba(255, 255, 255, 0.055);
+  --fill-hover: rgba(255, 255, 255, 0.085);
+  --titlebar: 42px;
+  --gutter: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  /* Transparent at the edges so an acrylic backdrop reads through; the tint
+     keeps text legible whichever surface is behind. */
+  background:
+    radial-gradient(120% 70% at 50% -10%, rgba(10, 132, 255, 0.1), transparent 60%),
+    linear-gradient(180deg, rgba(20, 20, 27, 0.78), rgba(10, 10, 14, 0.9));
+  color: var(--ink);
+  font: 13px/1.45 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* --- title bar ------------------------------------------------------------ */
+
+.titlebar {
+  flex: 0 0 var(--titlebar);
+  display: flex;
+  align-items: center;
+  padding-left: var(--gutter);
+  -webkit-app-region: drag;
+}
+
+.titlebar-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--dim);
+}
+
+.titlebar-buttons {
+  margin-left: auto;
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.win-btn {
+  width: 44px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.win-btn svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.win-btn:hover { background: var(--fill-hover); color: var(--ink); }
+.win-btn.is-close:hover { background: #c42b1c; color: #fff; }
+
+/* --- sheet ---------------------------------------------------------------- */
+
+.sheet {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px var(--gutter) var(--gutter);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.sheet::-webkit-scrollbar { width: 10px; }
+.sheet::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 6px;
+}
+.sheet::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.24); background-clip: content-box; }
+
+/* --- identity ------------------------------------------------------------- */
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 2px 2px;
+}
+
+.monogram {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(10, 132, 255, 0.34), rgba(10, 132, 255, 0.1));
+  box-shadow: var(--ring), 0 6px 18px -8px rgba(10, 132, 255, 0.7);
+  font-size: 19px;
+  font-weight: 600;
+  color: #cfe4ff;
+}
+
+.identity h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.identity p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+/* --- groups --------------------------------------------------------------- */
+
+.group {
+  display: flex;
+  flex-direction: column;
+  /* The sheet is a scrolling column, so groups must keep their natural height
+     instead of being shrunk to fit it. */
+  flex: 0 0 auto;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: var(--ring);
+  overflow: hidden;
+}
+
+.group-label {
+  margin: 0;
+  padding: 13px 16px 9px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  min-height: 56px;
+}
+
+/* A hairline between rows, never under the last one. */
+.row + .row,
+.display-card { border-top: 1px solid rgba(255, 255, 255, 0.055); }
+
+label.row { cursor: pointer; }
+label.row:hover { background: rgba(255, 255, 255, 0.025); }
+
+.row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-title {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.row-detail {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--dim);
+}
+
+.row > :not(.row-text) { margin-left: auto; flex: 0 0 auto; }
+
+/* --- switch --------------------------------------------------------------- */
+
+.switch {
+  appearance: none;
+  position: relative;
+  width: 40px;
+  height: 23px;
+  margin: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: var(--ring);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(17px); }
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* --- segmented ------------------------------------------------------------ */
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.28);
+  box-shadow: var(--ring);
+}
+
+.segmented button {
+  min-width: 62px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.segmented button:hover { color: var(--ink); }
+
+.segmented button[aria-checked="true"] {
+  background: var(--accent-soft);
+  color: #8dc4ff;
+  box-shadow: inset 0 0 0 0.7px rgba(10, 132, 255, 0.45);
+}
+
+.segmented button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* --- select and ghost button ---------------------------------------------- */
+
+select {
+  min-width: 164px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: var(--ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+select option { background: #16161c; color: var(--ink); }
+
+.ghost {
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--fill);
+  box-shadow: var(--ring);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.14s ease;
+}
+
+.ghost:hover { background: var(--fill-hover); }
+.ghost:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* --- display card --------------------------------------------------------- */
+
+.display-card {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 16px;
+}
+
+.display-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--fill);
+  box-shadow: var(--ring);
+  color: var(--dim);
+}
+
+.display-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.badge {
+  margin-left: auto;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: #8dc4ff;
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.about-line {
+  margin: 0;
+  padding: 0 16px 14px;
+  font-size: 11px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- status bar ----------------------------------------------------------- */
+
+.statusbar {
+  flex: 0 0 auto;
+  padding: 10px var(--gutter);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.statusbar.is-saved { color: #4ad07f; }
+.statusbar.is-error { color: #ff6b6b; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
+}

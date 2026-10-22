@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:;" />
+  <title>Islet</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="panels.css" />
+  <link rel="stylesheet" href="notch.css" />
+</head>
+<body class="state-closed" data-tab="send">
+  <div id="card">
+    <div class="shell-content">
+    <button id="closed-trigger" class="layer layer-closed" type="button" aria-label="Open file shelf" title="Click to open · Ctrl+Alt+D">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17V5m-4 4 4-4 4 4M5 15v4h14v-4" /></svg>
+      <span id="closed-art" class="art"><img alt="" /><span class="art-fallback">♪</span></span>
+      <span class="notch-sensor"></span>
+      <span id="closed-count" class="closed-count"><span class="ready-dot"></span></span>
+      <span id="closed-timer" class="closed-timer"></span>
+      <span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </button>
+
+    <div class="layer layer-peek" role="button" tabindex="0" aria-label="Open notch">
+      <span id="peek-clock">--:--</span>
+      <span class="peek-dot"></span>
+      <span id="peek-shelf">Empty</span>
+
+      <!-- swaps in for the clock while something is playing -->
+      <div class="peek-np">
+        <div id="peek-art" class="art art-sm"><img alt="" /><span class="art-fallback">♪</span></div>
+        <span class="marquee-box"><span id="peek-title" class="marquee-track"></span></span>
+      </div>
+
+      <button id="peek-toggle" class="peek-toggle icon-btn" type="button" title="Play / Pause" aria-label="Play / Pause">
+        <svg class="icon-play filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3v10l9-5z" /></svg>
+        <svg class="icon-pause filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zm5 0h3v10H9z" /></svg>
+      </button>
+
+      <span class="peek-spacer"></span>
+
+      <!-- A session waiting on an answer, visible without opening the card.
+           It rides the right edge on purpose; see "peek precedence" in style.css. -->
+      <span id="peek-ai" class="peek-ai" hidden>
+        <span class="ai-dot is-waiting"></span>
+        <span id="peek-ai-count"></span>
+      </span>
+
+    </div>
+
+    <div class="layer layer-open">
+      <header class="notch-header">
+        <button id="explore" class="icon-btn" type="button" title="Explore modules" aria-label="Explore modules" aria-expanded="false"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="12" y="3" width="5" height="5" rx="1"/><rect x="3" y="12" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/></svg></button>
+        <div class="notch-heading"><span id="panel-title">Send files</span></div>
+        <span class="connection"><span class="ready-dot"></span> LocalSend</span>
+        <button id="keep-open" class="icon-btn" type="button" aria-label="Keep open" aria-pressed="false" title="Keep open"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 3 6 0-1 5 3 3H5l3-3-1-5Zm3 8v6" /></svg></button>
+        <button id="collapse" class="icon-btn" type="button" aria-label="Collapse notch" title="Collapse · Esc"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 12 5-5 5 5" /></svg></button>
+      </header>
+      <input id="explore-search" class="clip-search explore-search" type="search" placeholder="Find a module…" aria-label="Find a module" />
+      <nav id="tabs" class="tabs" aria-label="Modules">
+        <button class="tab" type="button" data-tab="send" title="Send files" aria-label="Send files">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 13.4V3.2M3.9 7.3 8 3.2l4.1 4.1" />
+            <path d="M2.6 11.9v1.2a1.3 1.3 0 0 0 1.3 1.3h8.2a1.3 1.3 0 0 0 1.3-1.3v-1.2" />
+          </svg>
+          <span>Send files</span>
+        <small class="module-caption">Across your devices</small></button>
+        <button class="tab" type="button" data-tab="media" title="Music" aria-label="Music">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M6.1 12.2V3.6l7-1.3v8.6" />
+            <circle cx="4.4" cy="12.3" r="1.8" /><circle cx="11.3" cy="10.9" r="1.8" />
+          </svg>
+          <span>Music</span>
+        <small class="module-caption">Stay in the flow</small></button>
+        <button class="tab" type="button" data-tab="clipboard" title="Clipboard" aria-label="Clipboard">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <rect x="3.4" y="3.1" width="9.2" height="11" rx="1.6" />
+            <path d="M6.1 3.1V2.4a1 1 0 0 1 1-1h1.8a1 1 0 0 1 1 1v.7z" />
+          </svg>
+          <span>Clipboard</span>
+        <small class="module-caption">Keep it within reach</small></button>
+        <button class="tab" type="button" data-tab="system" title="System" aria-label="System">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <rect x="2.2" y="2.2" width="11.6" height="11.6" rx="2.4" />
+            <rect x="5.6" y="5.6" width="4.8" height="4.8" rx="1.1" />
+            <path d="M6.6 2.2V.9M9.4 2.2V.9M6.6 15.1v-1.3M9.4 15.1v-1.3M13.8 6.6h1.3M13.8 9.4h1.3M.9 6.6h1.3M.9 9.4h1.3" />
+          </svg>
+          <span>System</span>
+        <small class="module-caption">A quiet overview</small></button>
+        <button class="tab" type="button" data-tab="ai" title="AI Monitor" aria-label="AI Monitor">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1.6 9.5 5.8 13.7 7.3 9.5 8.8 8 13 6.5 8.8 2.3 7.3 6.5 5.8z" />
+          </svg>
+          <span>AI</span>
+        <small class="module-caption">Know your limits</small></button>
+        <button class="tab" type="button" data-tab="timer" aria-label="Timer"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="11" r="6.5"/><path d="M8 1h4m-2 3V1m0 7v4l2 1m3-8 2-2"/></svg><span>Timer</span><small class="module-caption">Time, well spent</small></button>
+        <button class="tab" type="button" data-tab="notes" aria-label="Notes"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 2h12v12l-4 4H4zM12 18v-4h4M7 6h6M7 9h6"/></svg><span>Notes</span><small class="module-caption">Catch a thought</small></button>
+        <button class="tab" type="button" data-tab="settings" aria-label="Settings"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"/><circle cx="7" cy="5" r="2"/><circle cx="13" cy="10" r="2"/><circle cx="8" cy="15" r="2"/></svg><span>Settings</span><small class="module-caption">Make it yours</small></button>
+      </nav>
+
+      <main id="panels">
+        <!-- Send files -------------------------------------------------------- -->
+        <section class="panel" data-panel="send">
+          <div class="section-head">
+            <span class="section-label" id="shelf-count">File shelf</span>
+            <button id="clear" type="button" class="ghost-btn" title="Clear file shelf">Clear</button>
+          </div>
+
+          <div id="shelf" class="shelf">
+            <p class="hint">Drop files here</p>
+          </div>
+
+          <div class="section-head">
+            <span class="section-label"><span class="discovery-dot"></span> Nearby devices</span>
+            <span id="device-hint" class="section-meta"></span>
+          </div>
+          <div id="devices" class="devices">
+            <p class="hint">Discovering devices…</p>
+          </div>
+
+          <div id="status" class="status" role="status" aria-live="polite" hidden>
+            <svg id="status-icon" viewBox="0 0 20 20" aria-hidden="true"><path d="m5 10 3 3 7-7" /></svg>
+            <div class="bar"><div id="bar-fill"></div></div>
+            <span id="status-text"></span>
+          </div>
+
+          <form id="pin-form" class="pin" hidden>
+            <label for="pin-input">Receiver PIN</label>
+            <input id="pin-input" type="text" inputmode="numeric" maxlength="6" autocomplete="off" />
+            <button type="submit">Continue</button>
+          </form>
+        </section>
+
+        <!-- Music ----------------------------------------------------------- -->
+        <section class="panel" data-panel="media">
+          <div class="section-head"><span class="section-label">Now Playing</span></div>
+          <div class="card np">
+            <div id="np-art" class="art art-lg"><img alt="" /><span class="art-fallback">♪</span></div>
+            <div class="np-main">
+              <div class="np-top">
+                <div class="np-text">
+                  <span class="marquee-box"><span id="np-title" class="marquee-track"></span></span>
+                  <div id="np-sub" class="np-sub"></div>
+                  <select id="np-source" class="np-source" aria-label="Playback source" hidden></select>
+                </div>
+                <div class="np-buttons">
+                  <button id="np-prev" type="button" title="Previous track">
+                    <svg viewBox="0 0 16 16" aria-hidden="true" class="filled">
+                      <path d="M4.2 2.6h1.7v10.8H4.2z" /><path d="M13.4 3.1v9.8L6.6 8z" />
+                    </svg>
+                  </button>
+                  <button id="np-toggle" type="button" title="Play / Pause">
+                    <svg class="icon-play filled" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M4.4 2.4v11.2L13.8 8z" />
+                    </svg>
+                    <svg class="icon-pause filled" viewBox="0 0 16 16" aria-hidden="true">
+                      <path d="M4.3 2.7h2.7v10.6H4.3zM9 2.7h2.7v10.6H9z" />
+                    </svg>
+                  </button>
+                  <button id="np-next" type="button" title="Next track">
+                    <svg viewBox="0 0 16 16" aria-hidden="true" class="filled">
+                      <path d="M10.1 2.6h1.7v10.8h-1.7z" /><path d="M2.6 3.1v9.8L9.4 8z" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="np-progress">
+                <div class="np-bar"><div id="np-fill"></div></div>
+                <input id="np-seek" class="np-seek" type="range" min="0" max="100" value="0" step="1" aria-label="Playback position" disabled />
+                <div class="np-times"><span id="np-time" class="np-time"></span><span id="np-remaining" class="np-time"></span></div>
+              </div>
+            </div>
+          </div>
+          <span id="media-feedback" class="media-feedback" role="status" aria-live="polite"></span>
+          <p id="np-empty" class="hint">Nothing playing yet</p>
+        </section>
+
+        <!-- Clipboard and system panels are mounted by panel-*.js. -->
+        <section class="panel" data-panel="clipboard"></section>
+
+        <section class="panel" data-panel="system"></section>
+        <section class="panel" data-panel="timer"></section>
+        <section class="panel" data-panel="notes"></section>
+
+        <!-- AI Monitor ------------------------------------------------------ -->
+        <section class="panel" data-panel="ai">
+          <div id="ai-dashboard"></div>
+        </section>
+      </main>
+
+      <footer class="panel-footer">
+        <span id="footer-hint" role="status" aria-live="polite">Drop files. Choose a device. Send.</span>
+        <span class="shortcut"><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>D</kbd></span>
+        <button id="quit" type="button" class="icon-btn" aria-label="Quit" title="Quit">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1.9v6.4" /><path d="M11.8 3.6a5.6 5.6 0 1 1-7.6 0" />
+          </svg>
+        </button>
+      </footer>
+    </div>
+    </div>
+  </div>
+
+  <script src="notch-geometry.js"></script>
+  <script src="notch-motion.js"></script>
+  <script src="media-state.js"></script>
+  <script src="ai-state.js"></script>
+  <script src="panel-clipboard.js"></script>
+  <script src="panel-system.js"></script>
+  <script src="panel-utilities.js"></script>
+  <script src="panel-ai.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>

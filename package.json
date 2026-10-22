@@ -1,0 +1,20 @@
+{
+  "name": "islet",
+  "productName": "Islet",
+  "version": "0.1.0",
+  "description": "A Dynamic Island for Windows: send files over LocalSend, with music, clipboard, system and AI modules",
+  "main": "src/main.js",
+  "private": true,
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/send-roundtrip.js && node test/media-state.js && node test/media-bridge.js && node test/notch-logic.js && node test/displays.js && node test/notes.js && node test/aimon.js && node test/ai-usage.js && node test/ai-worker.js && node test/clipboard.js && node test/sysmon.js",
+    "test:ui": "electron test/renderer-smoke.js"
+  },
+  "devDependencies": {
+    "electron": "^38.2.2"
+  },
+  "dependencies": {
+    "selfsigned": "^5.5.0"
+  }
+}

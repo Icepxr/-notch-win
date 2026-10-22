@@ -1,0 +1,838 @@
+/* Shared controls and panel foundations. The current edge-attached surface,
+   geometry and motion are defined in notch.css, loaded after these defaults. */
+
+:root {
+  --spring: cubic-bezier(0.22, 0.9, 0.26, 1.06);
+
+  /* Base palette; notch.css supplies the current surface tokens. */
+  --panel: rgb(11, 11, 20);
+  --card: rgba(255, 255, 255, 0.075);
+  --fill: rgba(255, 255, 255, 0.07);
+  --fill-hover: rgba(255, 255, 255, 0.14);
+
+  /* An inset ring instead of a border: it stays hairline-crisp on a HiDPI
+     screen and costs nothing in the box model. */
+  --ring: inset 0 0 0 0.7px rgba(255, 255, 255, 0.11);
+
+  --ink: rgba(255, 255, 255, 0.86);
+  --dim: rgba(255, 255, 255, 0.55);
+  --faint: rgba(255, 255, 255, 0.38);
+
+  --accent: rgb(10, 132, 255);
+  --accent-soft: rgba(10, 132, 255, 0.2);
+  --good: #30d158;
+  --warn: #ff9f0a;
+  --bad: #ff453a;
+
+  --r-card: 10px;
+  --r-ctrl: 8px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', 'Leelawadee UI', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* --- the notch shell ------------------------------------------------------ */
+
+#card {
+  position: relative;
+  margin: 0 auto;
+  width: 200px;
+  height: 7px;
+  background: var(--panel);
+  border-radius: 0 0 11px 11px;
+  overflow: hidden;
+  transition:
+    width 0.42s var(--spring),
+    height 0.42s var(--spring),
+    border-radius 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+body.state-peek #card {
+  width: 268px;
+  height: 36px;
+  border-radius: 0 0 17px 17px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+
+body.state-peek.has-media #card {
+  width: 348px;
+  height: 40px;
+  border-radius: 0 0 19px 19px;
+}
+
+body.state-open #card {
+  width: 640px;
+  height: 376px;
+  border-radius: 0 0 26px 26px;
+  box-shadow: 0 20px 52px rgba(0, 0, 0, 0.6);
+}
+
+/* The hairline lip sells the "cut out of the screen" look. */
+#card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  pointer-events: none;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+
+body.state-peek .layer-peek,
+body.state-open .layer-open {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0.1s;
+}
+
+/* --- peek ----------------------------------------------------------------- */
+
+.layer-peek {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 16px;
+  font-size: 12.5px;
+  letter-spacing: 0.2px;
+}
+
+#peek-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.peek-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+#peek-shelf { color: var(--dim); }
+.peek-spacer { flex: 1; }
+
+/* Music takes the peek over while it is playing. */
+body.has-media .layer-peek #peek-clock,
+body.has-media .layer-peek .peek-dot,
+body.has-media .layer-peek #peek-shelf { display: none; }
+
+.peek-np {
+  display: none;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+body.has-media .peek-np { display: flex; }
+.peek-np .marquee-box { font-weight: 500; }
+
+/* --- album art ------------------------------------------------------------ */
+
+.art {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--fill);
+  color: var(--faint);
+}
+
+.art img {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.art.has-art img { display: block; }
+.art.has-art .art-fallback { display: none; }
+
+.art-fallback { line-height: 1; }
+
+.art-sm {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+}
+
+.art-sm .art-fallback { font-size: 13px; }
+
+.art-lg {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+}
+
+.art-lg .art-fallback { font-size: 24px; }
+
+/* --- marquee -------------------------------------------------------------- */
+
+.marquee-box {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.marquee-track {
+  display: inline-block;
+  white-space: nowrap;
+  will-change: transform;
+}
+
+.marquee-track.is-scrolling {
+  animation: marquee 11s linear infinite;
+}
+
+@keyframes marquee {
+  0%, 12% { transform: translateX(0); }
+  88%, 100% { transform: translateX(var(--shift, -40%)); }
+}
+
+/* --- tab bar -------------------------------------------------------------- */
+
+.layer-open {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px 12px;
+  gap: 10px;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: var(--ring);
+}
+
+.tab {
+  position: relative;
+  flex: 1 1 0;
+  display: grid;
+  place-items: center;
+  height: 34px;
+  border: 0;
+  border-radius: var(--r-ctrl);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover { background: var(--fill); color: var(--ink); }
+
+.tab.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tab.is-active:hover { background: var(--accent-soft); }
+
+.tab svg { width: 16px; height: 16px; }
+
+/* Icons are stroked by default; .filled ones paint instead. */
+svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+svg.filled { fill: currentColor; stroke: none; }
+
+/* --- panels --------------------------------------------------------------- */
+
+#panels {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.panel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  gap: 7px;
+  overflow-y: auto;
+}
+
+.panel.is-active { display: flex; }
+
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 2px;
+}
+
+.section-label {
+  font-size: 10px;
+  line-height: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.section-meta {
+  font-size: 10.5px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  border-radius: var(--r-card);
+  background: var(--card);
+  box-shadow: var(--ring);
+  padding: 10px;
+}
+
+.hint {
+  margin: 0;
+  padding: 2px;
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.ghost-btn {
+  border: 0;
+  background: var(--fill);
+  color: var(--dim);
+  border-radius: 7px;
+  font: inherit;
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.ghost-btn:hover { background: var(--fill-hover); color: var(--ink); }
+.ghost-btn[hidden] { display: none; }
+
+/* --- footer --------------------------------------------------------------- */
+
+.panel-footer {
+  display: flex;
+  gap: 8px;
+}
+
+.wide-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 32px;
+  box-shadow: var(--ring);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--dim);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.wide-btn:hover { background: var(--fill-hover); color: var(--ink); }
+.wide-btn svg { width: 13px; height: 13px; }
+
+/* --- file shelf ----------------------------------------------------------- */
+
+.shelf {
+  flex: 1;
+  min-height: 86px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 9px;
+  border-radius: var(--r-card);
+  border: 1.5px dashed rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.022);
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+body.dragging .shelf {
+  border-color: var(--accent);
+  background: rgba(10, 132, 255, 0.11);
+}
+
+.shelf .hint { margin: auto; }
+
+.item {
+  position: relative;
+  flex: 0 0 auto;
+  width: 76px;
+  padding: 8px 6px 7px;
+  border-radius: 10px;
+  background: var(--fill);
+  text-align: center;
+  cursor: grab;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.item:hover {
+  background: var(--fill-hover);
+  transform: translateY(-1px);
+}
+
+.item:active { cursor: grabbing; }
+
+.item .ext {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.item .name {
+  margin-top: 3px;
+  font-size: 10.5px;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  /* Break inside a word only when the word itself cannot fit, so
+     "Project notes.pdf" wraps at the space rather than mid-extension. */
+  overflow-wrap: anywhere;
+}
+
+.item .size {
+  margin-top: 3px;
+  font-size: 9.5px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.item .drop {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 15px;
+  height: 15px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--ink);
+  font-size: 11px;
+  line-height: 1;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.item:hover .drop { opacity: 1; }
+.item .drop:hover { background: var(--bad); }
+
+/* --- devices -------------------------------------------------------------- */
+
+.devices {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  min-height: 44px;
+  align-items: center;
+  padding-bottom: 2px;
+}
+
+.device {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 200px;
+  border: 1.5px solid transparent;
+  background: var(--fill);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  padding: 7px 13px 7px 10px;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.device:hover:not(:disabled) {
+  background: var(--fill-hover);
+  transform: translateY(-1px);
+}
+
+.device.drop-target {
+  border-color: var(--accent);
+  background: rgba(10, 132, 255, 0.2);
+}
+
+.device:disabled { opacity: 0.45; cursor: default; }
+.device .glyph { font-size: 14px; }
+
+.device .labels {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+  overflow: hidden;
+}
+
+.device .alias {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.device .addr {
+  font-size: 9.5px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- transfer status ------------------------------------------------------ */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11.5px;
+}
+
+.status[hidden] { display: none; }
+
+.bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+#bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.18s linear, background 0.2s ease;
+}
+
+.status.is-done #bar-fill { background: var(--good); }
+.status.is-error #bar-fill { background: var(--bad); }
+.status.is-error #status-text { color: var(--bad); }
+.status.is-done #status-text { color: var(--good); }
+
+#status-text {
+  flex: 0 0 auto;
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--dim);
+}
+
+.pin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+
+.pin[hidden] { display: none; }
+
+.pin input {
+  width: 86px;
+  background: var(--fill);
+  box-shadow: var(--ring);
+  border-radius: 7px;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-align: center;
+  padding: 4px 6px;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.pin input:focus { outline: none; border-color: var(--accent); }
+
+.pin button {
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 7px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+
+/* --- now playing ---------------------------------------------------------- */
+
+.np {
+  display: none;
+  gap: 12px;
+  align-items: center;
+}
+
+body.has-media .np { display: flex; }
+body.has-media #np-empty { display: none; }
+
+.np-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.np-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.np-text { min-width: 0; flex: 1; }
+
+.np-text .marquee-box {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.np-sub {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.np-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.np-buttons button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.np-buttons button:hover:not(:disabled) { background: var(--fill-hover); }
+.np-buttons button:disabled { opacity: 0.4; cursor: default; }
+.np-buttons svg { width: 13px; height: 13px; }
+
+#np-toggle { width: 34px; height: 34px; }
+#np-toggle svg { width: 15px; height: 15px; }
+
+/* Only one of the two glyphs shows, depending on playback. */
+#np-toggle .icon-pause { display: none; }
+body.is-playing #np-toggle .icon-play { display: none; }
+body.is-playing #np-toggle .icon-pause { display: block; }
+
+.np-progress {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  opacity: 0.45;
+  transition: opacity 0.2s ease;
+}
+
+/* The bridge only reports a usable timeline sometimes; dim it when it is stale. */
+.np-progress.is-live { opacity: 1; }
+
+.np-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+#np-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 2px;
+  background: var(--ink);
+  transition: width 0.3s linear;
+}
+
+.np-time {
+  font-size: 10.5px;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ai sessions ---------------------------------------------------------- */
+
+/* Peek precedence: Now Playing owns the middle of the peek whenever something
+   is playing, and it keeps it. Music is the thing the user glances down at
+   constantly; an AI session waiting for an answer is a one-bit fact, and one bit
+   fits in a dot. So the indicator rides the right edge, which both layouts
+   leave alone - neither has to give way, and the peek does not have to grow a
+   third width to fit both. */
+
+.peek-ai {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--good);
+}
+
+.peek-ai[hidden] { display: none; }
+
+/* Collapsed, there is no room for even a dot, so the lip of the sliver carries
+   it: a green hairline along the bottom edge instead of the usual white one. */
+body.ai-waiting.state-closed #card::after {
+  border-bottom-color: var(--good);
+  box-shadow: 0 1px 6px rgba(48, 209, 88, 0.55);
+}
+
+/* Open, the tab itself says there is something to come back to. */
+body.ai-waiting .tab[data-tab="ai"]:not(.is-active)::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.ai-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.ai-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 11px;
+}
+
+.ai-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+
+.ai-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-cwd {
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-since {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+/* --- status dot ----------------------------------------------------------- */
+
+.ai-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+
+/* Working: a pulse, because the point is that it is still moving. */
+.ai-dot.is-working {
+  background: var(--warn);
+  animation: ai-pulse 1.5s ease-in-out infinite;
+}
+
+/* Waiting on the user: the one state worth a colour that carries to the peek. */
+.ai-dot.is-waiting {
+  background: var(--good);
+  box-shadow: 0 0 6px rgba(48, 209, 88, 0.5);
+}
+
+.ai-dot.is-quiet { background: var(--faint); }
+
+/* A status we have no mapping for: neutral, never a colour that implies a state. */
+.ai-dot.is-unknown {
+  background: transparent;
+  border: 1.5px solid var(--faint);
+}
+
+@keyframes ai-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.78); }
+}
+
+/* --- scrollbars ----------------------------------------------------------- */
+
+::-webkit-scrollbar { height: 5px; width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.28); }

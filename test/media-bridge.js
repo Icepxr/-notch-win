@@ -1,0 +1,23 @@
+'use strict';
+
+const assert = require('node:assert/strict');
+const { MediaBridge } = require('../src/media');
+const writes = [];
+const bridge = new MediaBridge();
+bridge.child = { stdin: { writable: true, write: (value) => writes.push(value) } };
+assert.equal(bridge.command('toggle'), true);
+assert.equal(writes.pop(), 'toggle\n');
+assert.equal(bridge.command('seek', 90.5), true);
+assert.deepEqual(JSON.parse(writes.pop()), { action: 'seek', value: 90.5 });
+assert.equal(bridge.command('source', 'Spotify.exe'), true);
+assert.deepEqual(JSON.parse(writes.pop()), { action: 'source', value: 'Spotify.exe' });
+assert.equal(bridge.command('source', 'Spotify.exe\nquit'), false);
+assert.equal(bridge.command('source', 12), false);
+for (const value of [-1, NaN, Infinity, '40', Number.MAX_VALUE]) assert.equal(bridge.command('seek', value), false);
+assert.equal(bridge.command('toggle\nquit'), false);
+assert.equal(writes.length, 0);
+bridge.child.stdin.writable = false;
+assert.equal(bridge.command('next'), false);
+bridge.child = null;
+assert.equal(bridge.command('prev'), false);
+console.log('Media bridge commands: valid actions, numeric bounds and pipe framing passed');
