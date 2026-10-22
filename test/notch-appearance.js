@@ -1,0 +1,34 @@
+'use strict';
+const assert = require('node:assert/strict');
+const Appearance = require('../src/renderer/notch-appearance');
+const Geometry = require('../src/renderer/notch-geometry');
+const { placement, pointerInside } = require('../src/displays');
+assert.deepEqual(Appearance.normalize(), Appearance.defaults);
+assert.deepEqual(Geometry.sizesFor(), Geometry.sizes);
+assert.deepEqual(Geometry.hostFor(), Geometry.hostSize);
+assert.equal(Appearance.normalize({ expandedWidth: Infinity, notchScale: '125', surfaceTint: 'url(x)' }).surfaceTint, Appearance.defaults.surfaceTint);
+assert.equal(Appearance.normalize({ expandedWidth: -10 }).expandedWidth, 480);
+assert.equal(Appearance.normalize({ closedWidth: 300 }).closedWidth, 280);
+assert.equal(Appearance.normalize({ notchScale: 999 }).notchScale, 125);
+assert.equal(Appearance.normalize({ expandedWidth: 521 }).expandedWidth, 520);
+assert.equal(Appearance.normalize({ accentColor: '#FF00AA' }).accentColor, '#ff00aa');
+for (const r of [0, 64, 128, 192, 255]) for (const g of [0, 64, 128, 192, 255]) for (const b of [0, 64, 128, 192, 255]) {
+  const tint = '#' + [r,g,b].map(v => v.toString(16).padStart(2, '0')).join('');
+  const colors = Appearance.colors({ surfaceTint: tint, accentColor: tint });
+  assert.ok(Appearance.contrast(colors.accent, colors.raised) >= 4.5, tint + ' accent stays readable');
+  assert.ok(Appearance.contrast('#b2b2b8', colors.raised) >= 4.5, tint + ' secondary text stays readable');
+}
+const desktop = { bounds: { x: -1920, y: -100, width: 1920, height: 1080 }, workArea: { x: -1920, y: -100, width: 1920, height: 1040 } };
+const prefs = { expandedWidth: 640, closedWidth: 280, notchScale: 125 };
+const p = placement(desktop, 'notch', prefs), host = Geometry.hostFor(prefs);
+assert.equal(p.zoomFactor, 1.25);
+assert.equal(p.bounds.width, host.width * 1.25);
+const region = { x: (host.width - 280) / 2, y: 0, width: 280, height: 28, radius: 10 };
+assert.ok(pointerInside(region, { x: p.bounds.x + host.width / 2 * p.zoomFactor, y: p.bounds.y + 14 * p.zoomFactor }, p.bounds, p.zoomFactor));
+assert.equal(pointerInside(region, { x: p.bounds.x + 10, y: p.bounds.y + 100 }, p.bounds, p.zoomFactor), false);
+const small = { bounds: { x: 0, y: 0, width: 640, height: 480 }, workArea: { x: 0, y: 0, width: 640, height: 440 } };
+const fit = placement(small, 'capsule', prefs);
+assert.ok(fit.zoomFactor < 1.25 && fit.bounds.width <= 640 && fit.bounds.y + fit.bounds.height <= 440);
+assert.equal(Geometry.sizesFor(prefs).openMusic.width, 640);
+assert.equal(Geometry.sizesFor(prefs).openAi.height, 510);
+console.log('Appearance: ranges, stored defaults, 125 color combinations, scaled hit regions and small-display fitting passed');

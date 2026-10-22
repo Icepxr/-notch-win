@@ -8,6 +8,88 @@ const statusEl = document.getElementById('status');
 const bar = document.querySelector('.statusbar');
 let statusTimer = null;
 let painting = false;
+let currentPreferences = {};
+let appearanceDraft = {};
+let appearanceTimer = null;
+let appearanceRevision = 0;
+
+// Preview on every input frame; persist after a short pause or on release.
+// Draft values win over older broadcasts while a slider is being moved.
+function editAppearance(patch, commit = false) {
+  appearanceRevision++;
+  Object.assign(appearanceDraft, patch);
+  paintAppearance({ ...currentPreferences, ...appearanceDraft });
+  clearTimeout(appearanceTimer);
+  if (commit) flushAppearance();
+  else appearanceTimer = setTimeout(flushAppearance, 180);
+}
+
+async function flushAppearance() {
+  clearTimeout(appearanceTimer);
+  const revision = appearanceRevision;
+  const patch = { ...appearanceDraft };
+  if (!Object.keys(patch).length) return;
+  try {
+    const result = await window.panel.update(patch);
+    if (revision === appearanceRevision) appearanceDraft = {};
+    paint(result);
+    status(result.ok ? 'Appearance saved' : 'Cannot save appearance', result.ok ? 'saved' : 'error');
+  } catch {
+    if (revision === appearanceRevision) appearanceDraft = {};
+    paintAppearance({ ...currentPreferences, ...appearanceDraft });
+    status('Cannot save appearance', 'error');
+  }
+}
+
+for (const input of document.querySelectorAll('[data-appearance]')) {
+  const patch = () => ({ [input.dataset.appearance]: input.type === 'range' ? Number(input.value) : input.value });
+  input.addEventListener('input', () => editAppearance(patch()));
+  input.addEventListener('change', () => editAppearance(patch(), true));
+}
+for (const [index, preset] of NotchAppearance.presets.entries()) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.preset = index;
+  button.setAttribute('aria-pressed', 'false');
+  const dot = document.createElement('i');
+  dot.style.background = preset.accentColor;
+  const label = document.createElement('span');
+  label.textContent = preset.name;
+  button.append(dot, label);
+  button.addEventListener('click', () => editAppearance({ surfaceTint: preset.surfaceTint, accentColor: preset.accentColor }, true));
+  document.getElementById('color-presets').append(button);
+}
+document.getElementById('reset-appearance').addEventListener('click', () => editAppearance({ ...NotchAppearance.defaults }, true));
+for (const button of document.querySelectorAll('[data-preview]')) {
+  button.addEventListener('click', () => {
+    document.getElementById('appearance-preview').dataset.expanded = String(button.dataset.preview === 'expanded');
+    for (const choice of document.querySelectorAll('[data-preview]')) choice.setAttribute('aria-pressed', String(choice === button));
+  });
+}
+
+function paintAppearance(value) {
+  const prefs = NotchAppearance.normalize(value), colors = NotchAppearance.colors(prefs);
+  const preview = document.getElementById('appearance-preview');
+  for (const [key, color] of Object.entries(colors)) preview.style.setProperty('--preview-' + key, color);
+  preview.style.setProperty('--preview-rest-width', prefs.closedWidth * .64 * prefs.notchScale / 100 + 'px');
+  preview.style.setProperty('--preview-open-width', prefs.expandedWidth * .64 * prefs.notchScale / 100 + 'px');
+  preview.style.setProperty('--preview-scale', prefs.notchScale / 100);
+  preview.dataset.silhouette = value.silhouette || 'notch';
+  document.getElementById('preview-caption').textContent = prefs.closedWidth + ' px rest · ' + prefs.expandedWidth + ' px expanded · ' + prefs.notchScale + '% size';
+  for (const input of document.querySelectorAll('[data-appearance]')) {
+    input.value = prefs[input.dataset.appearance];
+    const label = document.getElementById(input.id + '-value');
+    if (input.type === 'range') {
+      label.textContent = prefs[input.dataset.appearance] + (input.dataset.appearance === 'notchScale' ? '%' : ' px');
+      input.setAttribute('aria-valuetext', label.textContent);
+      input.style.setProperty('--range-fill', (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100 + '%');
+    } else label.textContent = input.value.toUpperCase();
+  }
+  for (const button of document.querySelectorAll('[data-preset]')) {
+    const preset = NotchAppearance.presets[Number(button.dataset.preset)];
+    button.setAttribute('aria-pressed', String(preset.surfaceTint === prefs.surfaceTint && preset.accentColor === prefs.accentColor));
+  }
+}
 
 function status(message, kind) {
   clearTimeout(statusTimer);
@@ -63,10 +145,11 @@ for (const select of document.querySelectorAll('select')) {
 }
 
 document.getElementById('reveal-data').addEventListener('click', () => window.panel.revealData());
-document.getElementById('win-close').addEventListener('click', () => window.panel.close());
+async function closePanel() { await flushAppearance(); window.panel.close(); }
+document.getElementById('win-close').addEventListener('click', closePanel);
 document.getElementById('win-minimize').addEventListener('click', () => window.panel.minimize());
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') window.panel.close();
+  if (event.key === 'Escape') closePanel();
 });
 
 const SEGMENT_DEFAULT = { silhouette: 'notch', glass: 'high' };
@@ -81,6 +164,8 @@ function paint(state) {
   if (!state) return;
   painting = true;
   const preferences = state.preferences || {};
+  currentPreferences = preferences;
+  paintAppearance({ ...preferences, ...appearanceDraft });
 
   for (const group of document.querySelectorAll('.segmented')) {
     const key = group.dataset.preference;

@@ -1,0 +1,227 @@
+/* Vorssaint-inspired desktop notch. Source dimensions: 56px artwork,
+   86px gallery tiles, 8px row gaps. Islet keeps its own name and symbols. */
+:root {
+  --surface-rest: #050506;
+  --surface-open: #080809;
+  --surface-sheen: #0e0e0f;
+  --surface-raised: #151516;
+  --text-primary: #f3f3f5;
+  --text-secondary: #b2b2b8;
+  --text-muted: #9c9ca5;
+  --edge-soft: #ffffff0b;
+  --ink: var(--text-primary);
+  --dim: var(--text-secondary);
+  --faint: var(--text-muted);
+  --accent: #aac4ef;
+  --motion-enter: 220ms;
+  --motion-exit: 140ms;
+}
+body { font-size: 12px; }
+body { --panel: var(--surface-rest); }
+body.state-open { --panel: var(--surface-open); }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 2px solid #bcd3ff; outline-offset: -2px;
+}
+body.state-open #card { background: var(--surface-open); box-shadow: 0 16px 32px -12px #000c; }
+body.state-open:not([data-glass="off"]) #card {
+  background: linear-gradient(180deg, var(--surface-sheen), var(--surface-open) 78%);
+}
+body.state-closed #card, body.state-peek #card { background: var(--surface-rest); }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline-color: var(--accent); }
+body.state-open .layer-open::before { display: none; }
+body.state-open:not([data-glass="off"]) .layer-open::before { display: none; }
+body.state-open.has-media:not([data-glass="off"]) .shell-content::before {
+  opacity: .2; filter: blur(40px) saturate(120%) brightness(.45);
+}
+body.state-open:not([data-tab="media"]) .shell-content::before { opacity: .07; }
+body.state-open:not([data-glass="off"]) .shell-content::after {
+  box-shadow: inset 1px 0 #ffffff06, inset -1px 0 #ffffff06, inset 0 -1px #ffffff12;
+}
+body.state-open:not([data-glass="off"]) :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
+  background: #ffffff08; border-color: var(--edge-soft); box-shadow: none; backdrop-filter: none;
+}
+body.state-open[data-glass="high"] :is(.ai-card, .clip-list, .scratchpad) { background: #ffffff0a; }
+body[data-glass="low"] { --islet-blur: 4px; }
+body[data-glass="medium"] { --islet-blur: 8px; }
+body[data-glass="high"] { --islet-blur: 12px; }
+body.state-open:not([data-glass="off"]):not(.is-morphing) :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
+  backdrop-filter: blur(var(--islet-blur, 12px)) saturate(110%);
+}
+body.is-morphing .shell-content::before { visibility: hidden; }
+.layer-open, body[data-tab="ai"] .layer-open { height: var(--page-height, 350px); padding: 14px 22px 12px; gap: 10px; }
+.notch-header { position: relative; flex: 0 0 26px; gap: 9px; }
+.notch-heading { font-size: 12px; font-weight: 550; color: #dedee3; letter-spacing: -.2px; }
+.notch-heading { transform: translateX(var(--page-pull, 0px)); transition: transform 140ms ease; }
+.notch-header[data-dragging="true"] .notch-heading { transition: none; }
+.notch-header::after { content: ''; position: absolute; left: calc(50% - 39px); top: -14px; width: 78px; height: 9px; border-radius: 0 0 7px 7px; background: #030304; pointer-events: none; }
+body[data-silhouette="capsule"] .notch-header::after { display: none; }
+.connection { visibility: hidden; flex: 1; }
+.notch-header .icon-btn { width: 26px; height: 26px; color: #b0b0b7; border-radius: 8px; }
+.notch-header .icon-btn:hover { background: #ffffff0c; }
+.notch-header .icon-btn svg { width: 15px; height: 15px; stroke-width: 1.5; }
+.notch-header #explore { margin-left: -3px; }
+.panel-footer { position: relative; flex: 0 0 24px; padding-top: 4px; border: 0; gap: 10px; min-width: 0; margin-top: auto; }
+.panel-footer .shortcut { display: none; }
+#footer-hint { color: #b7b7bf; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.panel-footer #quit { width: 24px; height: 24px; opacity: .7; }
+.page-dots { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+.page-dots button { display: grid; place-items: center; min-width: 24px; height: 24px; border-radius: 7px; background: transparent; color: #b6b6be; }
+.page-dots button:hover { background: #ffffff0c; }
+.page-dots button svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.page-dots .module-index { font-size: 9px; min-width: 30px; font-variant-numeric: tabular-nums; }
+body.is-exploring .page-dots { display: none; }
+.panel.is-active { animation: page-reveal var(--motion-enter) cubic-bezier(.2,.8,.2,1) both; }
+body[data-page-direction="previous"] .panel.is-active { animation-name: page-reveal-back; }
+@keyframes page-reveal { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+@keyframes page-reveal-back { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
+.section-label { font-size: 11px; font-weight: 500; letter-spacing: 0; color: #c3c3cb; }
+.section-meta { font-size: 10px; color: var(--text-muted); }
+
+/* The source gallery uses two rows of 86px tiles, with one whole-row step. */
+body.is-exploring .explore-search { height: 29px; flex: 0 0 29px; background: #ffffff07; border: 1px solid #ffffff06; border-radius: 8px; font-size: 11px; }
+body.is-exploring .tabs { position: relative; flex: 0 0 180px; height: 180px; min-height: 180px; grid-auto-rows: 86px; gap: 8px; padding-right: 28px; scrollbar-width: none; scroll-snap-type: y mandatory; scroll-padding-top: 0; }
+body.is-exploring .tabs::-webkit-scrollbar { display: none; }
+body.is-exploring .tab { height: 86px; gap: 5px; padding: 10px 6px 6px; background: #ffffff0a; border: 1px solid #ffffff07; border-radius: 16px; box-shadow: none; font-size: 11px; scroll-snap-align: start; }
+body.is-exploring .tab:hover, body.is-exploring .tab:focus-visible { background: #ffffff16; border-color: #ffffff45; transform: none; }
+body.is-exploring .tab.is-active { background: #ffffff12; border-color: #ffffff17; }
+body.is-exploring .tab.is-active::before { content: '✓'; position: absolute; right: 8px; top: 6px; color: #d8d8df; font-size: 10px; }
+body.is-exploring .tab svg { width: 22px; height: 22px; margin: 0; stroke-width: 1.5; }
+.tab .module-caption { font: 10px/1.4 'Segoe UI', sans-serif; color: #aaaab2; }
+#gallery-rail { display: none; }
+body.is-exploring #gallery-rail { position: absolute; display: flex; flex-direction: column; right: 18px; top: 147px; gap: 3px; }
+#gallery-rail button { width: 24px; height: 24px; display: grid; place-items: center; background: transparent; border-radius: 7px; }
+#gallery-rail button::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #ffffff45; }
+#gallery-rail button[aria-pressed="true"]::before { background: #fff; }
+
+/* Music follows the reference: cover/title row, full-width timeline, transport. */
+[data-panel="media"] { justify-content: center; gap: 0; }
+body.state-open:not([data-glass="off"]) .np, .np { background: none; border: 0; box-shadow: none; padding: 3px 7px 0; gap: 14px; }
+.np { grid-template-columns: 56px minmax(0, 1fr); }
+.np .art-lg { width: 56px; height: 56px; border-radius: 11px; box-shadow: 0 2px 12px #0006; }
+.np-text .marquee-box { font-size: 16px; font-weight: 550; letter-spacing: -.25px; }
+.np-sub { font-size: 11px; color: #b6b6bf; margin-top: 4px; }
+.np-source { font-size: 10px; padding: 2px 4px; margin-top: 3px; background: transparent; color: #b3b3bb; }
+.np-progress { margin: 0; }
+.np-bar { height: 3px; background: #ffffff20; }
+#np-fill { background: var(--accent); opacity: .9; }
+.np-times { margin-top: 5px; }
+.np-time { color: #c0c0c8; font-size: 10px; }
+.np-buttons { gap: 34px; margin: 0; }
+.np-buttons button, #np-toggle { width: 36px; height: 36px; background: transparent; color: #f1f1f4; box-shadow: none; }
+.np-buttons button:hover, #np-toggle:hover { background: #ffffff10; }
+.np-buttons #np-toggle svg { width: 22px; height: 22px; }
+.np-buttons svg { width: 17px; height: 17px; }
+.media-feedback { font-size: 10px; margin-top: 3px; }
+
+/* Drop intention stays local to the shelf and destination. */
+.shelf { position: relative; border-radius: 15px; transition: border-color 150ms, background 150ms, transform 180ms; }
+.shelf.is-empty { background: #ffffff05; border: 1px dashed #ffffff20; min-height: 100px; }
+.shelf .empty-icon { opacity: .8; }
+.shelf strong { color: #ededf2; font-size: 14px; font-weight: 500; }
+.shelf small { color: #b0b0b9; font-size: 11px; }
+.section-actions { display: flex; gap: 8px; align-items: center; }
+.section-actions button { min-height: 24px; border-radius: 6px; padding: 4px 8px; font-size: 10px; background: #ffffff0b; color: #d0d0d8; }
+.section-actions button:hover { background: #ffffff18; }
+.devices { gap: 7px; }
+.device, body.state-open:not([data-glass="off"]) .device { border-radius: 13px; background: #ffffff08; border: 1px solid #ffffff08; min-height: 51px; transition: background 140ms, border-color 140ms, transform 180ms; }
+.device .alias { font-size: 12px; font-weight: 500; }
+.device .addr { font-size: 10px; color: #b1b1bb; }
+body.dragging .shelf { border-color: #b3d3ff; background: #9fc7ff12 !important; transform: translate(var(--drop-x,0), var(--drop-y,0)); }
+body.dragging .shelf::after { content: 'Release to park'; position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; background: #111a28ec; color: #e1ecff; font-size: 16px; font-weight: 500; pointer-events: none; }
+body.aiming-device .shelf::after { content: 'Release on the device to send'; font-size: 13px; color: #b7c8df; }
+.device.drop-target, body.state-open:not([data-glass="off"]) .device.drop-target { background: #a9d9bf20; border-color: #b1e2ca; transform: scale(1.025); }
+.device.drop-target .device-send { transform: translateX(3px); color: #c8f0dc; }
+body.drop-complete .shelf { animation: parked 600ms ease both; }
+@keyframes parked { 30% { border-color: #aad6bb; box-shadow: 0 0 0 3px #aad6bb18; } }
+.status { font-size: 10px; border-radius: 9px; }
+body.transfer-active #closed-progress { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; transform-origin: left; transform: scaleX(var(--transfer-progress, .06)); background: #a6d6bd; transition: transform 180ms linear; }
+body.transfer-active.transfer-waiting #closed-progress { animation: waiting-pulse 900ms ease-in-out infinite alternate; }
+@keyframes waiting-pulse { to { opacity: .3; } }
+
+/* Notices are a distinct peek layer, not Windows-wide notification access. */
+.layer-notice { width: 360px; height: 64px; left: 50%; right: auto; margin-left: -180px; padding: 10px 17px; display: flex; align-items: center; gap: 8px; contain: layout style; }
+body.has-notice.state-peek .layer-peek { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 70ms, visibility 0s 70ms; }
+body.has-notice.state-peek .layer-notice { visibility: visible; opacity: 1; transform: none; pointer-events: auto; transition: opacity 150ms 70ms, transform 200ms 70ms; }
+body.is-shrinking.state-closed .layer-notice { opacity: 0; visibility: hidden; transition: opacity 65ms, visibility 0s 65ms; }
+.notice-open { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; background: transparent; text-align: left; padding: 0; border-radius: 9px; }
+.notice-symbol { display: grid; place-items: center; color: #bcd0ef; flex: 0 0 30px; width: 30px; height: 30px; border-radius: 10px; background: #ffffff0a; }
+.notice-symbol svg { width: 18px; height: 18px; }
+.notice-symbol img { width: 30px; height: 30px; border-radius: 9px; object-fit: cover; }
+body[data-notice="success"] .notice-symbol { color: #b1dfc4; }
+body[data-notice="timer"] .notice-symbol { color: #e7c8a0; }
+body[data-notice="ai"] .notice-symbol { color: #c3b3e9; }
+.notice-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.notice-open .notice-copy { flex: 1; }
+.notice-meter { display: block; height: 3px; width: 100%; background: #ffffff20; border-radius: 4px; overflow: hidden; margin-top: 1px; }
+.notice-meter i { display: block; width: 100%; height: 100%; background: var(--accent); border-radius: inherit; transform: scaleX(var(--notice-progress, 0)); transform-origin: left; transition: transform 120ms ease; }
+body.has-notice-meter .notice-symbol { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+body.has-notice-meter .activity-inline::after { content: ''; position: absolute; height: 2px; bottom: 0; left: 0; right: 0; background: var(--accent); transform-origin: left; transform: scaleX(var(--notice-progress, 0)); transition: transform 120ms ease; border-radius: 3px; }
+@media (prefers-reduced-motion: reduce) { .notice-meter i, body.has-notice-meter .activity-inline::after { transition: none; } }
+.notice-copy strong { font-size: 12px; font-weight: 550; color: #f1f1f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notice-copy small { font-size: 10px; color: #b7b7c0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#notice-dismiss { width: 24px; height: 24px; flex: 0 0 24px; }
+.activity-inline { display: none; }
+body.has-notice.state-open .activity-inline { display: flex; align-items: center; justify-content: space-between; position: absolute; bottom: 10px; right: 22px; left: 124px; height: 25px; background: #1b1b1e; border: 1px solid #ffffff12; border-radius: 8px; color: #eeeef4; padding: 0 9px; text-align: left; font-size: 10px; z-index: 4; }
+.activity-inline svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.activity-inline span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-card { border-radius: 14px; }
+.ai-signin-hint { display: block; margin-top: 5px; font-size: 10px; color: #b8b8c2; }
+.ai-signin-hint code { font-size: 10px; color: #d0d8e8; user-select: text; }
+.ai-connect { margin-top: 8px; padding: 5px 9px; border-radius: 7px; background: #ffffff12; color: #e2d6cf; font: inherit; font-size: 10px; }
+.ai-connect:hover { background: #ffffff20; }
+.ai-card-head { color: #c3c3cb; }
+.ai-soft, .ai-readout, .ai-window small, .ai-empty, .ai-privacy, .ai-live-row small { color: #aaaab3; }
+.scratchpad { font-size: 13px; }
+[data-panel="timer"] { gap: 7px; }
+[data-panel="timer"] .timer-face { min-height: 80px; }
+[data-panel="timer"] #timer-clock { font-size: 46px; }
+@media (prefers-reduced-motion: reduce) {
+  .panel.is-active, body.drop-complete .shelf { animation: none !important; }
+  .device, .shelf, .layer-notice { transition: none !important; }
+  #closed-progress { animation: none !important; }
+  #gallery-rail, .tabs { scroll-behavior: auto; }
+}
+
+/* --- colour that follows the music ----------------------------------------
+
+   Custom properties do not animate unless the browser knows they are colours,
+   so register them. With that, every surface and accent in the notch eases
+   from one album's palette to the next instead of snapping, and the handover
+   back to the user's own colours when the music stops is a fade rather than a
+   jump. The seeds come from ArtworkPalette; NotchAppearance.colors() has
+   already held them to the readability floor by the time they land here. */
+
+@property --panel { syntax: '<color>'; inherits: true; initial-value: #080809; }
+@property --surface-rest { syntax: '<color>'; inherits: true; initial-value: #050506; }
+@property --surface-open { syntax: '<color>'; inherits: true; initial-value: #080809; }
+@property --surface-sheen { syntax: '<color>'; inherits: true; initial-value: #0e0e0f; }
+@property --accent { syntax: '<color>'; inherits: true; initial-value: #aac4ef; }
+
+:root {
+  transition:
+    --panel 620ms cubic-bezier(.4, 0, .2, 1),
+    --surface-rest 620ms cubic-bezier(.4, 0, .2, 1),
+    --surface-open 620ms cubic-bezier(.4, 0, .2, 1),
+    --surface-sheen 620ms cubic-bezier(.4, 0, .2, 1),
+    --accent 620ms cubic-bezier(.4, 0, .2, 1);
+}
+
+/* While the cover is dressing the notch, let a little of that colour reach
+   the rim and the shoulders too, so the tint reads as the whole object being
+   lit rather than one card changing shade. */
+body.is-dressed-by-music.state-open .shell-content::after {
+  box-shadow:
+    inset 1px 0 0 #ffffff14,
+    inset -1px 0 0 #ffffff14,
+    inset 0 -1px 0 color-mix(in srgb, var(--accent) 46%, #ffffff2e);
+}
+
+body.is-dressed-by-music.state-open #card {
+  box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--accent) 22%, #000000cc);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { transition-duration: 1ms; }
+}

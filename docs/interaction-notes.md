@@ -1,5 +1,59 @@
 # Interaction details
 
+## Current redesign
+
+Appearance now exposes independent resting/expanded widths, overall scale and
+surface/accent colors. Settings previews on input, batches saves and rolls back
+failed writes. See the design system for bounds and native-host reservation.
+
+Windows system feedback reads the default render endpoint with Core Audio,
+subscribes to `WmiMonitorBrightnessEvent`, and reads only the Caps Lock toggle.
+The hidden helper samples audio/lock state every 120ms; only changes cross IPC.
+There is no startup toast or percentage synthesized for an unavailable device.
+Brightness requires a display driver that exposes Windows WMI brightness; external
+monitor hardware buttons and DDC/CI-only changes are not observed by this bridge.
+
+Rapid changes replace one activity and restart its brief expiry, rather than
+adding a queue entry per key press. A different system control replaces the prior
+one. Critical timer/transfer activities retain priority; queued system feedback
+expires after 2.2 seconds and cannot appear late. Click a volume/brightness/lock
+activity for Sound/Display/Keyboard settings. The open page remains open, with a
+small inline meter. Reduced motion removes meter animation.
+
+The current [design system](../design-system/islet/MASTER.md) follows the source
+gallery's two 86px rows and 94px row stepping. Music is a compact 520×270 player;
+Files and Notes use 520×350. The native host remains stable through these changes.
+
+Horizontal trackpad gestures and deliberate pointer swipes on the header switch
+modules; music gestures keep their track behavior. Previous/next controls, Alt+Arrow,
+Alt+1–8, gallery navigation, Add files and Ctrl+O provide alternatives.
+
+The activity queue coalesces duplicate events, caps waiting entries, gives timers
+priority over music, pauses on hover/focus, and supports dismiss/open actions. It
+shows app-owned music, transfer, timer and AI events. It does not read Windows-wide
+notifications. Activities stay inline while a module is open and never focus the
+window automatically. Escape discards queued previews.
+
+File dragging reveals a shelf cue and a distinct device send target. Compact
+transfers show their real progress, with a waiting pulse before acceptance.
+
+The tests use synthetic data and never send the user's files. Offscreen Electron
+does not generate native focus events for hidden windows, so focus-handler tests
+dispatch the corresponding DOM event; pure queue tests verify pause/resume timing.
+
+Current validation: the full Node suite and 122 offscreen renderer checks pass.
+`node test/system-actions-live-read.js` additionally reads three live Windows
+samples with stdin kept open, then closes the helper normally. Audio, WMI
+brightness and Caps Lock are available on the development machine. The test
+never changes those values. Streaming uses a dedicated StreamReader because
+Windows PowerShell's synchronized Console.In can block ReadLineAsync.
+
+The native Claude CLI reports signed out on this machine; quota rendering is
+verified with synthetic account responses, and the real reader returns the
+sign-in state. Actual authenticated quota requires the user's CLI sign-in.
+
+## Earlier exploration
+
 สำรวจ [Vorssaint live demo](https://vorssaint.com/) เมื่อ 2026-10-22
 โดยกดใช้งาน Now Playing, Files, Clipboard, Explore และเมนู Dynamic Island
 บันทึกนี้แยกพฤติกรรมที่เห็นในเดโมออกจากวิธีปรับใช้กับแอป Windows นี้

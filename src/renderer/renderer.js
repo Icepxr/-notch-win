@@ -1,6 +1,6 @@
 'use strict';
 
-const SIZES = NotchGeometry.sizes;
+let SIZES = NotchGeometry.sizes;
 
 // Small, consistent line icons; no platform-dependent emoji rendering.
 const GLYPH = {
@@ -94,6 +94,11 @@ let currentMorph = null;
 let preferences = { autoDismiss: true, musicPreview: true, gestures: true, silhouette: 'notch' };
 let timerState = { hasSession: false };
 let exploring = false;
+let activeNotice = null;
+let choosingFiles = false;
+const PAGE_NAMES = { send: 'Files', media: 'Music', clipboard: 'Clipboard', system: 'System', ai: 'AI Agents', timer: 'Timer', notes: 'Notes' };
+const PAGE_ORDER = Object.keys(PAGE_NAMES);
+const pageSwipe = new NotchActivity.Swipe();
 
 for (const [name, size] of Object.entries(SIZES)) {
   document.documentElement.style.setProperty('--' + name + '-width', size.width + 'px');
@@ -104,8 +109,12 @@ for (const [name, size] of Object.entries(SIZES)) {
 
 /** The card size for a state, which depends on whether music is showing. */
 function geometryFor(name) {
-  if (name === 'peek') return mediaVisible && !timerState.hasSession ? SIZES.peekMedia : SIZES.peek;
-  if (name === 'open') return activeTab === 'ai' ? SIZES.openAi : SIZES.open;
+  if (name === 'peek') return activeNotice ? SIZES.peekNotice : mediaVisible && !timerState.hasSession ? SIZES.peekMedia : SIZES.peek;
+  if (name === 'open') {
+    if (exploring) return SIZES.openGallery;
+    return activeTab === 'ai' ? SIZES.openAi : activeTab === 'media' ? SIZES.openMusic
+      : activeTab === 'send' || activeTab === 'notes' ? SIZES.openShelf : activeTab === 'timer' ? SIZES.openTools : SIZES.open;
+  }
   return SIZES.closed;
 }
 
@@ -114,17 +123,21 @@ function applyVisualState() {
   document.body.classList.remove('state-closed', 'state-peek', 'state-open');
   document.body.classList.add('state-' + state);
   document.body.classList.toggle('has-media', mediaVisible);
+  document.body.classList.toggle('has-notice', !!activeNotice);
   for (const name of ['closed', 'peek', 'open']) {
-    document.querySelector('.layer-' + name).inert = name !== state;
+    document.querySelector('.layer-' + name).inert = name !== state || name === 'peek' && !!activeNotice;
   }
+  document.querySelector('.layer-notice').inert = state !== 'peek' || !activeNotice;
 }
 
 let morphTarget = '';
 async function updateGeometry() {
   const target = geometryFor(state);
+  card.style.setProperty('--page-height', geometryFor('open').height + 'px');
   const key = [state, target.width, target.height, preferences.silhouette].join(':');
   if (key === morphTarget) { applyVisualState(); return; }
   morphTarget = key;
+  document.body.classList.add('is-morphing');
   const revision = ++geometryRevision;
   const drawn = card.getBoundingClientRect();
   document.body.classList.toggle('is-shrinking', target.width < drawn.width || target.height < drawn.height);
@@ -149,6 +162,7 @@ async function updateGeometry() {
   morph.cancel();
   currentMorph = null;
   document.body.classList.remove('is-shrinking');
+  document.body.classList.remove('is-morphing');
 }
 
 function setState(next) {
@@ -168,11 +182,43 @@ function openNotch(tab) {
   notch.focus();
 }
 
+// The colours the notch is wearing right now: the user's palette, or the one
+// the current cover is lending it. Seeds go through NotchAppearance.colors()
+// either way, which is what holds the readability floor.
+let musicPalette = null;
+
+function applyColors() {
+  const followMusic = preferences.musicColors !== false;
+  const seed = followMusic && musicPalette ? { ...preferences, ...musicPalette } : preferences;
+  const colors = NotchAppearance.colors(seed);
+  for (const [token, color] of Object.entries({ '--panel': colors.surface, '--surface-rest': colors.rest,
+    '--surface-open': colors.surface, '--surface-sheen': colors.sheen, '--accent': colors.accent })) {
+    document.documentElement.style.setProperty(token, color);
+  }
+  document.body.classList.toggle('is-dressed-by-music', Boolean(followMusic && musicPalette));
+}
+
+/** Take the colour of a cover, or give it back when the music stops. */
+function setMusicPalette(value) {
+  const next = value || null;
+  if (next?.accentColor === musicPalette?.accentColor && next?.surfaceTint === musicPalette?.surfaceTint) return;
+  musicPalette = next;
+  applyColors();
+}
+
 function applyPreferences(value) {
+  const previousWidth = SIZES.open.width;
   preferences = { ...preferences, ...value };
+  SIZES = NotchGeometry.sizesFor(preferences);
+  for (const [name, size] of Object.entries(SIZES)) {
+    document.documentElement.style.setProperty('--' + name + '-width', size.width + 'px');
+    document.documentElement.style.setProperty('--' + name + '-height', size.height + 'px');
+  }
+  applyColors();
   document.body.dataset.silhouette = preferences.silhouette;
   document.body.dataset.glass = preferences.glass || 'high';
   updateGeometry();
+  if (previousWidth !== SIZES.open.width) requestAnimationFrame(() => { fitMarquee(els.npTitle); fitMarquee(els.peekTitle); });
 }
 
 notch.onDisplays((value) => {
@@ -185,7 +231,7 @@ notch.onPreferences((result) => {
   if (result?.preferences) applyPreferences(result.preferences);
 });
 
-function setExploring(value) {
+function setExploring(value, resize = true) {
   exploring = value;
   document.body.classList.toggle('is-exploring', value);
   els.explore.setAttribute('aria-expanded', String(value));
@@ -198,10 +244,12 @@ function setExploring(value) {
     els.footerHint.textContent = 'A little space for everything.';
     els.exploreSearch.value = '';
     for (const tab of els.tabs.querySelectorAll('.tab')) tab.hidden = false;
+    updateGalleryRail();
     els.exploreSearch.focus();
   } else if (els.tabs.contains(document.activeElement) || document.activeElement === els.exploreSearch) {
     els.explore.focus();
   }
+  if (resize && state === 'open') updateGeometry();
 }
 
 els.explore.addEventListener('click', () => {
@@ -211,9 +259,100 @@ els.explore.addEventListener('click', () => {
 els.exploreSearch.addEventListener('input', () => {
   const query = els.exploreSearch.value.toLocaleLowerCase().trim();
   for (const tab of els.tabs.querySelectorAll('.tab')) tab.hidden = ![tab.textContent, tab.getAttribute('aria-label')].join(' ').toLocaleLowerCase().includes(query);
+  els.tabs.scrollTop = 0; updateGalleryRail();
 });
 
+// Brief activities are rendered in the notch itself and never steal focus.
+const activityQueue = new NotchActivity.Queue({ change: (item) => {
+  activeNotice = item;
+  const inline = document.getElementById('activity-inline');
+  inline.hidden = !item;
+  if (item) {
+    document.getElementById('notice-title').textContent = item.title;
+    document.getElementById('notice-detail').textContent = item.detail || '';
+    document.getElementById('activity-inline-label').textContent = item.title + (item.coalesceKey === 'hardware' ? ' · ' + item.detail : '');
+    document.body.dataset.notice = item.kind;
+    const hasMeter = Number.isFinite(item.progress);
+    document.body.classList.toggle('has-notice-meter', hasMeter);
+    const meter = document.getElementById('notice-meter');
+    meter.hidden = !hasMeter;
+    if (hasMeter) {
+      const value = Math.max(0, Math.min(100, item.progress));
+      meter.setAttribute('aria-valuenow', value);
+      meter.setAttribute('aria-valuetext', item.title + ' · ' + item.detail);
+      document.body.style.setProperty('--notice-progress', value / 100);
+    }
+    document.getElementById('notice-open').title = item.settings ? 'Open ' + item.settings + ' settings' : 'Open activity';
+    const paths = item.kind === 'music' ? '<path d="M9 18V5l10-2v13M9 8l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>'
+      : item.kind === 'timer' ? '<circle cx="12" cy="13" r="8"/><path d="M9 2h6m-3 3V2m0 7v5l3 2"/>'
+      : item.kind === 'ai' ? '<path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z"/>'
+      : item.kind === 'volume' ? '<path d="M4 9h4l5-4v14l-5-4H4Zm12-1a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14"/>'
+      : item.kind === 'muted' ? '<path d="M4 9h4l5-4v14l-5-4H4Zm13 0 5 6m0-6-5 6"/>'
+      : item.kind === 'brightness' ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/>'
+      : item.kind === 'capslock' ? '<path d="m5 13 7-9 7 9h-4v4H9v-4Zm4 7h6"/>'
+      : item.kind === 'error' ? '<circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 3h.01"/>' : '<path d="m5 12 4 4L19 6"/>';
+    const symbol = document.getElementById('notice-symbol');
+    symbol.replaceChildren(icon(paths));
+    if (item.kind === 'music' && media.thumb) {
+      const image = document.createElement('img'); image.alt = ''; image.src = media.thumb;
+      image.onerror = () => symbol.replaceChildren(icon(paths)); symbol.replaceChildren(image);
+    }
+    if (state === 'closed' && !dragDepth && !transferActive && (!hoverSuppressed || item.coalesceKey === 'hardware')) setState('peek');
+    else updateGeometry();
+  } else {
+    document.body.classList.remove('has-notice', 'has-notice-meter');
+    if (state === 'peek' && !pointerInside && !pinned && !openedByClick) collapseNotch();
+    else updateGeometry();
+  }
+} });
+function postActivity(item) { activityQueue.push(item); }
+function openActivity() {
+  const tab = activeNotice?.tab, settingsPage = activeNotice?.settings; activityQueue.clear();
+  if (settingsPage) { notch.openSystemSettings(settingsPage); return; }
+  if (tab) openNotch(tab);
+}
+notch.onSystemAction((event) => {
+  if (preferences.systemFeedback === false) return;
+  const base = { id: 'hardware:' + event.action, coalesceKey: 'hardware', replace: true, priority: 70,
+    duration: 1700, expiresAt: Date.now() + 2200 };
+  if (event.action === 'volume' && Number.isFinite(event.value)) postActivity({ ...base,
+    kind: event.muted ? 'muted' : 'volume', title: event.muted ? 'Muted' : event.value === 0 ? 'Volume off' : 'Volume',
+    detail: event.value + '%', progress: event.muted ? 0 : event.value, settings: 'sound' });
+  if (event.action === 'brightness' && Number.isFinite(event.value)) postActivity({ ...base,
+    kind: 'brightness', title: 'Display brightness', detail: event.value + '%', progress: event.value, settings: 'display' });
+  if (event.action === 'capslock' && typeof event.enabled === 'boolean') postActivity({ ...base,
+    kind: 'capslock', title: 'Caps Lock', detail: event.enabled ? 'On · Capital letters' : 'Off · Lowercase letters', settings: 'keyboard' });
+});
+document.getElementById('notice-open').addEventListener('click', openActivity);
+document.getElementById('activity-inline').addEventListener('click', openActivity);
+document.getElementById('notice-dismiss').addEventListener('click', () => activityQueue.clear());
+const noticeLayer = document.querySelector('.layer-notice');
+noticeLayer.addEventListener('mouseenter', () => activityQueue.pause());
+noticeLayer.addEventListener('mouseleave', () => { if (!noticeLayer.contains(document.activeElement)) activityQueue.resume(); });
+noticeLayer.addEventListener('focusin', () => activityQueue.pause());
+noticeLayer.addEventListener('focusout', (event) => { if (!noticeLayer.contains(event.relatedTarget) && !noticeLayer.matches(':hover')) activityQueue.resume(); });
+
+function cyclePage(direction) {
+  if (state !== 'open' || exploring || dragDepth || transferActive) return;
+  const next = PAGE_ORDER[(PAGE_ORDER.indexOf(activeTab) + direction + PAGE_ORDER.length) % PAGE_ORDER.length];
+  document.body.dataset.pageDirection = direction > 0 ? 'next' : 'previous';
+  setTab(next);
+}
+
+async function chooseFiles() {
+  if (choosingFiles || transferActive) return;
+  choosingFiles = true; document.getElementById('choose-files').disabled = true;
+  try {
+    const result = await notch.chooseFiles();
+    if (result.added) { openNotch('send'); postActivity({ id: 'chosen:' + Date.now(), kind: 'success', title: result.added + (result.added === 1 ? ' file parked' : ' files parked'), tab: 'send', priority: 30, duration: 1800 }); }
+    if (result.rejected?.length) showStatus(result.rejected[0].reason, null, 'error');
+  } catch { showStatus('Cannot open these files. Try again.', null, 'error'); }
+  finally { choosingFiles = false; document.getElementById('choose-files').disabled = false; }
+}
+document.getElementById('choose-files').addEventListener('click', chooseFiles);
+
 function collapseNotch() {
+  activityQueue.resume();
   clearTimeout(mediaPreviewTimer);
   clearTimeout(collapseTimer);
   clearTimeout(hoverTimer);
@@ -232,7 +371,7 @@ function setPinned(value) {
 
 function dismissOutside() {
   if (state === 'closed') return;
-  if (!preferences.autoDismiss || pinned || dragDepth > 0) return;
+  if (!preferences.autoDismiss || pinned || dragDepth > 0 || choosingFiles) return;
   if (transferActive) { outsideDuringTransfer = true; return; }
   collapseNotch();
 }
@@ -393,6 +532,7 @@ function updateDeviceHint() {
 }
 
 function renderDevices(list) {
+  updateModulePager();
   deviceList = list || [];
   els.devices.replaceChildren();
 
@@ -454,13 +594,15 @@ function renderDevices(list) {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'copy';
       chip.classList.add('drop-target');
+      document.body.classList.add('aiming-device');
     });
-    chip.addEventListener('dragleave', () => chip.classList.remove('drop-target'));
+    chip.addEventListener('dragleave', () => { chip.classList.remove('drop-target'); document.body.classList.remove('aiming-device'); });
     chip.addEventListener('drop', async (event) => {
       event.preventDefault();
       event.stopPropagation();
       if (transferActive) return;
       chip.classList.remove('drop-target');
+      document.body.classList.remove('aiming-device');
       dragDepth = 0;
       document.body.classList.remove('dragging');
       openedByClick = true;
@@ -535,6 +677,8 @@ async function doSend(fingerprint, pin) {
   if (transferActive) return;
   clearTimeout(collapseTimer);
   transferActive = true;
+  document.body.classList.add('transfer-active', 'transfer-waiting');
+  card.style.setProperty('--transfer-progress', '.04');
   openedByClick = true;
   outsideDuringTransfer = false;
   renderDevices(deviceList); // disable the chips while sending
@@ -550,6 +694,8 @@ async function doSend(fingerprint, pin) {
       if (result.sent) parts.push('Sent ' + result.sent + ' files');
       if (result.skipped) parts.push('Skipped ' + result.skipped);
       showStatus(parts.join(' · ') || 'Done', 1, 'done');
+      const target = deviceList.find((d) => d.fingerprint === fingerprint);
+      postActivity({ id: 'sent:' + Date.now(), title: 'Transfer complete', detail: target ? 'Delivered to ' + target.alias : parts.join(' · '), tab: 'send', kind: 'success', priority: 80 });
     } else if (result.kind === 'pin') {
       showPin(fingerprint);
     } else {
@@ -559,6 +705,7 @@ async function doSend(fingerprint, pin) {
     showStatus(error.message || 'Transfer failed. Try again.', 0, 'error');
   } finally {
     transferActive = false;
+    document.body.classList.remove('transfer-active', 'transfer-waiting');
     renderDevices(deviceList);
     if (!pendingPinFor && !pinned && (completed || outsideDuringTransfer) && (outsideDuringTransfer || !pointerInside)) {
       clearTimeout(collapseTimer);
@@ -608,6 +755,7 @@ card.addEventListener('click', (event) => {
 
 els.collapse.addEventListener('click', () => {
   setPinned(false);
+  activityQueue.clear();
   collapseNotch();
 });
 els.keepOpen.addEventListener('click', () => setPinned(!pinned));
@@ -622,6 +770,12 @@ els.pinForm.addEventListener('submit', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (state === 'open' && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o' && !event.target.closest('input, textarea')) { event.preventDefault(); chooseFiles(); return; }
+  if (state === 'open' && event.altKey && !event.ctrlKey && !event.metaKey && (!event.target.closest('input, textarea, select') || event.target === els.exploreSearch)) {
+    if (['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); cyclePage(event.key === 'ArrowRight' ? 1 : -1); return; }
+    const index = Number(event.key) - 1;
+    if (index >= 0 && index < 8) { event.preventDefault(); setTab(index === 7 ? 'settings' : PAGE_ORDER[index]); return; }
+  }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && activeTab === 'clipboard' && state === 'open') {
     event.preventDefault();
     document.querySelector('[data-panel="clipboard"] .clip-search').focus();
@@ -629,6 +783,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     if (exploring) { setTab(activeTab); return; }
     setPinned(false);
+    activityQueue.clear();
     collapseNotch();
   }
 });
@@ -638,6 +793,10 @@ card.addEventListener('wheel', (event) => {
   if (!preferences.gestures || event.ctrlKey || event.metaKey || exploring) return;
   const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerHeight : 1;
   const control = !!event.target.closest('button:not(#closed-trigger), input, textarea, select');
+  if (state === 'open' && !control && event.target.closest('.notch-header, .panel-footer')) {
+    const direction = pageSwipe.wheel(event.deltaX * unit, event.deltaY * unit, Date.now());
+    if (direction) { event.preventDefault(); cyclePage(direction); return; }
+  }
   const musicSurface = !!event.target.closest('.np, .layer-peek, .layer-closed');
   const action = wheelGesture.handle({ x: -event.deltaX * unit, y: event.deltaY * unit, time: Date.now(),
     expanded: state === 'open', vertical: !control && (state !== 'open' || !!event.target.closest('.notch-header, .tabs, .panel-footer') || musicSurface),
@@ -662,6 +821,7 @@ document.addEventListener('dragenter', (event) => {
   event.preventDefault();
   if (dragDepth === 0) pinnedBeforeDrag = openedByClick;
   dragDepth += 1;
+  updateModulePager();
   focusSendTab(); // dropping a file is a send-tab action, whatever is showing
   clearTimeout(collapseTimer);
   document.body.classList.add('dragging');
@@ -671,12 +831,18 @@ document.addEventListener('dragenter', (event) => {
 document.addEventListener('dragover', (event) => {
   event.preventDefault();
   if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  if (dragDepth) {
+    card.style.setProperty('--drop-x', Math.max(-2, Math.min(2, (event.clientX - innerWidth / 2) / 70)) + 'px');
+    card.style.setProperty('--drop-y', Math.max(-2, Math.min(2, (event.clientY - 160) / 70)) + 'px');
+  }
 });
 
 document.addEventListener('dragleave', () => {
   dragDepth = Math.max(0, dragDepth - 1);
   if (dragDepth === 0) {
     document.body.classList.remove('dragging');
+    document.body.classList.remove('aiming-device');
+    updateModulePager();
     openedByClick = pinnedBeforeDrag;
     scheduleCollapse(600);
   }
@@ -686,11 +852,17 @@ document.addEventListener('drop', async (event) => {
   event.preventDefault();
   if (!event.dataTransfer?.types.includes('Files')) return;
   dragDepth = 0;
+  updateModulePager();
   document.body.classList.remove('dragging');
   openedByClick = true;
   notch.focus();
   const added = await intake(event.dataTransfer);
-  if (added) showStatus('Added ' + added + ' files added. Choose a device.', null, 'done');
+  if (added) {
+    showStatus(added + (added === 1 ? ' file parked. Choose a device.' : ' files parked. Choose a device.'), null, 'done');
+    document.body.classList.add('drop-complete');
+    setTimeout(() => document.body.classList.remove('drop-complete'), 650);
+    postActivity({ id: 'park:' + Date.now(), title: added + (added === 1 ? ' file parked' : ' files parked'), detail: 'Ready whenever you are.', tab: 'send', kind: 'success', priority: 30, duration: 1800 });
+  }
 });
 
 notch.onDevices(renderDevices);
@@ -698,9 +870,12 @@ notch.onShelf(renderShelf);
 
 notch.onTransfer((p) => {
   if (p.phase === 'waiting') {
+    document.body.classList.add('transfer-waiting');
     showStatus('Waiting for ' + p.alias + ' to accept…', 0);
   } else if (p.phase === 'sending') {
+    document.body.classList.remove('transfer-waiting');
     const ratio = p.totalBytes ? p.sentBytes / p.totalBytes : 0;
+    card.style.setProperty('--transfer-progress', String(Math.max(0, Math.min(1, ratio))));
     const label = p.fileName ? p.fileName + ' · ' : '';
     showStatus(label + formatBytes(p.sentBytes) + ' / ' + formatBytes(p.totalBytes), ratio);
   } else if (p.phase === 'error') {
@@ -723,18 +898,29 @@ function setArt(host, dataUri) {
   const img = host.querySelector('img');
   if (dataUri) {
     if (host === els.npArt) img.onload = () => {
-      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 8;
+      // 8x8 is enough for the glass bloom's average, but far too coarse to
+      // find the one vivid region a palette should follow; 32x32 is.
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 32;
       try {
         const context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(img, 0, 0, 8, 8);
-        const pixels = context.getImageData(0, 0, 8, 8).data;
+        context.drawImage(img, 0, 0, 32, 32);
+        const pixels = context.getImageData(0, 0, 32, 32).data;
         const sum = [0, 0, 0];
         for (let i = 0; i < pixels.length; i += 4) for (let channel = 0; channel < 3; channel++) sum[channel] += pixels[i + channel];
-        const tint = NotchMotion.artworkTint(sum.map((value) => value / (64 * 255)));
+        const tint = NotchMotion.artworkTint(sum.map((value) => value / (1024 * 255)));
         document.body.style.setProperty('--artwork-rgb', tint ? tint.join(', ') : '0, 0, 0');
-      } catch { document.body.style.setProperty('--artwork-rgb', '0, 0, 0'); }
+        setMusicPalette(ArtworkPalette.paletteFrom(pixels));
+      } catch {
+        document.body.style.setProperty('--artwork-rgb', '0, 0, 0');
+        setMusicPalette(null);
+      }
     };
-    img.onerror = () => { host.classList.remove('has-art'); if (host === els.npArt) document.body.style.setProperty('--artwork-rgb', '0, 0, 0'); };
+    img.onerror = () => {
+      host.classList.remove('has-art');
+      if (host !== els.npArt) return;
+      document.body.style.setProperty('--artwork-rgb', '0, 0, 0');
+      setMusicPalette(null);
+    };
     if (img.getAttribute('src') !== dataUri) img.src = dataUri;
     host.classList.add('has-art');
     if (host === els.npArt) document.body.style.setProperty('--artwork-url', 'url("' + dataUri + '")');
@@ -744,6 +930,7 @@ function setArt(host, dataUri) {
     if (host === els.npArt) {
       document.body.style.setProperty('--artwork-rgb', '0, 0, 0');
       document.body.style.removeProperty('--artwork-url');
+      setMusicPalette(null);
     }
   }
 }
@@ -914,11 +1101,8 @@ notch.onNowPlaying((message) => {
   renderNowPlaying();
   if (preferences.musicPreview && !timerState.hasSession && media.active && media.playing && (newTrack || !previous.playing) && state === 'closed'
     && !dragDepth && !transferActive && !hoverSuppressed) {
-    setState('peek');
-    clearTimeout(mediaPreviewTimer);
-    mediaPreviewTimer = setTimeout(() => {
-      if (state === 'peek' && !pointerInside && !pinned && !openedByClick) setState('closed');
-    }, 2400);
+    postActivity({ id: 'track:' + media.app + ':' + media.title, kind: 'music', title: media.title || 'Now playing', detail: media.artist || media.appLabel,
+      tab: 'media', priority: 10, duration: 2400 });
   }
 });
 
@@ -948,7 +1132,7 @@ notch.onAiDashboard((value) => {
   renderAiSessions();
 });
 notch.onAiComplete((value) => {
-  els.footerHint.textContent = value.provider + ' · ' + value.name + ' · Task complete';
+  postActivity({ id: 'ai:' + Date.now(), kind: 'ai', title: 'Agent finished', detail: value.provider + ' · ' + value.name, tab: 'ai', priority: 50 });
 });
 
 notch.onClipboard((entries) => {
@@ -993,13 +1177,9 @@ function renderTimer(value) {
     renderNowPlaying();
   }
   if (state === 'peek' && wasActive !== timerState.hasSession) updateGeometry();
-  if (timerState.completed && !wasComplete && state === 'closed' && !transferActive) {
-    setState('peek');
+  if (timerState.completed && !wasComplete) {
     els.closedTrigger.setAttribute('aria-label', 'Time is up. Open timer');
-    clearTimeout(mediaPreviewTimer);
-    mediaPreviewTimer = setTimeout(() => {
-      if (state === 'peek' && !pointerInside && !pinned && !openedByClick) setState('closed');
-    }, 3200);
+    postActivity({ id: 'timer:' + Date.now(), kind: 'timer', title: 'Time is up', detail: UtilityPanels.phaseName[timerState.phase] + ' completed', tab: 'timer', priority: 100, duration: 3200 });
   }
 }
 notch.onTimer(renderTimer);
@@ -1041,12 +1221,12 @@ function setTab(name) {
   }
   const panel = document.querySelector('.panel[data-panel="' + name + '"]');
   if (!panel) return;
-  setExploring(false);
+  setExploring(false, false);
   activeTab = name;
   clearTimeout(feedbackTimer);
   els.footerHint.classList.remove('is-confirmed');
   document.body.dataset.tab = name;
-  const titles = { send: 'Send files', media: 'Now Playing', clipboard: 'Clipboard', system: 'System', ai: 'AI Monitor', timer: 'Timer', notes: 'Notes' };
+  const titles = PAGE_NAMES;
   const hints = { send: 'Drop files. Choose a device. Send.', media: 'Your music, a little closer.', clipboard: 'Click an item to copy it.', system: 'A quiet look at your Windows PC.', ai: 'Codex & Claude · Local activity', timer: 'Keep time, even with the notch closed.', notes: 'Autosaved · Only on this device' };
   els.panelTitle.textContent = titles[name];
   els.footerHint.textContent = hints[name];
@@ -1060,6 +1240,7 @@ function setTab(name) {
     section.classList.toggle('is-active', section === panel);
     section.inert = section !== panel;
   }
+  updateModulePager();
   if (name === 'media') requestAnimationFrame(() => { fitMarquee(els.npTitle); });
   if (state === 'open') updateGeometry();
 }
@@ -1067,6 +1248,8 @@ function setTab(name) {
 els.tabs.setAttribute('role', 'menu');
 for (const tab of els.tabs.querySelectorAll('.tab')) {
   const name = tab.dataset.tab;
+  const shortcut = tab.querySelector('.module-caption');
+  if (shortcut) shortcut.textContent = 'Alt ' + (name === 'settings' ? 8 : PAGE_ORDER.indexOf(name) + 1);
   tab.setAttribute('role', 'menuitemradio');
   tab.id = 'tab-' + name;
   tab.setAttribute('aria-controls', 'panel-' + name);
@@ -1076,6 +1259,50 @@ for (const tab of els.tabs.querySelectorAll('.tab')) {
   panel.setAttribute('role', 'tabpanel');
   panel.setAttribute('aria-labelledby', tab.id);
 }
+const modulePager = document.getElementById('page-dots');
+modulePager.innerHTML = '<button type="button" id="module-previous" title="Previous module · Alt+Left" aria-label="Previous module"><svg viewBox="0 0 20 20"><path d="m12 5-5 5 5 5"/></svg></button><button type="button" class="module-index" id="module-index" aria-label="Choose a module">1 / 7</button><button type="button" id="module-next" title="Next module · Alt+Right" aria-label="Next module"><svg viewBox="0 0 20 20"><path d="m8 5 5 5-5 5"/></svg></button>';
+document.getElementById('module-previous').addEventListener('click', () => cyclePage(-1));
+document.getElementById('module-next').addEventListener('click', () => cyclePage(1));
+document.getElementById('module-index').addEventListener('click', () => setExploring(true));
+function updateModulePager() {
+  const index = document.getElementById('module-index'); if (!index) return;
+  index.textContent = (PAGE_ORDER.indexOf(activeTab) + 1) + ' / ' + PAGE_ORDER.length;
+  index.setAttribute('aria-label', PAGE_NAMES[activeTab] + '. Choose a module');
+  for (const button of modulePager.querySelectorAll('button')) button.disabled = transferActive || dragDepth > 0;
+  document.getElementById('choose-files').disabled = transferActive || choosingFiles;
+}
+const header = document.querySelector('.notch-header');
+let headerDrag = null;
+header.addEventListener('pointerdown', (event) => {
+  if (event.button !== 0 || event.target.closest('button, input, select') || exploring || transferActive) return;
+  headerDrag = { x: event.clientX, y: event.clientY, id: event.pointerId }; header.dataset.dragging = 'true';
+  try { header.setPointerCapture(event.pointerId); } catch {}
+});
+header.addEventListener('pointermove', (event) => {
+  if (!headerDrag || event.pointerId !== headerDrag.id) return;
+  header.style.setProperty('--page-pull', Math.max(-12, Math.min(12, (event.clientX - headerDrag.x) * .15)) + 'px');
+});
+function finishHeaderSwipe(event) {
+  if (!headerDrag || event.pointerId !== headerDrag.id) return;
+  const x = event.clientX - headerDrag.x, y = event.clientY - headerDrag.y;
+  headerDrag = null; delete header.dataset.dragging; header.style.removeProperty('--page-pull');
+  if (event.type !== 'pointercancel' && Math.abs(x) > 60 && Math.abs(x) > Math.abs(y) * 1.4) cyclePage(x < 0 ? 1 : -1);
+}
+header.addEventListener('pointerup', finishHeaderSwipe); header.addEventListener('pointercancel', finishHeaderSwipe);
+header.addEventListener('lostpointercapture', () => { headerDrag = null; delete header.dataset.dragging; header.style.removeProperty('--page-pull'); });
+const galleryRail = document.createElement('div'); galleryRail.id = 'gallery-rail'; galleryRail.setAttribute('aria-label', 'Module rows');
+els.tabs.after(galleryRail);
+function updateGalleryRail() {
+  const positions = Math.max(1, Math.ceil(els.tabs.querySelectorAll('.tab:not([hidden])').length / 3) - 1);
+  galleryRail.replaceChildren();
+  for (let i = 0; i < positions; i++) {
+    const button = document.createElement('button'); button.type = 'button'; button.setAttribute('aria-label', 'Module row ' + (i + 1));
+    button.setAttribute('aria-pressed', String(Math.round(els.tabs.scrollTop / 94) === i));
+    button.addEventListener('click', () => els.tabs.scrollTo({ top: i * 94, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }));
+    galleryRail.append(button);
+  }
+}
+els.tabs.addEventListener('scroll', () => { galleryRail.querySelectorAll('button').forEach((button, i) => button.setAttribute('aria-pressed', String(Math.round(els.tabs.scrollTop / 94) === i))); }, { passive: true });
 els.tabs.addEventListener('keydown', (event) => {
   const tabs = [...els.tabs.querySelectorAll('.tab:not([hidden])')];
   const index = tabs.indexOf(document.activeElement);

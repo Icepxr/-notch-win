@@ -8,7 +8,7 @@
   "license": "GPL-3.0-or-later",
   "scripts": {
     "start": "electron .",
-    "test": "node test/send-roundtrip.js && node test/media-state.js && node test/media-bridge.js && node test/notch-logic.js && node test/displays.js && node test/notes.js && node test/aimon.js && node test/ai-usage.js && node test/ai-worker.js && node test/clipboard.js && node test/sysmon.js",
+    "test": "node test/send-roundtrip.js && node test/media-state.js && node test/artwork-palette.js && node test/media-bridge.js && node test/notch-logic.js && node test/notch-activity.js && node test/notch-appearance.js && node test/displays.js && node test/profile.js && node test/notes.js && node test/aimon.js && node test/ai-usage.js && node test/ai-claude.js && node test/ai-worker.js && node test/clipboard.js && node test/sysmon.js && node test/system-actions.js",
     "test:ui": "electron test/renderer-smoke.js"
   },
   "devDependencies": {

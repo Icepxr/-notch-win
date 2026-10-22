@@ -1,6 +1,7 @@
 'use strict';
 const { EventEmitter } = require('node:events');
 const Geometry = require('./renderer/notch-geometry');
+const Appearance = require('./renderer/notch-appearance');
 const MODES = ['selected', 'primary', 'cursor'];
 
 // Electron screen bounds, window bounds and cursor positions are already DIP.
@@ -20,13 +21,16 @@ function selectDisplay(displays, primaryId, settings, point) {
     && !!d.internal === !!settings.displayInternal) : [];
   return byName.length === 1 ? byName[0] : primary;
 }
-function placement(display, silhouette = 'notch') {
+function placement(display, silhouette = 'notch', preferences = {}, reserveWidth = 0) {
+  const host = Geometry.hostFor(preferences);
+  host.width = Math.max(host.width, reserveWidth);
+  const userZoom = Appearance.normalize(preferences).notchScale / 100;
   const b = display.bounds, work = display.workArea || b;
   const y = Math.max(b.y, work.y) + (silhouette === 'capsule' ? 8 : 0);
   const bottom = Math.min(b.y + b.height, work.y + work.height);
-  const zoomFactor = Math.min(1, Math.max(.1, (b.width - 8) / Geometry.hostSize.width),
-    Math.max(.1, (bottom - y - 8) / Geometry.hostSize.height));
-  const width = Math.ceil(Geometry.hostSize.width * zoomFactor), height = Math.ceil(Geometry.hostSize.height * zoomFactor);
+  const zoomFactor = Math.min(userZoom, Math.max(.1, (b.width - 8) / host.width),
+    Math.max(.1, (bottom - y - 8) / host.height));
+  const width = Math.ceil(host.width * zoomFactor), height = Math.ceil(host.height * zoomFactor);
   return { bounds: { x: Math.round(b.x + (b.width - width) / 2), y, width, height }, zoomFactor };
 }
 function pointerInside(region, point, bounds, zoomFactor = 1) {
@@ -48,7 +52,11 @@ class DisplayController extends EventEmitter {
     }
     return selectDisplay(displays, primaryId, settings, this.screen.getCursorScreenPoint());
   }
-  initialPlacement() { const d = this.choose(); this.currentId = d.id; return placement(d, this.settings().silhouette); }
+  initialPlacement() {
+    const d = this.choose(); this.currentId = d.id;
+    this.hostWidth = Geometry.hostFor(this.settings()).width;
+    return placement(d, this.settings().silhouette, this.settings(), this.hostWidth);
+  }
   attach(win) { this.win = win; this.apply(); }
   start() {
     for (const event of ['display-added', 'display-removed', 'display-metrics-changed']) {
@@ -62,7 +70,10 @@ class DisplayController extends EventEmitter {
   stop() { clearTimeout(this.settle); for (const [name, listener] of this.listeners) this.screen.removeListener(name, listener); this.listeners = []; }
   apply(display = this.choose()) {
     if (!display || !this.win || this.win.isDestroyed()) return;
-    const position = placement(display, this.settings().silhouette), old = this.win.getBounds();
+    // Keep enough backing surface for an outgoing wider shell as preferences
+    // morph down. Transparent space remains click-through; the bound is 692px.
+    this.hostWidth = Math.max(this.hostWidth || 0, Geometry.hostFor(this.settings()).width);
+    const position = placement(display, this.settings().silhouette, this.settings(), this.hostWidth), old = this.win.getBounds();
     this.currentId = display.id;
     const moved = ['x', 'y', 'width', 'height'].some((key) => old[key] !== position.bounds[key]);
     if (moved) this.win.setBounds(position.bounds);

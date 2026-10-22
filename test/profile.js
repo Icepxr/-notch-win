@@ -1,0 +1,15 @@
+'use strict';
+const assert = require('node:assert/strict');
+const path = require('node:path');
+const { chooseProfile } = require('../src/profile');
+const current = path.resolve('new-profile'), legacy = path.resolve('old-profile');
+const existing = new Set(), exists = (name) => existing.has(name);
+assert.equal(chooseProfile(current, legacy, exists), current);
+existing.add(path.join(legacy, 'settings.json'));
+assert.equal(chooseProfile(current, legacy, exists), legacy, 'a new name reuses existing app data');
+existing.add(path.join(current, 'scratchpad.txt'));
+assert.equal(chooseProfile(current, legacy, exists), current, 'new-profile notes must not be hidden');
+existing.delete(path.join(current, 'scratchpad.txt')); existing.add(path.join(current, 'shelf.json'));
+assert.equal(chooseProfile(current, legacy, exists), current, 'an already-used shelf keeps its profile');
+assert.equal(chooseProfile(legacy, legacy, exists), legacy);
+console.log('Profile: branding continuity and existing new-profile content preserved');

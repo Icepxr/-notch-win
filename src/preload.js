@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('notch', {
   onDisplays: (cb) => ipcRenderer.on('notch:displays', (_e, value) => cb(value)),
   setInteraction: (state) => ipcRenderer.send('notch:interaction', state),
   refreshAi: () => ipcRenderer.invoke('notch:ai-refresh'),
+  connectClaude: () => ipcRenderer.invoke('notch:claude-signin'),
+  onSystemAction: (cb) => ipcRenderer.on('notch:system-action', (_e, value) => cb(value)),
+  openSystemSettings: (page) => ipcRenderer.invoke('notch:system-settings', page),
   onAiDashboard: (cb) => ipcRenderer.on('notch:ai-dashboard', (_e, value) => cb(value)),
   onAiComplete: (cb) => ipcRenderer.on('notch:ai-complete', (_e, value) => cb(value)),
 
@@ -30,6 +33,7 @@ contextBridge.exposeInMainWorld('notch', {
   openSettings: () => ipcRenderer.send('notch:open-settings'),
   onPreferences: (cb) => ipcRenderer.on('notch:preferences', (_e, value) => cb(value)),
   addFiles: (paths) => ipcRenderer.invoke('notch:add-files', paths),
+  chooseFiles: () => ipcRenderer.invoke('notch:choose-files'),
   sendTo: (fingerprint, pin) => ipcRenderer.invoke('notch:send', { fingerprint, pin }),
   removeItem: (id) => ipcRenderer.send('notch:shelf-remove', id),
   clearShelf: () => ipcRenderer.send('notch:shelf-clear'),

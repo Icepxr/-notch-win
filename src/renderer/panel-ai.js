@@ -23,6 +23,16 @@ window.AiPanel = (() => {
     try { const next = await notch.refreshAi(); if (next) update(next); } catch { meta.textContent = 'Cannot refresh. Try again.'; }
     setTimeout(() => { button.disabled = false; }, 10000);
   });
+  root.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-ai-connect]');
+    if (!button) return;
+    button.disabled = true;
+    try {
+      const result = await notch.connectClaude();
+      meta.textContent = result?.ok ? 'Complete Claude sign-in in Terminal, then Refresh.' : 'Cannot open Claude sign-in. Run Claude Code in Terminal.';
+    } catch { meta.textContent = 'Cannot open Claude sign-in. Run Claude Code in Terminal.'; }
+    finally { if (button.isConnected) button.disabled = false; }
+  });
   function card(id, content, wide = false) { return hidden.includes(id) ? '' : `<article class="ai-card ${wide ? 'ai-wide' : ''}" data-card="${id}">${content}</article>`; }
   function resetText(w, now) {
     if (!w.resetsAt) return 'Reset time unavailable';
@@ -36,13 +46,13 @@ window.AiPanel = (() => {
     return card('limits', `<div class="ai-card-head"><span>Remaining quota</span><span class="ai-soft">Account</span></div>` + providers.map((id) => {
       const limits = data.limits[id];
       if (!limits) {
-        const reason = id === 'claude' ? 'Account quota unavailable' : { loading: 'Reading account limits…', missing: 'Codex CLI not found', signin: 'Sign in to Codex with ChatGPT', unavailable: 'Account quota is temporarily unavailable' }[data.accountStatus] || 'No quota data yet';
-        return `<div class="ai-limit-empty"><b class="ai-provider-${id}">${labels[id]}</b><span>${reason}</span></div>`;
+        const reason = id === 'claude' ? { loading: 'Reading Claude account limits…', missing: 'Claude Code CLI not found', signin: 'Sign in to Claude Code with a supported plan', outdated: 'Update Claude Code to read account limits', unavailable: 'Claude account limits could not be read. Try Refresh.' }[data.claudeAccountStatus] || 'No Claude account reading yet' : { loading: 'Reading account limits…', missing: 'Codex CLI not found', signin: 'Sign in to Codex with ChatGPT', unavailable: 'Account quota is temporarily unavailable' }[data.accountStatus] || 'No quota data yet';
+        return `<div class="ai-limit-empty"><b class="ai-provider-${id}">${labels[id]}</b><span>${reason}${id === 'claude' && data.claudeAccountStatus === 'signin' ? '<small class="ai-signin-hint">In Terminal: <code>claude auth login</code>, then Refresh.</small><button type="button" class="ai-connect" data-ai-connect>Connect Claude <span aria-hidden="true">↗</span></button>' : ''}</span></div>`;
       }
       const stale = now - limits.observedAt > 600000 || limits.source !== 'account';
       return `<div class="ai-limit-title"><b class="ai-provider-${id}">${labels[id]}</b><span>${esc(limits.plan)} · ${stale ? 'Log snapshot · May be stale' : 'Latest account reading'}</span></div><div class="ai-limit-windows">${limits.windows.map((w) => {
         const expired = w.resetsAt && w.resetsAt <= now;
-        const label = w.minutes >= 1440 ? (w.minutes / 1440).toLocaleString('en', { maximumFractionDigits: 1 }) + 'd' : w.minutes >= 60 ? (w.minutes / 60).toLocaleString('en', { maximumFractionDigits: 1 }) + 'h' : w.minutes ? w.minutes + ' min' : 'Quota window';
+        const label = (w.minutes >= 1440 ? (w.minutes / 1440).toLocaleString('en', { maximumFractionDigits: 1 }) + 'd' : w.minutes >= 60 ? (w.minutes / 60).toLocaleString('en', { maximumFractionDigits: 1 }) + 'h' : w.minutes ? w.minutes + ' min' : 'Quota window') + (w.scope ? ' · ' + w.scope : '');
         return `<div class="ai-window ${w.used >= 80 ? 'ai-low' : ''} ${expired || stale ? 'ai-stale' : ''}"><div><span>${label}</span><strong>${expired ? '—' : Math.round(100 - w.used) + '%'}</strong></div><progress max="100" value="${expired ? 0 : 100 - w.used}" aria-label="${labels[id]} remaining · ${label}"></progress><small title="${w.resetsAt ? esc(new Date(w.resetsAt).toLocaleString('en-US')) : ''}">${resetText(w, now)}</small></div>`;
       }).join('')}</div>`;
     }).join('') + (data.resets !== null && data.resets !== undefined && provider !== 'claude' ? `<div class="ai-reset-credit">Available Codex resets: ${data.resets.toLocaleString()}</div>` : ''), true);

@@ -3,9 +3,9 @@
 // Shared by Electron and the renderer: the native window leaves room for the
 // shoulders and shadow, while the painted surface remains centred at the edge.
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.NotchGeometry = factory();
-}(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./notch-appearance'));
+  else root.NotchGeometry = factory(root.NotchAppearance);
+}(typeof globalThis !== 'undefined' ? globalThis : this, function (Appearance) {
   const gutter = 20;
   const shadow = 32;
   const sizes = {
@@ -14,6 +14,11 @@
     peekMedia: { width: 360, height: 50 },
     open: { width: 520, height: 390 },
     openAi: { width: 520, height: 510 },
+    openMusic: { width: 520, height: 270 },
+    openShelf: { width: 520, height: 350 },
+    openTools: { width: 520, height: 330 },
+    openGallery: { width: 520, height: 330 },
+    peekNotice: { width: 360, height: 64 },
   };
   function windowSize(size) {
     return { width: size.width + gutter * 2, height: size.height + shadow };
@@ -21,6 +26,14 @@
   // Keep the Windows transparent backing surface stable throughout a morph.
   // Resizing that HWND at both ends can make DWM discard/recreate its surface.
   const hostSize = windowSize({ width: 532, height: 522 });
+  function sizesFor(value) {
+    const prefs = Appearance.normalize(value);
+    return Object.fromEntries(Object.entries(sizes).map(([name, size]) => [name, { ...size,
+      width: name === 'closed' ? prefs.closedWidth : name.startsWith('open') ? prefs.expandedWidth : size.width }]));
+  }
+  function hostFor(value) {
+    return windowSize({ width: Appearance.normalize(value).expandedWidth + 12, height: 522 });
+  }
   function contains(region, x, y) {
     const localX = x - region.x;
     const localY = y - region.y;
@@ -35,5 +48,5 @@
     const centreX = localX < radius ? radius : localX > region.width - radius ? region.width - radius : localX;
     return (localX - centreX) ** 2 + (localY - (region.height - radius)) ** 2 <= radius ** 2;
   }
-  return { sizes, gutter, shadow, windowSize, hostSize, contains };
+  return { sizes, sizesFor, gutter, shadow, windowSize, hostSize, hostFor, contains };
 }));

@@ -1,0 +1,43 @@
+'use strict';
+const assert = require('node:assert/strict');
+const { Queue, Swipe } = require('../src/renderer/notch-activity');
+let time = 1000, id = 0, current, timers = new Map();
+const queue = new Queue({ change: (item) => { current = item; }, now: () => time,
+  setTimer: (fn, ms) => { const key = ++id; timers.set(key, { fn, at: time + ms }); return key; }, clearTimer: (key) => timers.delete(key) });
+function advance(ms) {
+  time += ms;
+  for (const [key, timer] of [...timers]) if (timer.at <= time) { timers.delete(key); timer.fn(); }
+}
+queue.push({ id: 'music', title: 'A track', priority: 10 });
+const firstTimer = id;
+queue.push({ id: 'music', title: 'A track', priority: 10 });
+assert.equal(id, firstTimer, 'repeated metadata never restarts a preview');
+queue.push({ id: 'timer', title: 'Time is up', priority: 100 });
+assert.equal(current.id, 'timer', 'a timer interrupts music');
+queue.push({ id: 'agent', title: 'Agent finished', priority: 50 });
+assert.equal(current.id, 'timer', 'background activity waits behind a timer');
+advance(2800); assert.equal(current.id, 'agent');
+advance(1000); queue.pause(); advance(10000); assert.equal(current.id, 'agent', 'hover/focus pauses expiry');
+queue.resume(); advance(1799); assert.equal(current.id, 'agent'); advance(1); assert.equal(current, null);
+queue.push({ id: 'main', title: 'Main', priority: 100 });
+for (let n = 0; n < 10; n++) queue.push({ id: 'queued' + n, title: 'Queued', priority: n });
+assert.equal(queue.pending.length, 4, 'queue stays bounded'); queue.clear(); assert.equal(current, null); assert.equal(timers.size, 0);
+queue.push({ id: 'volume', title: 'Volume 10', coalesceKey: 'hardware', replace: true, priority: 70 });
+queue.push({ id: 'volume', title: 'Volume 20', coalesceKey: 'hardware', replace: true, priority: 70 });
+assert.equal(current.title, 'Volume 20', 'repeated system adjustments update in place');
+queue.push({ id: 'brightness', title: 'Brightness 40', coalesceKey: 'hardware', replace: true, priority: 70 });
+assert.equal(current.id, 'brightness', 'a different system control replaces the previous control immediately');
+assert.equal(queue.pending.length, 0);
+queue.push({ id: 'timer', title: 'Done', priority: 100 });
+queue.push({ id: 'volume', title: 'Volume 50', coalesceKey: 'hardware', replace: true, priority: 70, expiresAt: time + 1700 });
+queue.push({ id: 'brightness', title: 'Brightness 60', coalesceKey: 'hardware', replace: true, priority: 70, expiresAt: time + 1700 });
+assert.equal(queue.pending.length, 1, 'system updates waiting behind important activities coalesce too');
+advance(2800); assert.equal(current, null, 'an old adjustment never reappears after a higher-priority activity');
+const swipe = new Swipe();
+assert.equal(swipe.wheel(10, 30, 1000), null, 'vertical scrolling cannot switch pages');
+assert.equal(swipe.wheel(25, 0, 1010), null);
+assert.equal(swipe.wheel(25, 0, 1020), 1);
+assert.equal(swipe.wheel(100, 0, 1030), null, 'one switch per physical sequence');
+assert.equal(swipe.wheel(-50, 0, 1500), -1);
+assert.equal(swipe.wheel(NaN, 0, 2000), null);
+console.log('Notch activities: priority, deduplication, expiry, focus pause, bounds and gesture intent passed');

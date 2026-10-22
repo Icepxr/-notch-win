@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const fs = require('node:fs');
 const geometry = require('../src/renderer/notch-geometry');
+const appearance = require('../src/renderer/notch-appearance');
 const { NotchTimer } = require('../src/timer');
 
 const output = path.join(__dirname, '..', 'docs', 'previews');
@@ -34,6 +35,7 @@ let fixtureDisplayState = { mode: 'selected', activeDisplayId: 1, preferredDispl
   displays: [{ id: 1, label: 'Laptop display', primary: true, scaleFactor: 1.25 }, { id: 2, label: 'Studio display', primary: false, scaleFactor: 1.5 }] };
 let panelWin;
 let settingsOpened = 0;
+let filePickerOpened = 0;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const js = (source) => win.webContents.executeJavaScript(source);
 // The control panel is its own window, so it gets its own evaluator.
@@ -41,6 +43,10 @@ const pjs = (source) => panelWin.webContents.executeJavaScript(source);
 const emit = (name, value) => win.webContents.send('fixture:' + name, value);
 const errors = [];
 let checks = 0;
+let reservedHostWidth = geometry.hostSize.width;
+let rejectPreferences = false;
+let connectedClaude = 0;
+let openedSystemSettings = null;
 function check(value, message) { assert.ok(value, message); checks++; console.log('  ok  ' + message); }
 async function settled() { await delay(780); }
 /**
@@ -74,6 +80,22 @@ async function contrastOf(selector) {
   return Math.round(((Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05)) * 100) / 100;
 }
 
+function solidCover([r, g, b], size = 64) {
+  const rgba = Buffer.alloc(size * size * 4);
+  for (let i = 0; i < rgba.length; i += 4) { rgba[i] = r; rgba[i + 1] = g; rgba[i + 2] = b; rgba[i + 3] = 255; }
+  return require('../src/png').encodePNG(size, size, rgba);
+}
+
+async function cssColor(token) {
+  const value = await js(`getComputedStyle(document.documentElement).getPropertyValue(${JSON.stringify(token)}).trim()`);
+  const rgb = value.match(/\d+/g);
+  if (value.startsWith('#')) {
+    const parts = value.slice(1).match(/../g).map((p) => parseInt(p, 16));
+    return parts.join(',');
+  }
+  return rgb ? rgb.slice(0, 3).join(',') : value;
+}
+
 async function panelSnapshot(name) {
   fs.mkdirSync(output, { recursive: true });
   const shot = await panelWin.webContents.capturePage();
@@ -102,14 +124,22 @@ app.whenReady().then(async () => {
     timer: fixtureTimer.snapshot(), note: fixtureNote, preferences: fixturePreferences, displays: fixtureDisplayState.displays, displayState: fixtureDisplayState }));
   ipcMain.handle('fixture:size', (_event, size) => { win.setBounds({ ...win.getBounds(), ...size }); });
   ipcMain.handle('fixture:send', () => sendResult);
+  ipcMain.handle('fixture:choose-files', () => { filePickerOpened++; return { added: 1, rejected: [] }; });
   ipcMain.handle('fixture:media', (_event, command) => { mediaCommands.push(command); return true; });
   ipcMain.handle('fixture:ai-refresh', () => null);
+  ipcMain.handle('fixture:claude-signin', () => { connectedClaude++; return { ok: true }; });
+  ipcMain.handle('fixture:system-settings', (_event, page) => { openedSystemSettings = page; return true; });
   ipcMain.handle('fixture:timer', (_event, command) => {
     const state = fixtureTimer.command(command.action, command.options); emit('timer', state); return state;
   });
   ipcMain.handle('fixture:note', (_event, value) => { fixtureNote = value; return true; });
   ipcMain.handle('fixture:preferences', (_event, value) => {
-    fixturePreferences = { ...fixturePreferences, ...value };
+    if (rejectPreferences) return { ok: false, ...panelState() };
+    fixturePreferences = { ...fixturePreferences, ...value, ...appearance.normalize({ ...fixturePreferences, ...value }) };
+    reservedHostWidth = Math.max(reservedHostWidth, geometry.hostFor(fixturePreferences).width);
+    const zoom = fixturePreferences.notchScale / 100;
+    win.setSize(Math.ceil(reservedHostWidth * zoom), Math.ceil(geometry.hostSize.height * zoom));
+    win.webContents.setZoomFactor(zoom);
     fixtureDisplayState = { ...fixtureDisplayState, mode: fixturePreferences.displayMode || 'selected', activeDisplayId: fixturePreferences.displayId, preferredDisplayId: fixturePreferences.displayId };
     const result = { ok: true, preferences: fixturePreferences, displayState: fixtureDisplayState };
     // Main broadcasts every change to both windows; the fixture has to as well,
@@ -144,14 +174,18 @@ app.whenReady().then(async () => {
     await js(`document.getElementById('closed-trigger').click()`);
     await settled();
     box = await layout();
-    check(box.width === 520 && box.height === 390, 'click opens the full surface');
+    check(box.width === 520 && box.height === 350, 'file shelf opens at a compact content height');
     check(box.viewport[0] === geometry.hostSize.width && box.viewport[1] === geometry.hostSize.height, 'Windows backing surface stays reserved for every state and spring overshoot');
     check(box.panelOverflow <= 1 && box.footerBottom < box.bottom, 'empty send panel fits without clipping');
     await snapshot('send-empty');
     await js(`pointerInside = true`);
-    await js(`els.explore.click()`); await delay(300);
+    await js(`els.explore.click()`); await settled();
     check(await js(`document.body.classList.contains('is-exploring') && getComputedStyle(els.tabs).display === 'grid'`), 'Explore opens the module gallery');
     await snapshot('explore');
+    check(await js(`Math.round(document.querySelector('.tab').getBoundingClientRect().height) === 86 && document.querySelectorAll('#gallery-rail button').length === 2`), 'source-sized gallery tiles have whole-row pagination');
+    await js(`document.querySelectorAll('#gallery-rail button')[1].click()`); await delay(450);
+    check(await js(`Math.abs(els.tabs.scrollTop - 94) <= 1`), 'gallery steps by one whole row without cutting tiles');
+    await snapshot('explore-more');
     await js(`els.exploreSearch.value = 'Timer'; els.exploreSearch.dispatchEvent(new Event('input'));`);
     check(await js(`els.tabs.querySelectorAll('.tab:not([hidden])').length === 1`), 'module gallery search filters available destinations');
     await js(`setTab('send')`);
@@ -163,7 +197,7 @@ app.whenReady().then(async () => {
 
     await js(`document.querySelector('.device').click()`);
     await delay(80);
-    check(await js(`document.getElementById('status').classList.contains('is-done')`), 'successful send shows confirmation');
+    check(await js(`document.getElementById('status').classList.contains('is-done')`), 'successful send shows confirmation: ' + await js(`els.statusText.textContent`));
     check((await layout()).panelOverflow <= 1, 'success feedback fits with the files and destination');
     await snapshot('send-success');
 
@@ -212,6 +246,31 @@ app.whenReady().then(async () => {
     await js(`els.explore.click(); document.querySelector('.tab[data-tab="ai"]').focus(); els.tabs.dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));`);
     check(await js(`document.activeElement.id === 'tab-send'`), 'gallery keyboard navigation moves focus to the first destination');
     await js(`document.activeElement.click()`);
+    await js(`setTab('send'); document.getElementById('module-next').click()`); await settled();
+    check((await layout()).activeTab === 'media' && (await layout()).height === 270, 'module buttons switch to the compact source-like player');
+    await js(`card.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true, bubbles: true }))`); await settled();
+    check((await layout()).activeTab === 'send', 'Alt+Arrow is an accessible alternative to module swipes');
+    await js(`document.querySelector('.notch-header').dispatchEvent(new WheelEvent('wheel', { deltaX: 65, deltaY: 0, bubbles: true, cancelable: true }))`); await settled();
+    check((await layout()).activeTab === 'media', 'a horizontal trackpad gesture on the header switches modules');
+    await js(`setTab('send'); document.querySelector('.notch-header').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 8, button: 0, clientX: 250, clientY: 20, bubbles: true })); document.querySelector('.notch-header').dispatchEvent(new PointerEvent('pointerup', { pointerId: 8, clientX: 150, clientY: 20, bubbles: true }));`); await settled();
+    check((await layout()).activeTab === 'media', 'a deliberate header swipe changes pages without touching music controls');
+    await js(`setTab('send'); document.getElementById('choose-files').click()`); await delay(100);
+    check(filePickerOpened === 1 && await js(`activeNotice?.title === '1 file parked' && state === 'open'`), 'native file picker provides a click alternative to drag and drop');
+    await js(`activityQueue.clear(); pointerInside = false; hoverSuppressed = false; collapseNotch()`); await settled();
+    emit('ai-complete', { provider: 'codex', name: 'Demo task' }); await settled();
+    check(await js(`state === 'peek' && activeNotice.kind === 'ai' && !openedByClick && document.getElementById('notice-title').textContent === 'Agent finished'`), 'agent completion appears as a brief notch activity without opening a page');
+    await snapshot('notice-agent');
+    // A hidden offscreen window does not dispatch native focus events.
+    await js(`document.getElementById('notice-open').focus(); document.getElementById('notice-open').dispatchEvent(new FocusEvent('focusin', { bubbles: true }));`);
+    check(await js(`activityQueue.paused`), 'notification focus handler pauses expiry');
+    await js(`document.getElementById('notice-open').click()`); await settled();
+    check((await layout()).activeTab === 'ai' && (await layout()).state.includes('state-open'), 'clicking an activity opens its own module');
+    await js(`postActivity({ id: 'quiet-test', kind: 'success', title: 'Files parked', tab: 'send', priority: 20 });`);
+    check((await layout()).activeTab === 'ai' && await js(`!document.getElementById('activity-inline').hidden`), 'notifications keep the current page while the notch is open');
+    await js(`postActivity({ id: 'pending-test', kind: 'music', title: 'Queued preview', tab: 'media', priority: 5 }); card.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`); await settled();
+    check(await js(`state === 'closed' && !activityQueue.current && activityQueue.pending.length === 0`), 'Escape clears queued previews so they cannot reopen a dismissed notch');
+    await js(`openNotch('send')`); await settled();
+    await js(`activityQueue.clear(); pointerInside = true`);
     emit('clipboard', [{ id: 'clip-demo', kind: 'text', preview: 'A note to take with you', chars: 23, at: Date.now() }]);
     emit('system', { host: 'Windows PC', uptime: 10800, cpu: { overall: .24, count: 8, model: 'Intel Core i7', history: [.1, .3, .25, .18, .24] }, memory: { ratio: .48, used: 8246337208, total: 17179869184, history: [.4, .43, .46, .48] }, disks: [{ mount: 'C:', ratio: .35, free: 300000000000 }] });
     emit('ai', [{ pid: 1234, name: 'Demo workspace', folder: 'Demo', cwd: 'C:\\Demo', status: 'idle', statusUpdatedAt: Date.now() - 60000 }]);
@@ -263,7 +322,7 @@ app.whenReady().then(async () => {
 
     // A long media title must use the CSS custom properties the renderer sets.
     await js(`els.npTitle.textContent = 'An exceptionally long song title that should scroll at a readable speed'; fitMarquee(els.npTitle)`);
-    check(await js(`getComputedStyle(els.npTitle).animationDuration === els.npTitle.style.getPropertyValue('--marquee-dur')`), 'marquee uses measured title distance and duration');
+    check(await js(`parseFloat(getComputedStyle(els.npTitle).animationDuration) === parseFloat(els.npTitle.style.getPropertyValue('--marquee-dur'))`), 'marquee duration matches the measured text distance');
 
     const musicFrames = await js(`new Promise((resolve) => {
       const frames = [], morphs = new Set(); let changes = 0;
@@ -310,7 +369,13 @@ app.whenReady().then(async () => {
     box = await layout();
     check(box.width === 184 && box.height === 28 && box.viewport[0] === geometry.hostSize.width, 'rapid morph reversals settle without reallocating the Windows backing surface');
 
-    await js(`pinned = false; openedByClick = false; const transfer = new DataTransfer(); transfer.items.add(new File(['demo'], 'Notes.pdf')); document.dispatchEvent(new DragEvent('dragenter', { dataTransfer: transfer })); document.dispatchEvent(new DragEvent('dragleave', { dataTransfer: transfer }));`);
+    await js(`pinned = false; openedByClick = false; window.demoDrag = new DataTransfer(); window.demoDrag.items.add(new File(['demo'], 'Notes.pdf')); document.dispatchEvent(new DragEvent('dragenter', { dataTransfer: window.demoDrag }));`); await settled();
+    check(await js(`document.body.classList.contains('dragging') && getComputedStyle(els.shelf, '::after').content.includes('Release to park')`), 'dragging files shows a clear shelf drop intention');
+    await snapshot('drop-shelf');
+    await js(`document.querySelector('.device').dispatchEvent(new DragEvent('dragover', { dataTransfer: window.demoDrag, bubbles: true, cancelable: true }))`);
+    check(await js(`document.querySelector('.device').classList.contains('drop-target') && document.body.classList.contains('aiming-device')`), 'a device drop target highlights the actual send action');
+    await snapshot('drop-device');
+    await js(`document.querySelector('.device').dispatchEvent(new DragEvent('dragleave', { dataTransfer: window.demoDrag })); document.dispatchEvent(new DragEvent('dragleave', { dataTransfer: window.demoDrag })); delete window.demoDrag;`);
     await delay(1250);
     check((await layout()).state.includes('state-closed'), 'abandoning a file drag does not leave the notch pinned open');
 
@@ -331,6 +396,7 @@ app.whenReady().then(async () => {
     await snapshot('closed-media');
 
     await js(`openNotch('timer')`); await settled();
+    check((await layout()).panelOverflow <= 1, 'compact timer keeps its controls visible without clipping');
     await snapshot('timer');
     await js(`document.getElementById('timer-action').click()`); await delay(100);
     check(fixtureTimer.snapshot().running, 'the timer UI starts a real main-process session');
@@ -439,6 +505,34 @@ app.whenReady().then(async () => {
     const worst = Math.min(...Object.values(measured).filter((v) => v !== null));
     check(worst >= 4.5, 'every label stays above 4.5:1 with the brightest cover behind the glass (worst ' + worst + ':1)');
 
+    // --- colour that follows the music ---------------------------------------
+    const neutral = await cssColor('--accent');
+    // A cover with one unmistakable hue, so the expected answer is knowable.
+    const teal = 'data:image/png;base64,' + solidCover([0, 170, 170]).toString('base64');
+    emit('now-playing', { type: 'state', session: true, title: 'Teal', artist: 'Local artist',
+      app: 'Spotify.exe', status: 'Playing', duration: 200, position: 10, thumb: teal,
+      canPause: true, canNext: true, canPrev: true, canSeek: true, sources: ['Spotify.exe'] });
+    await settled(); await settled();
+    const dressed = await cssColor('--accent');
+    check(dressed !== neutral && await js(`document.body.classList.contains('is-dressed-by-music')`),
+      'a playing cover lends the notch its colour');
+    const [r, g, b] = dressed.split(',').map(Number);
+    check(g > r + 40 && b > r + 40 && Math.abs(g - b) < 60,
+      'the borrowed accent is the hue of the cover, not an average of it (' + dressed + ')');
+    check(await contrastOf('#np-sub') >= 4.5, 'secondary text survives the borrowed palette');
+    await snapshot('music-colour');
+
+    // Handing the colour back has to work, or the notch keeps the last album
+    // it saw forever.
+    emit('now-playing', { type: 'state', session: false });
+    await settled(); await settled();
+    check(await cssColor('--accent') === neutral && !await js(`document.body.classList.contains('is-dressed-by-music')`),
+      'the user palette returns when the music stops');
+    emit('now-playing', { type: 'state', session: true, title: 'A Quiet Morning', artist: 'Local artist',
+      app: 'Spotify.exe', status: 'Playing', duration: 240, position: 87, thumb: fixtureArt,
+      canPause: true, canNext: true, canPrev: true, canSeek: true, sources: ['Spotify.exe'] });
+    await settled();
+
     await pjs(`document.querySelector('.segmented[data-preference="silhouette"] button[data-value="capsule"]').click()`);
     await settled();
     check(await js(`document.body.dataset.silhouette === 'capsule' && parseFloat(getComputedStyle(card).borderTopLeftRadius) > 0`),
@@ -455,6 +549,90 @@ app.whenReady().then(async () => {
     await pjs(`{ const d = document.querySelector('[data-preference="autoDismiss"]'); d.checked = true; d.dispatchEvent(new Event('change')); }`);
     await delay(160);
 
+    // Appearance edits cross the same IPC boundary as the real Settings window.
+    await js(`openNotch('media')`); await settled();
+    await pjs(`document.querySelector('.sheet').scrollTop = 0`);
+    await pjs(`{ const input = document.querySelector('#expanded-width'); for (const width of [552,576,600,624,640]) { input.value = width; input.dispatchEvent(new Event('input')); } }`);
+    check(await pjs(`document.querySelector('#expanded-width-value').textContent === '640 px' && document.querySelector('#preview-caption').textContent.includes('640 px')`), 'sliders update their value and live preview immediately');
+    check(fixturePreferences.expandedWidth === 520, 'a slider drag batches persistence instead of resizing the HWND on every input');
+    await settled();
+    check((await layout()).width === 640 && await js(`document.querySelector('.layer-open').getBoundingClientRect().width === 640`), 'expanded width reaches both the painted shell and its content layout');
+    const widerHost = win.getSize();
+    await pjs(`{ const input = document.querySelector('#expanded-width'); input.value = 480; input.dispatchEvent(new Event('change')); }`);
+    await settled();
+    check((await layout()).width === 480 && win.getSize()[0] === widerHost[0], 'shrinking a customized shell preserves its backing surface for the outgoing animation');
+    check(await js(`document.querySelector('.layer-open').scrollWidth <= 480 && document.querySelector('.np').scrollWidth <= 436`), 'music content fits the narrowest supported expanded width');
+    await pjs(`{ const input = document.querySelector('#closed-width'); input.value = 280; input.dispatchEvent(new Event('change')); }`);
+    await js(`collapseNotch()`); await settled();
+    check((await layout()).width === 280, 'resting width is independently customizable while music is playing');
+    await pjs(`{ const input = document.querySelector('#notch-scale'); input.value = 125; input.dispatchEvent(new Event('change')); }`);
+    await settled();
+    check(win.webContents.getZoomFactor() === 1.25 && Math.abs((await layout()).width - 280) < 1, 'overall size scales text and controls through Electron zoom without corrupting CSS geometry');
+    await pjs(`{ const input = document.querySelector('#notch-scale'); input.value = 85; input.dispatchEvent(new Event('change')); }`);
+    await settled();
+    check(win.webContents.getZoomFactor() === .85 && await js(`Math.abs(card.getBoundingClientRect().x + card.getBoundingClientRect().width / 2 - innerWidth / 2) < 1`), 'the smallest overall size remains centered');
+    await pjs(`{ const input = document.querySelector('#notch-scale'); input.value = 100; input.dispatchEvent(new Event('change')); } document.querySelector('[data-preset="2"]').click();`);
+    await js(`openNotch('media')`); await settled();
+    check(await cssColor('--surface-open') === '48,33,62' && await cssColor('--accent') === '204,180,255',
+      'a named palette changes the real notch surface and accent');
+    await snapshot('appearance-music');
+    await pjs(`document.querySelector('[data-preview="resting"]').click()`); await delay(450);
+    check(await pjs(`document.querySelector('#appearance-preview').dataset.expanded === 'false' && document.querySelector('[data-preview="resting"]').getAttribute('aria-pressed') === 'true'`), 'the preview can morph independently between resting and expanded states');
+    await panelSnapshot('appearance-studio');
+    await pjs(`{ const a = document.querySelector('#surface-tint'); a.value = '#ffffff'; a.dispatchEvent(new Event('input')); const b = document.querySelector('#accent-color'); b.value = '#000000'; b.dispatchEvent(new Event('change')); }`);
+    await settled();
+    check(await js(`{ const c = NotchAppearance.colors(preferences); NotchAppearance.contrast(c.accent, c.raised) >= 4.5 }`), 'custom white surfaces and black accents adapt to readable dark-theme colors');
+    const customContrast = await contrastOf('#np-sub');
+    check(customContrast >= 4.5, 'custom surface keeps real rendered music labels readable (' + customContrast + ':1)');
+    rejectPreferences = true;
+    await pjs(`document.querySelector('[data-preset="1"]').click()`); await delay(180);
+    check(await pjs(`document.querySelector('#status').textContent.includes('Cannot save') && document.querySelector('#surface-tint').value === '#ffffff'`), 'failed saves restore stored appearance and show an error');
+    rejectPreferences = false;
+    await pjs(`document.querySelector('#reset-appearance').click()`); await settled();
+    check(Object.keys(appearance.defaults).every(key => fixturePreferences[key] === appearance.defaults[key]), 'Reset appearance restores every size and color without changing behavior preferences');
+    await pjs(`document.querySelector('[data-preview="expanded"]').click(); document.querySelector('#group-color').scrollIntoView({ block: 'start' });`); await delay(450);
+    await panelSnapshot('appearance-colors');
+
+    const claudeNow = Date.now();
+    emit('ai-dashboard', { updatedAt: claudeNow, buckets: [], providers: ['claude'], sessions: [{ provider: 'claude', sessionId: 'live', name: 'Local project', status: 'busy', statusAt: claudeNow, startedAt: claudeNow, inferred: false }], limits: { claude: { source: 'account', plan: 'Claude', observedAt: claudeNow, windows: [{ used: 26, minutes: 300, resetsAt: claudeNow + 3600000 }, { used: 40, minutes: 10080, scope: 'Opus', resetsAt: claudeNow + 86400000 }] } }, claudeAccountStatus: 'ready' });
+    await js(`openNotch('ai'); document.querySelector('[data-ai-provider="claude"]').click()`); await settled();
+    check(await js(`document.querySelector('[data-card="limits"]').textContent.includes('74%') && document.querySelector('[data-card="limits"]').textContent.includes('Opus') && document.querySelector('.ai-live-row .ai-dot').classList.contains('is-working')`), 'Claude renders actual account windows, model scope and live working status');
+    await snapshot('ai-claude');
+    emit('ai-dashboard', { updatedAt: claudeNow, buckets: [], sessions: [], limits: {}, claudeAccountStatus: 'signin' }); await delay(180);
+    check(await js(`document.querySelector('[data-card="limits"]').textContent.includes('claude auth login') && !document.querySelector('[data-card="limits"]').textContent.includes('0%')`), 'a signed-out Claude account explains how to reconnect without inventing a zero quota');
+    await snapshot('ai-claude-signin');
+    await js(`document.querySelector('[data-ai-connect]').click()`); await delay(100);
+    check(connectedClaude === 1 && await js(`document.querySelector('#ai-meta').textContent.includes('Terminal')`), 'Connect Claude routes to its own terminal sign-in and explains the next step');
+
+    await js(`activityQueue.clear(); pointerInside = false; hoverSuppressed = false; collapseNotch()`); await settled();
+    emit('system-action', { action: 'volume', value: 40, muted: false }); await settled();
+    check((await layout()).state.includes('state-peek') && await js(`document.querySelector('#notice-title').textContent === 'Volume' && document.querySelector('#notice-meter').getAttribute('aria-valuenow') === '40'`), 'Windows volume adjustments appear as a compact meter without opening a module');
+    const hardwareHost = win.getSize();
+    for (const value of [42,44,46,48,50,52]) emit('system-action', { action: 'volume', value, muted: false });
+    await delay(160);
+    check(await js(`activeNotice.detail === '52%' && activityQueue.pending.length === 0 && !document.body.classList.contains('is-morphing')`) && win.getSize()[0] === hardwareHost[0], 'held volume keys update one meter without a notification backlog or repeated shell morphs');
+    await snapshot('feedback-volume');
+    emit('system-action', { action: 'volume', value: 52, muted: true }); await delay(160);
+    check(await js(`document.querySelector('#notice-title').textContent === 'Muted' && document.querySelector('#notice-meter').getAttribute('aria-valuenow') === '0'`), 'mute uses its own icon and an empty meter while preserving the stored level');
+    emit('system-action', { action: 'brightness', value: 70 }); await delay(160);
+    check(await js(`document.querySelector('#notice-title').textContent === 'Display brightness' && document.querySelector('#notice-meter').getAttribute('aria-valuenow') === '70'`), 'brightness replaces volume immediately with the real percentage');
+    await snapshot('feedback-brightness');
+    await js(`document.querySelector('#notice-open').click()`); await delay(100);
+    check(openedSystemSettings === 'display', 'a brightness activity opens display settings through the validated IPC action');
+    emit('system-action', { action: 'capslock', enabled: true }); await delay(180);
+    check(await js(`activeNotice.title === 'Caps Lock' && activeNotice.detail.startsWith('On') && document.querySelector('#notice-meter').hidden`), 'Caps Lock feedback is explicit text and does not show a fake percentage');
+    await snapshot('feedback-capslock');
+    await delay(1800); await settled();
+    check((await layout()).state.includes('state-closed'), 'system feedback expires and returns to the customized resting notch');
+    await js(`openNotch('media')`); await settled();
+    emit('system-action', { action: 'volume', value: 60, muted: false }); await delay(180);
+    check((await layout()).activeTab === 'media' && await js(`document.querySelector('#activity-inline-label').textContent.includes('60%')`), 'volume feedback stays inline while music is open');
+    await snapshot('feedback-inline');
+    await js(`activityQueue.clear()`);
+    await pjs(`{ const input = document.querySelector('[data-preference="systemFeedback"]'); input.checked = false; input.dispatchEvent(new Event('change')); }`); await delay(100);
+    emit('system-action', { action: 'brightness', value: 20 }); await delay(150);
+    check(await js(`activeNotice === null`), 'system feedback can be disabled in Settings');
+    await pjs(`{ const input = document.querySelector('[data-preference="systemFeedback"]'); input.checked = true; input.dispatchEvent(new Event('change')); }`); await delay(100);
     check(errors.length === 0, 'renderer completes without console errors' + (errors.length ? ': ' + errors.join('; ') : ''));
     console.log('\nAll ' + checks + ' renderer checks passed. Screenshots: docs/previews');
     app.exit(0);

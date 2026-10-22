@@ -8,6 +8,35 @@
 
 ## ใช้งาน
 
+The notch now uses a closer Vorssaint-inspired layout, with content-sized pages,
+56px music artwork and a two-row module gallery with shortcut labels.
+
+- Swipe horizontally on the header to switch modules, or use **Alt+Left/Right**.
+- Use the small previous/next controls at the bottom; click the page counter to
+  choose a module. **Alt+1–7** opens a module; **Alt+8** opens Settings.
+- Drag files onto the shelf to park them, or onto a device to send. **Add files**
+  and **Ctrl+O** open the native file picker.
+- Track changes, completed timers, transfers and AI turns can appear as brief
+  activities in the notch. Click an activity to open its module; dismiss it with
+  the cross. Hover or keyboard focus pauses expiry. An open page stays open.
+- **Settings → Size & proportions** adjusts resting width (160–280px), expanded
+  width (480–640px), and overall size (85–125%). The preview responds as you drag.
+  Pick Obsidian, Midnight, Iris or Moss, or choose surface/accent hues yourself.
+  **Reset appearance** restores just the size and color defaults.
+- Changing Windows volume, mute, supported display brightness or Caps Lock shows
+  brief system feedback. Repeated presses update the same meter. Click for the
+  relevant Windows Settings page; disable it under **Behaviour → System feedback**.
+  Brightness uses Windows WMI reporting; DDC/CI-only external monitor controls
+  are not observed.
+
+Design decisions and skill references are recorded in
+[the Islet design system](design-system/islet/MASTER.md).
+
+When adopting the Islet name, a new, unused Islet profile reuses the original
+`localsend-island` data directory. Existing notes, shelf entries, preferences and
+LocalSend identity remain in place. A new profile that already contains notes or
+a shelf keeps its own data; neither profile is deleted or overwritten.
+
 ```bash
 npm install
 npm start
@@ -205,8 +234,16 @@ CPU, หน่วยความจำ, พื้นที่ดิสก์ แ
 ถ้า API ใช้ไม่ได้จะใช้ข้อมูลจาก log พร้อมป้ายว่าอาจไม่ล่าสุด ข้อมูลที่ผ่านเวลารีเซ็ต
 จะแสดง — จนกว่าจะได้ข้อมูลใหม่ ไม่เดาว่าโควตากลับมาเต็ม
 
-ยังไม่รองรับโควตาบัญชี Claude, OpenCode/Copilot, สลับบัญชี หรือประมาณค่าใช้จ่าย
-จากราคาโมเดล Token ใน log เป็นกิจกรรมบนเครื่องนี้ ไม่ใช่ยอดเงินในแพ็กเกจ
+โควตา Claude อ่านผ่าน Claude Code CLI ด้วย control requests `initialize` และ
+`get_usage` ตามต้นแบบ Vorssaint ไม่ส่ง user message ไม่เรียกโมเดล และปิด user
+hooks/tools/MCP ในคำขอตรวจบัญชี ตรวจโควตา 5 ชั่วโมง/7 วันและแยก Opus/Sonnet
+เมื่อบัญชีรายงานมา ตรวจอายุ cache และการเปลี่ยนบัญชีก่อนแสดง มี backoff เมื่อ CLI
+หาย/เก่า/ยังไม่ลงชื่อเข้าใช้ ถ้าต้องเชื่อมบัญชี กด **AI → Claude → Connect Claude**
+เพื่อเปิดขั้นตอน login ของ CLI ใน Terminal แล้วกด **Refresh** ใน notch
+Claude จัดการการลงชื่อเข้าใช้เอง รวมทั้งการยืนยันบนเบราว์เซอร์ของผู้ใช้
+
+ยังไม่รองรับ OpenCode/Copilot, สลับบัญชี หรือประมาณค่าใช้จ่ายจากราคาโมเดล
+Token ใน log เป็นกิจกรรมบนเครื่องนี้ ไม่ใช่ยอดเงินในแพ็กเกจ
 
 ## ความลื่นของ notch บน Windows
 

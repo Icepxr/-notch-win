@@ -35,7 +35,7 @@ function file(extra = {}) {
       version: '2.1.299',
       kind: 'interactive',
       entrypoint: 'claude-desktop',
-      pidDomain: 'win32:uchida',
+      pidDomain: 'win32:demo',
       name: 'โมดูล AI monitor ในนอตช์',
       nameSource: 'user',
       status: 'busy',
@@ -114,7 +114,7 @@ test('session files that roamed in from another machine are skipped', () => {
     now: T0,
     home: HOME,
     isAlive: alive,
-    pidDomain: 'win32:uchida',
+    pidDomain: 'win32:demo',
   });
   assert.deepStrictEqual(list.map((s) => s.pid), [17816]);
 
@@ -309,12 +309,12 @@ test('a real directory listing becomes the list the notch paints', () => {
     file(),
     file({ pid: 12848, name: 'ส่งไฟล์ระหว่างอุปกรณ์', status: 'idle', statusUpdatedAt: T0 - 2 * MINUTE }),
     file({ pid: 35096, name: 'กำลังเล่น ในนอตช์', status: 'idle', statusUpdatedAt: T0 - 90 * MINUTE }),
-    { contents: '{"pid":404,"status":"busy","statusUpdatedAt":' + T0 + ',"pidDomain":"win32:uchida"}' },
+    { contents: '{"pid":404,"status":"busy","statusUpdatedAt":' + T0 + ',"pidDomain":"win32:demo"}' },
   ], {
     now: T0,
     home: HOME,
     isAlive: (pid) => pid !== 404, // the one that died without cleaning up
-    pidDomain: 'win32:uchida',
+    pidDomain: 'win32:demo',
   });
 
   assert.deepStrictEqual(list.map((s) => s.pid), [17816, 12848, 35096]);

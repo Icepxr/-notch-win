@@ -17,11 +17,17 @@ Adapted files and concepts:
 - `Sources/Vorssaint/Services/Notch/NotchMusicSupport.swift`: artwork tint
   normalization and the 1.5-second playback metadata grace period.
 - `Sources/Vorssaint/UI/Notch/NotchSectionsView.swift`: module gallery navigation.
+  The current `islet.css` and renderer use its 86px tile/8px row spacing,
+  whole-row stepping and shortcut-label hierarchy. `NotchMusicView.swift` and
+  `NotchSupport.swift` inform the 56px artwork and compact player proportions.
 - `Sources/Vorssaint/Services/AgentUsage/Harness/CodexReader.swift` and
   `ClaudeReader.swift`: usage counters, deduplication keys and turn lifecycle
   mapping, adapted in `src/ai-usage.js`.
 - `Sources/Vorssaint/Services/AgentUsage/AgentCodexServer.swift`: read-only
   account handshake, adapted for Windows in `src/ai-codex.js`.
+- `Sources/Vorssaint/Services/AgentUsage/AgentClaudeServer.swift`: read-only
+  Claude Code control requests, cache freshness and account-change checks,
+  adapted for Windows in `src/ai-claude.js`.
 - `Sources/Vorssaint/UI/Notch/NotchAgentsView.swift` and
   `Services/Notch/NotchAgentSupport.swift`: paired cards, periods, provider
   filters, remaining allowance, idle timeout and 80% quota alert behavior.

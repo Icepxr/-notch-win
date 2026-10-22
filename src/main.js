@@ -1,11 +1,12 @@
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage, globalShortcut, shell,
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, nativeImage, globalShortcut, shell, dialog,
   clipboard: electronClipboard } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
 const crypto = require('node:crypto');
+const { spawn } = require('node:child_process');
 
 const { Discovery } = require('./discovery');
 const { sendFiles, TransferError } = require('./sender');
@@ -21,7 +22,15 @@ const { Notification } = require('electron');
 const { NotchTimer } = require('./timer');
 const { NotesStore } = require('./notes');
 const NotchGeometry = require('./renderer/notch-geometry');
+const NotchAppearance = require('./renderer/notch-appearance');
 const { DisplayController, pointerInside, MODES: DISPLAY_MODES } = require('./displays');
+const { chooseProfile } = require('./profile');
+const { SystemActions } = require('./system-actions');
+const { findClaude, signInCommand } = require('./ai-claude');
+
+const initialUserData = app.getPath('userData');
+const persistentUserData = chooseProfile(initialUserData, path.join(app.getPath('appData'), 'localsend-island'));
+if (persistentUserData !== initialUserData) app.setPath('userData', persistentUserData);
 
 // Our own register endpoint. Deliberately not 53317 so the notch can run
 // alongside the real LocalSend app without fighting it for the port.
@@ -37,6 +46,7 @@ let settings = {};
 let devices = [];
 let identity = null;
 let media = null;
+let systemActions = null;
 let aimon = null;
 let aiSessions = [];
 let aiDashboard = null;
@@ -53,6 +63,7 @@ let notes = null;
 let displayController = null;
 let notchExpanded = false;
 let panelWin = null;
+let lastClaudeSignIn = 0;
 
 function userFile(name) {
   return path.join(app.getPath('userData'), name);
@@ -87,7 +98,8 @@ function saveSettings() {
 const GLASS_LEVELS = ['high', 'medium', 'off'];
 
 function clientPreferences() {
-  return { autoDismiss: settings.autoDismiss !== false, musicPreview: settings.musicPreview !== false,
+  return { ...NotchAppearance.normalize(settings), autoDismiss: settings.autoDismiss !== false, musicPreview: settings.musicPreview !== false,
+    systemFeedback: settings.systemFeedback !== false, musicColors: settings.musicColors !== false,
     gestures: settings.gestures !== false, silhouette: settings.silhouette === 'capsule' ? 'capsule' : 'notch',
     glass: GLASS_LEVELS.includes(settings.glass) ? settings.glass : 'high',
     displayMode: DISPLAY_MODES.includes(settings.displayMode) ? settings.displayMode : 'selected',
@@ -101,7 +113,9 @@ function clientPreferences() {
  */
 function applyPreferencePatch(patch) {
   const previous = { ...settings };
-  for (const key of ['autoDismiss', 'musicPreview', 'gestures']) {
+  const appearance = NotchAppearance.normalize({ ...settings, ...patch });
+  for (const key of Object.keys(NotchAppearance.defaults)) settings[key] = appearance[key];
+  for (const key of ['autoDismiss', 'musicPreview', 'gestures', 'systemFeedback', 'musicColors']) {
     if (typeof patch?.[key] === 'boolean') settings[key] = patch[key];
   }
   if (['notch', 'capsule'].includes(patch?.silhouette)) settings.silhouette = patch.silhouette;
@@ -387,6 +401,11 @@ function startShelf() {
 }
 
 function startMedia() {
+  systemActions = new SystemActions();
+  systemActions.on('ready', () => console.log('[system-actions] ready'));
+  systemActions.on('action', (action) => { if (settings.systemFeedback !== false) send('notch:system-action', action); });
+  systemActions.on('unavailable', () => console.log('[system-actions] System feedback unavailable'));
+  systemActions.start();
   media = new MediaBridge({ scriptPath: mediaScriptPath() });
   media.on('message', (message) => send('notch:now-playing', message));
   media.on('command', (result) => send('notch:media-result', result));
@@ -407,9 +426,9 @@ function startAiMonitor() {
     notification.on('click', () => send('notch:navigate', 'ai'));
     notification.show();
   });
-  aiDashboard.on('limit', ({ used }) => {
+  aiDashboard.on('limit', ({ used, provider = 'codex' }) => {
     if (!Notification.isSupported()) return;
-    const notification = new Notification({ title: 'Codex quota is running low', body: 'Used ' + Math.round(used) + '% · Click to view reset times' });
+    const notification = new Notification({ title: (provider === 'claude' ? 'Claude' : 'Codex') + ' quota is running low', body: 'Used ' + Math.round(used) + '% · Click to view reset times' });
     notification.on('click', () => send('notch:navigate', 'ai'));
     notification.show();
   });
@@ -536,6 +555,10 @@ function registerIpc() {
     if (!Array.isArray(paths)) return { added: 0, rejected: [] };
     return shelf.add(paths.filter((p) => typeof p === 'string'));
   });
+  ipcMain.handle('notch:choose-files', async () => {
+    const result = await dialog.showOpenDialog(win, { title: 'Add files to Islet', properties: ['openFile', 'multiSelections'] });
+    return result.canceled ? { added: 0, rejected: [] } : shelf.add(result.filePaths);
+  });
 
   ipcMain.on('notch:shelf-remove', (_event, id) => shelf.remove(id));
   ipcMain.on('notch:shelf-clear', () => shelf.clear());
@@ -618,6 +641,26 @@ function registerIpc() {
     app.quit();
   });
   ipcMain.handle('notch:ai-refresh', () => aiDashboard?.refresh());
+  ipcMain.handle('notch:claude-signin', () => {
+    const executable = findClaude();
+    if (!executable) return { ok: false };
+    if (Date.now() - lastClaudeSignIn < 3000) return { ok: true };
+    lastClaudeSignIn = Date.now();
+    // A visible terminal is intentional here: the person clicks Connect and
+    // completes the CLI's own browser sign-in. No credentials enter Islet.
+    return new Promise(resolve => {
+      const env = { ...process.env, DISABLE_AUTOUPDATER: '1' }; delete env.CLAUDECODE;
+      const child = spawn('powershell.exe', ['-NoProfile', '-NoExit', '-Command', signInCommand(executable)],
+        { detached: true, windowsHide: false, stdio: 'ignore', cwd: os.homedir(), env });
+      child.once('error', () => resolve({ ok: false }));
+      child.once('spawn', () => { child.unref(); resolve({ ok: true }); });
+    });
+  });
+  ipcMain.handle('notch:system-settings', async (_event, page) => {
+    const pages = { sound: 'ms-settings:sound', display: 'ms-settings:display', keyboard: 'ms-settings:easeofaccess-keyboard' };
+    if (!Object.hasOwn(pages, page)) return false;
+    try { await shell.openExternal(pages[page]); return true; } catch { return false; }
+  });
 }
 
 // --- lifecycle --------------------------------------------------------------
@@ -672,6 +715,7 @@ if (!app.requestSingleInstanceLock()) {
     globalShortcut.unregisterAll();
     discovery?.stop();
     media?.stop();
+    systemActions?.stop();
     aimon?.stop();
     aiDashboard?.stop();
     clipboard?.stop();

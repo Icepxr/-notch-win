@@ -39,7 +39,7 @@ const RETRY_WATCH_MS = 30000;
 class AiMonitor extends EventEmitter {
   constructor(options = {}) {
     super();
-    this.dir = options.dir || path.join(os.homedir(), '.claude', 'sessions');
+    this.dir = options.dir || path.join(process.env.CLAUDE_CONFIG_DIR || path.join(options.home || os.homedir(), '.claude'), 'sessions');
     this.home = options.home || os.homedir();
     this.pollMs = options.pollMs || POLL_MS;
     // Session files carry the pid's domain, so files that roamed in from

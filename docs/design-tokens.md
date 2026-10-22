@@ -1,4 +1,9 @@
-# Notch design
+# Notch design — earlier baseline
+
+The current redesign is specified in
+[design-system/islet/MASTER.md](../design-system/islet/MASTER.md).
+Its content-sized surfaces, stable native host and activity layer supersede the
+geometry table and resizing notes below. This document retains earlier exploration.
 
 อ้างอิงบรรยากาศและลำดับเนื้อหาจาก [Vorssaint live demo](https://vorssaint.com/)
 หน้า Now Playing และ Files ที่ดูเมื่อ 2026-10-22 แล้วออกแบบให้เข้ากับการส่งไฟล์
