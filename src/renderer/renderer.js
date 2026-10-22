@@ -48,6 +48,8 @@ const els = {
   tabs: document.getElementById('tabs'),
   quit: document.getElementById('quit'),
   peekAi: document.getElementById('peek-ai'),
+  closedAgent: document.getElementById('closed-agent'),
+  closedAgentTime: document.getElementById('closed-agent-time'),
   peekAiCount: document.getElementById('peek-ai-count'),
   closedTrigger: document.getElementById('closed-trigger'),
   closedCount: document.getElementById('closed-count'),
@@ -118,12 +120,20 @@ function geometryFor(name) {
   return SIZES.closed;
 }
 
+/** Nothing playing, parked, running or in flight: the notch paints nothing. */
+function refreshIdle() {
+  const busy = mediaVisible || activeNotice || shelfItems.length || timerState.hasSession || transferActive
+    || document.body.classList.contains('ai-working') || document.body.classList.contains('ai-waiting');
+  document.body.classList.toggle('is-idle', !busy);
+}
+
 function applyVisualState() {
   notch.setInteraction(state);
   document.body.classList.remove('state-closed', 'state-peek', 'state-open');
   document.body.classList.add('state-' + state);
   document.body.classList.toggle('has-media', mediaVisible);
   document.body.classList.toggle('has-notice', !!activeNotice);
+  refreshIdle();
   for (const name of ['closed', 'peek', 'open']) {
     document.querySelector('.layer-' + name).inert = name !== state || name === 'peek' && !!activeNotice;
   }
@@ -289,8 +299,12 @@ const activityQueue = new NotchActivity.Queue({ change: (item) => {
       meter.setAttribute('aria-valuenow', value);
       meter.setAttribute('aria-valuetext', item.title + ' · ' + item.detail);
       document.body.style.setProperty('--notice-progress', value / 100);
+      document.body.style.setProperty('--notice-fill', value + '%');
     }
-    document.getElementById('notice-open').title = item.settings ? 'Open ' + item.settings + ' settings' : 'Open activity';
+    const open = document.getElementById('notice-open');
+    open.disabled = Boolean(item.passive);
+    open.title = item.passive ? '' : item.settings ? 'Open ' + item.settings + ' settings' : 'Open activity';
+    document.body.classList.toggle('notice-passive', Boolean(item.passive));
     const paths = item.kind === 'music' ? '<path d="M9 18V5l10-2v13M9 8l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>'
       : item.kind === 'timer' ? '<circle cx="12" cy="13" r="8"/><path d="M9 2h6m-3 3V2m0 7v5l3 2"/>'
       : item.kind === 'ai' ? '<path d="m12 2 2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5Z"/>'
@@ -308,28 +322,32 @@ const activityQueue = new NotchActivity.Queue({ change: (item) => {
     if (state === 'closed' && !dragDepth && !transferActive && (!hoverSuppressed || item.coalesceKey === 'hardware')) setState('peek');
     else updateGeometry();
   } else {
-    document.body.classList.remove('has-notice', 'has-notice-meter');
+    document.body.classList.remove('has-notice', 'has-notice-meter', 'notice-passive');
     if (state === 'peek' && !pointerInside && !pinned && !openedByClick) collapseNotch();
     else updateGeometry();
   }
 } });
 function postActivity(item) { activityQueue.push(item); }
 function openActivity() {
+  if (activeNotice?.passive) return;
   const tab = activeNotice?.tab, settingsPage = activeNotice?.settings; activityQueue.clear();
   if (settingsPage) { notch.openSystemSettings(settingsPage); return; }
   if (tab) openNotch(tab);
 }
 notch.onSystemAction((event) => {
   if (preferences.systemFeedback === false) return;
+  // Passive: the user already did the thing with a key. Showing them a
+  // button that opens Windows Settings turns an acknowledgement into an
+  // interruption they have to dismiss.
   const base = { id: 'hardware:' + event.action, coalesceKey: 'hardware', replace: true, priority: 70,
-    duration: 1700, expiresAt: Date.now() + 2200 };
+    passive: true, duration: 1700, expiresAt: Date.now() + 2200 };
   if (event.action === 'volume' && Number.isFinite(event.value)) postActivity({ ...base,
     kind: event.muted ? 'muted' : 'volume', title: event.muted ? 'Muted' : event.value === 0 ? 'Volume off' : 'Volume',
-    detail: event.value + '%', progress: event.muted ? 0 : event.value, settings: 'sound' });
+    detail: event.value + '%', progress: event.muted ? 0 : event.value });
   if (event.action === 'brightness' && Number.isFinite(event.value)) postActivity({ ...base,
-    kind: 'brightness', title: 'Display brightness', detail: event.value + '%', progress: event.value, settings: 'display' });
+    kind: 'brightness', title: 'Display brightness', detail: event.value + '%', progress: event.value });
   if (event.action === 'capslock' && typeof event.enabled === 'boolean') postActivity({ ...base,
-    kind: 'capslock', title: 'Caps Lock', detail: event.enabled ? 'On · Capital letters' : 'Off · Lowercase letters', settings: 'keyboard' });
+    kind: 'capslock', title: 'Caps Lock', detail: event.enabled ? 'On · Capital letters' : 'Off · Lowercase letters' });
 });
 document.getElementById('notice-open').addEventListener('click', openActivity);
 document.getElementById('activity-inline').addEventListener('click', openActivity);
@@ -455,6 +473,7 @@ function renderShelf(items) {
 
   const count = shelfItems.length;
   document.body.classList.toggle('has-files', count > 0);
+  refreshIdle();
   els.shelfCount.textContent = count ? 'File shelf · ' + count : 'File shelf';
   els.peekShelf.textContent = count ? count + ' files ready' : 'Ready to share';
   els.closedCount.replaceChildren();
@@ -1160,10 +1179,30 @@ function renderAiSessions() {
   const working = list.filter((s) => AiState.kindOf(s, now) === 'working').length;
   document.body.classList.toggle('ai-waiting', waiting > 0);
   document.body.classList.toggle('ai-working', working > 0);
+  refreshIdle();
   els.peekAi.hidden = waiting + working === 0;
   els.peekAi.title = working + ' working · ' + waiting + ' waiting';
   els.peekAiCount.textContent = waiting + working > 1 ? String(waiting + working) : '';
   AiPanel.updateSessions(aiSessions);
+  paintClosedAgent(now);
+}
+
+/**
+ * While an agent is working the resting notch carries its provider and how
+ * long it has been going, so the answer to "is it still thinking?" does not
+ * require opening anything.
+ */
+function paintClosedAgent(now = Date.now()) {
+  const running = AiState.sortSessions(aiSessions, now)
+    .filter((session) => AiState.kindOf(session, now) === 'working')
+    .sort((a, b) => (a.startedAt || now) - (b.startedAt || now))[0];
+  els.closedAgent.hidden = !running;
+  if (!running) return;
+  const provider = running.provider === 'codex' ? 'codex' : 'claude';
+  els.closedAgent.dataset.agent = provider;
+  els.closedAgent.title = (provider === 'codex' ? 'Codex' : 'Claude') + ' · ' + running.name;
+  els.closedAgentTime.textContent = running.startedAt
+    ? UtilityPanels.clock(Math.max(0, (now - running.startedAt) / 1000), true) : '';
 }
 
 let aiDashboardReady = false;
@@ -1206,6 +1245,7 @@ function renderTimer(value) {
   const wasComplete = timerState.completed;
   timerState = value || { hasSession: false };
   document.body.classList.toggle('has-timer', !!timerState.hasSession);
+  refreshIdle();
   els.closedTimer.textContent = timerState.hasSession ? UtilityPanels.clock(timerState.reading, timerState.countsUp) : '';
   UtilityPanels.updateTimer(timerState);
   tickClock();
@@ -1376,6 +1416,7 @@ function focusSendTab() {
   // Only the wording and the quiet threshold move between file events, and the
   // shortest thing either can say is a minute, so twice a minute is plenty.
   setInterval(renderAiSessions, 30000);
+  setInterval(() => { if (!els.closedAgent.hidden) paintClosedAgent(); }, 1000);
 
   mountModulePanels();
   setTab('send');

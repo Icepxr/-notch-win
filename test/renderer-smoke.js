@@ -180,7 +180,34 @@ app.whenReady().then(async () => {
     await settled();
     let box = await layout();
     check(box.width === 184 && box.height === 28, 'closed notch uses shared geometry');
+    // With nothing playing, parked or running, the notch is meant to be
+    // indistinguishable from the bezel.
+    check(await js(`(() => {
+      if (!document.body.classList.contains('is-idle')) return false;
+      const arrow = document.querySelector('.layer-closed > svg');
+      const sensor = document.querySelector('.notch-sensor');
+      return getComputedStyle(arrow).display === 'none'
+        && getComputedStyle(sensor).backgroundColor === 'rgba(0, 0, 0, 0)';
+    })()`), 'an idle notch paints no symbol at all');
     await snapshot('closed');
+
+    // A working agent is the one thing worth showing on a resting notch:
+    // which agent, and how long it has been going.
+    emit('ai', [{ pid: 4242, name: 'Refactoring the shelf', folder: 'Islet', cwd: 'C:\Demo',
+      provider: 'claude', status: 'busy', statusUpdatedAt: Date.now() - 95000, startedAt: Date.now() - 95000 }]);
+    await settled();
+    const agent = await js(`(() => {
+      const el = document.getElementById('closed-agent');
+      return { hidden: el.hidden, provider: el.dataset.agent, time: document.getElementById('closed-agent-time').textContent,
+        shown: getComputedStyle(el).display !== 'none', idle: document.body.classList.contains('is-idle') };
+    })()`);
+    check(!agent.hidden && agent.shown && agent.provider === 'claude' && /^\d+:\d\d$/.test(agent.time) && !agent.idle,
+      'a working agent shows its provider and running time on the resting notch (' + agent.time + ')');
+    await snapshot('closed-agent');
+    emit('ai', []);
+    await settled();
+    check(await js(`document.getElementById('closed-agent').hidden && document.body.classList.contains('is-idle')`),
+      'the notch goes quiet again when the agent finishes');
 
     await js(`document.getElementById('closed-trigger').click()`);
     await settled();
@@ -667,8 +694,12 @@ app.whenReady().then(async () => {
     emit('system-action', { action: 'brightness', value: 70 }); await delay(160);
     check(await js(`document.querySelector('#notice-title').textContent === 'Display brightness' && document.querySelector('#notice-meter').getAttribute('aria-valuenow') === '70'`), 'brightness replaces volume immediately with the real percentage');
     await snapshot('feedback-brightness');
+    // Hardware feedback acknowledges something the user already did with a
+    // key. It must not turn into a button that opens Windows Settings.
     await js(`document.querySelector('#notice-open').click()`); await delay(100);
-    check(openedSystemSettings === 'display', 'a brightness activity opens display settings through the validated IPC action');
+    check(openedSystemSettings === null && await js(`document.querySelector('#notice-open').disabled
+      && document.body.classList.contains('notice-passive')`),
+      'hardware feedback stays a readout and opens nothing when pressed');
     emit('system-action', { action: 'capslock', enabled: true }); await delay(180);
     check(await js(`activeNotice.title === 'Caps Lock' && activeNotice.detail.startsWith('On') && document.querySelector('#notice-meter').hidden`), 'Caps Lock feedback is explicit text and does not show a fake percentage');
     await snapshot('feedback-capslock');

@@ -200,13 +200,58 @@ body[data-notice="ai"] .notice-symbol { color: #c3b3e9; }
 .notice-meter { display: block; height: 3px; width: 100%; background: #ffffff20; border-radius: 4px; overflow: hidden; margin-top: 1px; }
 .notice-meter i { display: block; width: 100%; height: 100%; background: var(--accent); border-radius: inherit; transform: scaleX(var(--notice-progress, 0)); transform-origin: left; transition: transform 120ms ease; }
 body.has-notice-meter .notice-symbol { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-body.has-notice-meter .activity-inline::after { content: ''; position: absolute; height: 2px; bottom: 0; left: 0; right: 0; background: var(--accent); transform-origin: left; transform: scaleX(var(--notice-progress, 0)); transition: transform 120ms ease; border-radius: 3px; }
+/* The level reads as a fill inside the pill, so the number and the amount are
+   the same object rather than a bar pinned underneath it. */
+body.has-notice-meter .activity-inline::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 30%, transparent) 0 var(--notice-fill, 0%), transparent var(--notice-fill, 0%));
+  transition: --notice-fill 140ms ease;
+  pointer-events: none;
+}
 @media (prefers-reduced-motion: reduce) { .notice-meter i, body.has-notice-meter .activity-inline::after { transition: none; } }
 .notice-copy strong { font-size: 12px; font-weight: 550; color: #f1f1f4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .notice-copy small { font-size: 10px; color: #b7b7c0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #notice-dismiss { width: 24px; height: 24px; flex: 0 0 24px; }
 .activity-inline { display: none; }
-body.has-notice.state-open .activity-inline { display: flex; align-items: center; justify-content: space-between; position: absolute; bottom: 10px; right: 22px; left: 124px; height: 25px; background: #1b1b1e; border: 1px solid #ffffff12; border-radius: 8px; color: #eeeef4; padding: 0 9px; text-align: left; font-size: 10px; z-index: 4; }
+/* A readout, centred, that sits above the footer instead of lying across it.
+   It carries its own level as a ring of fill rather than a bar stuck to one
+   edge, and it is not a button: pressing a volume key is not an invitation
+   to open anything. */
+body.has-notice.state-open .activity-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  position: absolute;
+  bottom: 38px;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: auto;
+  max-width: calc(100% - 48px);
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #16161acc;
+  box-shadow: inset 0 0 0 1px #ffffff16, 0 8px 22px -10px #000000e6;
+  backdrop-filter: blur(16px) saturate(140%);
+  color: #f1f1f6;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  z-index: 4;
+  animation: notice-rise 220ms cubic-bezier(.2, .8, .3, 1);
+}
+
+@keyframes notice-rise {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+}
+
+/* Passive notices lose the arrow and the pointer: there is nothing to press. */
+body.notice-passive .activity-inline { cursor: default; }
+body.notice-passive .activity-inline > svg { display: none; }
 .activity-inline svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.5; }
 .activity-inline span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-card { border-radius: 14px; }
@@ -438,3 +483,105 @@ body.dragging .ghost-tile { animation: none; transform: none; }
 .item[data-kind="text"] .name { -webkit-line-clamp: 3; font-size: 10px; line-height: 1.35; color: #c9c9d2; }
 
 #paste-text { margin-left: 6px; }
+
+/* --- the resting waveform --------------------------------------------------
+
+   If a track is loaded the waveform is shown, playing or paused: the question
+   it answers is "is there music here", and pausing does not change that
+   answer. Paused it rests at a readable shape instead of collapsing to stubs,
+   and it sits at the right edge of the notch rather than beside the artwork,
+   so the cover reads as the subject and the waveform as its state. */
+
+body.has-media .equalizer {
+  margin-left: auto;
+  margin-right: 2px;
+  gap: 2.5px;
+}
+
+.equalizer i { height: 7px; transition: height 220ms ease, opacity 220ms ease; }
+.equalizer i:nth-child(1) { height: 5px; }
+.equalizer i:nth-child(2) { height: 11px; }
+.equalizer i:nth-child(3) { height: 7px; }
+.equalizer i:nth-child(4) { height: 12px; }
+
+/* Paused: present, quieter, and not moving. */
+body.has-media:not(.is-playing) .equalizer { opacity: .58; }
+body.has-media:not(.is-playing) .equalizer i { animation: none; }
+
+/* With files parked the count keeps its place and the waveform still ends up
+   last, so the two never trade positions between tracks. */
+body.has-media.has-files .closed-count { margin-left: auto; }
+body.has-media.has-files .equalizer { margin-left: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .equalizer i { animation: none !important; transition: none; }
+}
+
+/* --- the resting notch, with nothing to say --------------------------------
+
+   A notch that is always showing an upload arrow is an app advertising
+   itself. With no music, no parked files, no timer, no running agent and
+   nothing in flight, it should be indistinguishable from the bezel: black,
+   and silent. The hover target stays exactly where it was, so it is still
+   there when the pointer goes looking for it. */
+
+body.state-closed.is-idle .layer-closed > svg,
+body.state-closed.is-idle .closed-count { display: none; }
+
+/* The sensor is the grab hint, not information. An idle notch keeps its hit
+   region — the pointer still finds it — but paints nothing. */
+body.state-closed.is-idle .notch-sensor { background: transparent; }
+
+/* --- the working agent on the resting notch --------------------------------
+
+   The marks are drawn here rather than shipped as brand assets: a six-spoke
+   burst for Claude, a hexagonal knot for Codex. They are deliberately our own
+   shapes, recognisable in context without carrying anyone's logo file. */
+
+.closed-agent {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  margin-right: 2px;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--agent-mark, #b9b9c4);
+}
+
+body.ai-working.state-closed .closed-agent:not([hidden]) { display: flex; }
+
+/* The agent is the message. Keeping the upload arrow beside it turns one
+   clear statement into two competing ones. */
+body.ai-working.state-closed:not(.has-files):not(.has-media):not(.has-timer) .layer-closed > svg,
+body.ai-working.state-closed:not(.has-files):not(.has-media):not(.has-timer) .closed-count { display: none; }
+.closed-agent[data-agent="codex"] { --agent-mark: #7fd1b9; }
+.closed-agent[data-agent="claude"] { --agent-mark: #e8a87c; }
+
+.agent-mark {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  background: currentColor;
+  /* A quiet pulse, so a long run never looks frozen. */
+  animation: agent-pulse 2.4s ease-in-out infinite;
+}
+
+.closed-agent[data-agent="claude"] .agent-mark {
+  -webkit-mask: conic-gradient(from 0deg,
+    currentColor 0 7deg, transparent 7deg 53deg, currentColor 53deg 67deg, transparent 67deg 113deg,
+    currentColor 113deg 127deg, transparent 127deg 173deg, currentColor 173deg 187deg, transparent 187deg 233deg,
+    currentColor 233deg 247deg, transparent 247deg 293deg, currentColor 293deg 307deg, transparent 307deg 353deg,
+    currentColor 353deg 360deg) center / 100% 100% no-repeat;
+}
+
+.closed-agent[data-agent="codex"] .agent-mark {
+  -webkit-mask:
+    radial-gradient(closest-side, transparent 52%, currentColor 54% 72%, transparent 74%) center / 100% 100% no-repeat;
+}
+
+.agent-time { color: #c2c2cc; }
+
+@keyframes agent-pulse { 50% { opacity: .5; } }
+
+@media (prefers-reduced-motion: reduce) { .agent-mark { animation: none; } }
