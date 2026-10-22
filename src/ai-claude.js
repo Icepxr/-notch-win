@@ -109,7 +109,12 @@ function readClaudeLimits({ executable = findClaude(), spawnProcess = spawn, tim
         if (stage === 'initialize') { stage = 'usage'; send('usage', { subtype: 'get_usage', skip_behaviors: true }); }
         else {
           reading = response.response || {};
-          if (reading.rate_limits_available !== true) { finish({ status: 'signin' }); return; }
+          if (reading.rate_limits_available !== true) {
+            // An account is present when the CLI profile carries an org; the
+            // plan simply does not publish rate limits.
+            finish({ status: before.organization ? 'no-limits' : 'signin' });
+            return;
+          }
           // EOF lets the CLI save its quota-cache timestamp before we verify it.
           child.stdin.end();
           exitTimer = setTimeout(() => { child.kill(); }, 2000);

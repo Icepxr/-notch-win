@@ -48,7 +48,10 @@ function stub(answer = reading, failure = null) {
   assert.deepEqual(fixture.calls.map(x => x.request), [{ subtype: 'initialize' }, { subtype: 'get_usage', skip_behaviors: true }], 'only account-control requests, no model turn');
   assert.equal((await readClaudeLimits({ executable: null })).status, 'missing');
   assert.equal((await readClaudeLimits({ executable: 'fixture.exe', ...stub({}, 'Unsupported control request subtype'), readProfile: noProfile })).status, 'outdated');
-  assert.equal((await readClaudeLimits({ executable: 'fixture.exe', ...stub({ rate_limits_available: false }), readProfile: noProfile })).status, 'signin');
+  // An account that reports no rate limits is not an account that needs to
+  // sign in: the CLI answered successfully, it just has nothing to publish.
+  assert.equal((await readClaudeLimits({ executable: 'fixture.exe', ...stub({ rate_limits_available: false }), readProfile: noProfile })).status, 'no-limits');
+  assert.equal((await readClaudeLimits({ executable: 'fixture.exe', ...stub({ rate_limits_available: false }), readProfile: () => ({ organization: null, fetchedAt: now }) })).status, 'signin', 'with no account on file it really is a sign-in');
   assert.equal((await readClaudeLimits({ executable: 'fixture.exe', ...stub(), readProfile: () => ({ organization: 'same', fetchedAt: now - 3600000 }) })).status, 'unavailable', 'old cached readings cannot masquerade as live quota');
   let version = 0;
   assert.equal((await readClaudeLimits({ executable: 'fixture.exe', ...stub(), readProfile: () => ({ organization: String(++version), fetchedAt: now }) })).status, 'unavailable', 'switching accounts cannot mix quota');

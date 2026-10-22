@@ -65,6 +65,17 @@ function luminance(r, g, b) {
   return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
 }
 
+async function meanLuminanceOf(selector) {
+  const rect = await js(`(() => { const el = document.querySelector(${JSON.stringify(selector)});
+    if (!el) return null; const r = el.getBoundingClientRect();
+    return { x: Math.floor(r.x), y: Math.floor(r.y), width: Math.ceil(r.width), height: Math.ceil(r.height) }; })()`);
+  if (!rect || rect.width < 2 || rect.height < 2) return null;
+  const bitmap = (await win.webContents.capturePage(rect)).toBitmap();
+  let total = 0;
+  for (let i = 0; i < bitmap.length; i += 4) total += luminance(bitmap[i + 2], bitmap[i + 1], bitmap[i]);
+  return total / (bitmap.length / 4);
+}
+
 async function contrastOf(selector) {
   const rect = await js(`(() => { const el = document.querySelector(${JSON.stringify(selector)});
     if (!el) return null; const r = el.getBoundingClientRect();
@@ -481,6 +492,23 @@ app.whenReady().then(async () => {
     check(fixturePreferences.glass === 'off' && await js(`document.body.dataset.glass === 'off'
       && getComputedStyle(document.querySelector('.shelf')).backdropFilter === 'none'`),
       'turning glass off in the control panel reaches the notch and drops the blur');
+    // Three levels the eye can separate, measured off the rendered pixels.
+    // A control that changes a CSS value nobody can see is a control that
+    // does not work, which is exactly how this one shipped the first time.
+    const drawn = {};
+    for (const level of ['high', 'medium', 'off']) {
+      await pjs(`document.querySelector('.segmented[data-preference="glass"] button[data-value="${level}"]').click()`);
+      await delay(320);
+      drawn[level] = await meanLuminanceOf('#card');
+    }
+    console.log('      glass levels, mean panel luminance: '
+      + Object.entries(drawn).map(([k, v]) => k + ' ' + v.toFixed(4)).join(', '));
+    const spread = [['high', 'medium'], ['medium', 'off'], ['high', 'off']]
+      .map(([a, b]) => Math.abs(drawn[a] - drawn[b]));
+    check(Math.min(...spread) > 0.0015,
+      'each glass level draws a visibly different surface (closest pair differs by '
+      + Math.min(...spread).toFixed(4) + ')');
+
     await pjs(`document.querySelector('.segmented[data-preference="glass"] button[data-value="high"]').click()`);
     await delay(200);
     // Glass is at its most visible with a cover behind it, which is the

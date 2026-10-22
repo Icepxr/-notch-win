@@ -26,28 +26,71 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 }
 body.state-open #card { background: var(--surface-open); box-shadow: 0 16px 32px -12px #000c; }
 body.state-open:not([data-glass="off"]) #card {
-  background: linear-gradient(180deg, var(--surface-sheen), var(--surface-open) 78%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, var(--islet-lens, .03)), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, var(--surface-sheen), var(--surface-open) 78%);
 }
 body.state-closed #card, body.state-peek #card { background: var(--surface-rest); }
 button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline-color: var(--accent); }
 body.state-open .layer-open::before { display: none; }
 body.state-open:not([data-glass="off"]) .layer-open::before { display: none; }
+/* The sweep rides the gradient across a fixed-size box instead of moving the
+   box itself: a translated overlay widens .layer-open's scroll area, which
+   pushes real content around at narrow widths. */
+body.state-open[data-glass="high"] .layer-open::before {
+  display: block;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(104deg, transparent 42%, #ffffff14 50%, transparent 58%);
+  background-size: 300% 100%;
+  transform: none;
+  animation: islet-sweep 820ms cubic-bezier(.24, .7, .3, 1) 90ms 1 both;
+}
+@keyframes islet-sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.state-open[data-glass="high"] .layer-open::before { animation: none; background: none; }
+}
 body.state-open.has-media:not([data-glass="off"]) .shell-content::before {
-  opacity: .2; filter: blur(40px) saturate(120%) brightness(.45);
+  opacity: var(--islet-bloom, .2); filter: blur(40px) saturate(120%) brightness(.45);
 }
-body.state-open:not([data-tab="media"]) .shell-content::before { opacity: .07; }
-body.state-open:not([data-glass="off"]) .shell-content::after {
-  box-shadow: inset 1px 0 #ffffff06, inset -1px 0 #ffffff06, inset 0 -1px #ffffff12;
+body.state-open:not([data-tab="media"]) .shell-content::before { opacity: calc(var(--islet-bloom, .2) * .3); }
+body.state-open .shell-content::after {
+  box-shadow: inset 1px 0 #ffffff06, inset -1px 0 #ffffff06, inset 0 -1px var(--islet-rim, #ffffff12);
 }
-body.state-open:not([data-glass="off"]) :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
-  background: #ffffff08; border-color: var(--edge-soft); box-shadow: none; backdrop-filter: none;
+/* Three glass levels have to be three things a person can tell apart at a
+   glance, or the control is a lie. Blur alone does not do it: there is very
+   little behind these surfaces to blur, so 8px and 12px look identical. What
+   separates them is how much light and colour the panel carries — bloom
+   strength, surface translucency and saturation — with blur along for the
+   ride. Solid is genuinely opaque, not a thin sheet. */
+body[data-glass="high"] {
+  --islet-blur: 18px; --islet-sat: 155%; --islet-surface: #ffffff1a; --islet-lens: .115;
+  --islet-surface-lift: #ffffff24; --islet-bloom: .4; --islet-rim: #ffffff26;
 }
-body.state-open[data-glass="high"] :is(.ai-card, .clip-list, .scratchpad) { background: #ffffff0a; }
-body[data-glass="low"] { --islet-blur: 4px; }
-body[data-glass="medium"] { --islet-blur: 8px; }
-body[data-glass="high"] { --islet-blur: 12px; }
+body[data-glass="medium"] {
+  --islet-blur: 9px; --islet-sat: 112%; --islet-surface: #ffffff09; --islet-lens: .012;
+  --islet-surface-lift: #ffffff0e; --islet-bloom: .1; --islet-rim: #ffffff14;
+}
+body[data-glass="off"] {
+  --islet-surface: #16161b; --islet-surface-lift: #1c1c22; --islet-bloom: 0; --islet-rim: #ffffff10;
+}
+
+body.state-open :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
+  background: var(--islet-surface); border-color: var(--edge-soft); box-shadow: none; backdrop-filter: none;
+}
+body.state-open :is(.ai-card, .clip-list, .scratchpad) { background: var(--islet-surface-lift); }
 body.state-open:not([data-glass="off"]):not(.is-morphing) :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
-  backdrop-filter: blur(var(--islet-blur, 12px)) saturate(110%);
+  backdrop-filter: blur(var(--islet-blur)) saturate(var(--islet-sat));
+}
+/* Only the top level gets the lit top lip; it is the cheapest cue that the
+   surface is glass rather than paint. */
+body.state-open[data-glass="high"] :is(.card, .shelf, .device, .ai-card, .clip-list, .scratchpad) {
+  box-shadow: inset 0 1px 0 #ffffff1a;
 }
 body.is-morphing .shell-content::before { visibility: hidden; }
 .layer-open, body[data-tab="ai"] .layer-open { height: var(--page-height, 350px); padding: 14px 22px 12px; gap: 10px; }
@@ -125,7 +168,7 @@ body.state-open:not([data-glass="off"]) .np, .np { background: none; border: 0; 
 .section-actions button { min-height: 24px; border-radius: 6px; padding: 4px 8px; font-size: 10px; background: #ffffff0b; color: #d0d0d8; }
 .section-actions button:hover { background: #ffffff18; }
 .devices { gap: 7px; }
-.device, body.state-open:not([data-glass="off"]) .device { border-radius: 13px; background: #ffffff08; border: 1px solid #ffffff08; min-height: 51px; transition: background 140ms, border-color 140ms, transform 180ms; }
+.device, body.state-open:not([data-glass="off"]) .device { border-radius: 13px; background: var(--islet-surface, #ffffff08); border: 1px solid #ffffff08; min-height: 51px; transition: background 140ms, border-color 140ms, transform 180ms; }
 .device .alias { font-size: 12px; font-weight: 500; }
 .device .addr { font-size: 10px; color: #b1b1bb; }
 body.dragging .shelf { border-color: #b3d3ff; background: #9fc7ff12 !important; transform: translate(var(--drop-x,0), var(--drop-y,0)); }
