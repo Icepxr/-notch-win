@@ -188,6 +188,14 @@ app.whenReady().then(async () => {
     check(box.width === 520 && box.height === 350, 'file shelf opens at a compact content height');
     check(box.viewport[0] === geometry.hostSize.width && box.viewport[1] === geometry.hostSize.height, 'Windows backing surface stays reserved for every state and spring overshoot');
     check(box.panelOverflow <= 1 && box.footerBottom < box.bottom, 'empty send panel fits without clipping');
+    // The shelf clips its own overflow, so a caption can disappear inside it
+    // while the panel around it still measures clean.
+    check(await js(`(() => {
+      const shelf = document.querySelector('.shelf');
+      const caption = document.querySelector('.drop-caption');
+      if (!shelf || !caption) return false;
+      return Math.round(caption.getBoundingClientRect().bottom) <= Math.round(shelf.getBoundingClientRect().bottom);
+    })()`), 'the empty shelf shows its whole invitation, captions included');
     await snapshot('send-empty');
     await js(`pointerInside = true`);
     await js(`els.explore.click()`); await settled();
@@ -295,7 +303,21 @@ app.whenReady().then(async () => {
       limits: { codex: { source: 'account', observedAt: aiNow, plan: 'Demo plan', windows: [{ used: 27, minutes: 300, resetsAt: aiNow + 7200000 }, { used: 54, minutes: 10080, resetsAt: aiNow + 86400000 * 3 }] } },
       buckets: [{ provider: 'codex', day: aiDay, model: 'Demo model', project: '<Demo project>', total: 125000, input: 25000, cached: 80000, write: 0, output: 20000, responses: 12 }, { provider: 'claude', day: aiDay, model: 'Demo Claude', project: 'Demo notes', total: 5000, input: 2000, cached: 2000, write: 0, output: 1000, responses: 3 }] });
     await settled();
-    check(await js(`document.querySelector('[data-card="limits"]').textContent.includes('73%') && document.querySelectorAll('.ai-window').length === 2`), 'AI quota cards show remaining allowance and both reset windows');
+    check(await js(`document.querySelector('[data-card="limits"]').textContent.includes('73%')
+      && document.querySelectorAll('.ai-limit-block[data-agent="codex"] .ai-window').length === 2`),
+      'AI quota cards show remaining allowance and both reset windows');
+    // An agent with no publishable quota gets the same card shape rather than
+    // a bare sentence beside the other agent's full card.
+    check(await js(`(() => {
+      const block = document.querySelector('.ai-limit-block[data-agent="claude"]');
+      return !!block && block.querySelectorAll('.ai-window').length === 2
+        && block.textContent.includes('Not a plan allowance');
+    })()`), 'an agent without a quota still reports its activity in the same shape');
+    check(await js(`(() => {
+      const codex = getComputedStyle(document.querySelector('.ai-limit-block[data-agent="codex"] .ai-window strong')).color;
+      const claude = getComputedStyle(document.querySelector('.ai-limit-block[data-agent="claude"] .ai-window strong')).color;
+      return codex !== claude;
+    })()`), 'each agent reads in its own colour');
     check(await js(`document.querySelector('[data-card="projects"]').textContent.includes('<Demo project>') && !document.querySelector('demo')`), 'AI project names render as text, never HTML');
     check(await js(`document.body.classList.contains('ai-working') && document.querySelector('.ai-live-row').textContent.includes('Codex')`), 'Codex activity reaches the live card and compact indicator');
     check(await js(`parseFloat(document.querySelector('.ai-trend i.is-today').style.height) === 54`), 'daily graph heights render under the strict content security policy');

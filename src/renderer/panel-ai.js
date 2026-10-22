@@ -41,20 +41,41 @@ window.AiPanel = (() => {
     const m = Math.ceil(delta / 60000);
     return 'Resets in ' + (m >= 1440 ? Math.floor(m / 1440) + 'd ' + Math.floor(m % 1440 / 60) + 'h' : m >= 60 ? Math.floor(m / 60) + 'h ' + m % 60 + ' min' : m + ' min');
   }
-  function limitCard(now) {
+  /**
+   * An agent with no publishable quota still gets the shape of the quota card,
+   * filled with what this machine does know. Leaving one agent as a bare
+   * sentence beside the other's full card reads as broken rather than as
+   * "there is nothing to report here".
+   */
+  function activityBlock(id, rows) {
+    const mine = (rows || []).filter((r) => r.provider === id);
+    if (!mine.length) return '';
+    const sums = mine.reduce((a, r) => ({ total: a.total + (r.total || 0), responses: a.responses + (r.responses || 0) }),
+      { total: 0, responses: 0 });
+    const window = period === 'today' ? 'Today' : period + ' days';
+    return `<div class="ai-limit-windows">`
+      + `<div class="ai-window"><div><span>Tokens · ${window}</span><strong>${count(sums.total)}</strong></div></div>`
+      + `<div class="ai-window"><div><span>Responses · ${window}</span><strong>${count(sums.responses)}</strong></div></div>`
+      + `</div><small class="ai-limit-note">Counted from this machine's logs. Not a plan allowance.</small>`;
+  }
+
+  function limitCard(now, rows) {
     const providers = provider === 'all' ? ['codex', 'claude'] : [provider];
     return card('limits', `<div class="ai-card-head"><span>Remaining quota</span><span class="ai-soft">Account</span></div>` + providers.map((id) => {
       const limits = data.limits[id];
       if (!limits) {
         const reason = id === 'claude' ? { loading: 'Reading Claude account limits…', missing: 'Claude Code CLI not found', signin: 'Sign in to Claude Code with a supported plan', 'no-limits': 'This Claude plan does not publish usage limits', outdated: 'Update Claude Code to read account limits', unavailable: 'Claude account limits could not be read. Try Refresh.' }[data.claudeAccountStatus] || 'No Claude account reading yet' : { loading: 'Reading account limits…', missing: 'Codex CLI not found', signin: 'Sign in to Codex with ChatGPT', unavailable: 'Account quota is temporarily unavailable' }[data.accountStatus] || 'No quota data yet';
-        return `<div class="ai-limit-empty"><b class="ai-provider-${id}">${labels[id]}</b><span>${reason}${id === 'claude' && data.claudeAccountStatus === 'signin' ? '<small class="ai-signin-hint">In Terminal: <code>claude auth login</code>, then Refresh.</small><button type="button" class="ai-connect" data-ai-connect>Connect Claude <span aria-hidden="true">↗</span></button>' : ''}</span></div>`;
+        const signin = id === 'claude' && data.claudeAccountStatus === 'signin'
+          ? '<small class="ai-signin-hint">In Terminal: <code>claude auth login</code>, then Refresh.</small><button type="button" class="ai-connect" data-ai-connect>Connect Claude <span aria-hidden="true">↗</span></button>'
+          : '';
+        return `<div class="ai-limit-block" data-agent="${id}"><div class="ai-limit-title"><b class="ai-provider-${id}">${labels[id]}</b><span>${reason}</span></div>${activityBlock(id, rows)}${signin}</div>`;
       }
       const stale = now - limits.observedAt > 600000 || limits.source !== 'account';
-      return `<div class="ai-limit-title"><b class="ai-provider-${id}">${labels[id]}</b><span>${esc(limits.plan)} · ${stale ? 'Log snapshot · May be stale' : 'Latest account reading'}</span></div><div class="ai-limit-windows">${limits.windows.map((w) => {
+      return `<div class="ai-limit-block" data-agent="${id}"><div class="ai-limit-title"><b class="ai-provider-${id}">${labels[id]}</b><span>${esc(limits.plan)} · ${stale ? 'Log snapshot · May be stale' : 'Latest account reading'}</span></div><div class="ai-limit-windows">${limits.windows.map((w) => {
         const expired = w.resetsAt && w.resetsAt <= now;
         const label = (w.minutes >= 1440 ? (w.minutes / 1440).toLocaleString('en', { maximumFractionDigits: 1 }) + 'd' : w.minutes >= 60 ? (w.minutes / 60).toLocaleString('en', { maximumFractionDigits: 1 }) + 'h' : w.minutes ? w.minutes + ' min' : 'Quota window') + (w.scope ? ' · ' + w.scope : '');
         return `<div class="ai-window ${w.used >= 80 ? 'ai-low' : ''} ${expired || stale ? 'ai-stale' : ''}"><div><span>${label}</span><strong>${expired ? '—' : Math.round(100 - w.used) + '%'}</strong></div><progress max="100" value="${expired ? 0 : 100 - w.used}" aria-label="${labels[id]} remaining · ${label}"></progress><small title="${w.resetsAt ? esc(new Date(w.resetsAt).toLocaleString('en-US')) : ''}">${resetText(w, now)}</small></div>`;
-      }).join('')}</div>`;
+      }).join('')}</div></div>`;
     }).join('') + (data.resets !== null && data.resets !== undefined && provider !== 'claude' ? `<div class="ai-reset-credit">Available Codex resets: ${data.resets.toLocaleString()}</div>` : ''), true);
   }
   function ranking(rows, key, title) {
@@ -84,7 +105,8 @@ window.AiPanel = (() => {
     const activityMax = Math.max(1, ...activityDays.map((d) => d.value));
     const activity = card('activity', `<div class="ai-card-head">Activity<span class="ai-soft">28 days</span></div><div class="ai-heatmap">${activityDays.map((d) => `<i class="ai-level-${d.value ? Math.max(1, Math.ceil(d.value / activityMax * 4)) : 0}" title="${d.key} · ${count(d.value)} token"></i>`).join('')}</div>`, true);
     // Preserve scroll and keyboard focus: controls remain mounted across polls.
-    container.innerHTML = limitCard(now) + tokenCard + liveCard + trend + ranking(rows, 'model', 'Models') + ranking(rows, 'project', 'Projects') + activity;
+    container.dataset.agent = provider;
+    container.innerHTML = limitCard(now, rows) + tokenCard + liveCard + trend + ranking(rows, 'model', 'Models') + ranking(rows, 'project', 'Projects') + activity;
     container.querySelectorAll('[data-height]').forEach((bar) => { bar.style.height = bar.dataset.height + 'px'; });
     if (hidden.length === Object.keys(cards).length) container.innerHTML = '<p class="ai-empty">Choose cards from the ⋯ menu.</p>';
   }

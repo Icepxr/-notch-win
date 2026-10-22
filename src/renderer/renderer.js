@@ -189,8 +189,16 @@ let musicPalette = null;
 
 function applyColors() {
   const followMusic = preferences.musicColors !== false;
-  const seed = followMusic && musicPalette ? { ...preferences, ...musicPalette } : preferences;
+  // The notch stays the black the user chose. Only the accent follows the
+  // music, so the colour lands on the linework, the artwork's aura and the
+  // playback readout rather than washing the whole surface. Feeding just the
+  // accent through NotchAppearance.colors() keeps it legible against that
+  // same black, which is the contrast guarantee doing its job.
+  const seed = followMusic && musicPalette
+    ? { ...preferences, accentColor: musicPalette.accentColor }
+    : preferences;
   const colors = NotchAppearance.colors(seed);
+  document.documentElement.style.setProperty('--mood', colors.accent);
   for (const [token, color] of Object.entries({ '--panel': colors.surface, '--surface-rest': colors.rest,
     '--surface-open': colors.surface, '--surface-sheen': colors.sheen, '--accent': colors.accent })) {
     document.documentElement.style.setProperty(token, color);
@@ -453,18 +461,34 @@ function renderShelf(items) {
   els.clear.hidden = count === 0;
 
   if (!count) {
+    // Three outlines at the real tile size, rather than one large empty box.
+    // An empty rectangle says "nothing here"; tiles say "files go here, this
+    // is how they will look", and they fill the space with rhythm instead of
+    // air — which is what made this panel read as stiff.
     const hint = document.createElement('div');
     hint.className = 'drop-empty';
-    const symbol = document.createElement('span');
-    symbol.className = 'drop-symbol';
-    symbol.append(icon('<path d="M12 17V5m-4 4 4-4 4 4M5 15v5h14v-5"/>'));
+    const ghosts = document.createElement('div');
+    ghosts.className = 'drop-ghosts';
+    ghosts.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 5; i += 1) {
+      const tile = document.createElement('span');
+      tile.className = 'ghost-tile';
+      tile.style.setProperty('--ghost-index', String(i));
+      if (i === 2) {
+        const symbol = document.createElement('span');
+        symbol.className = 'drop-symbol';
+        symbol.append(icon('<path d="M12 17V5m-4 4 4-4 4 4M5 15v5h14v-5"/>'));
+        tile.append(symbol);
+      }
+      ghosts.append(tile);
+    }
     const title = document.createElement('span');
     title.className = 'drop-title';
-    title.textContent = 'Drop something here';
+    title.textContent = 'Drop files here';
     const caption = document.createElement('span');
     caption.className = 'drop-caption';
     caption.textContent = 'Send to your iPad or another nearby device.';
-    hint.append(symbol, title, caption);
+    hint.append(ghosts, title, caption);
     els.shelf.append(hint);
     updateDeviceHint();
     return;
@@ -539,7 +563,10 @@ function renderDevices(list) {
   if (!deviceList.length) {
     const hint = document.createElement('div');
     hint.className = 'device-empty';
-    hint.append(icon('<path d="M8.5 15.5a5 5 0 0 1 7 0M5 12a10 10 0 0 1 14 0M1.5 8.5a15 15 0 0 1 21 0"/><circle cx="12" cy="19" r="1"/>'));
+    const badge = document.createElement('span');
+    badge.className = 'device-badge is-searching';
+    badge.append(icon('<path d="M8.5 15.5a5 5 0 0 1 7 0M5 12a10 10 0 0 1 14 0M1.5 8.5a15 15 0 0 1 21 0"/><circle cx="12" cy="19" r="1"/>'));
+    hint.append(badge);
     const copy = document.createElement('span');
     const title = document.createElement('strong');
     title.textContent = 'Looking for nearby devices';

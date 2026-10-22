@@ -229,42 +229,196 @@ body.has-notice.state-open .activity-inline { display: flex; align-items: center
 
 /* --- colour that follows the music ----------------------------------------
 
-   Custom properties do not animate unless the browser knows they are colours,
-   so register them. With that, every surface and accent in the notch eases
-   from one album's palette to the next instead of snapping, and the handover
-   back to the user's own colours when the music stops is a fade rather than a
-   jump. The seeds come from ArtworkPalette; NotchAppearance.colors() has
-   already held them to the readability floor by the time they land here. */
+   The notch itself stays the black it was. Washing the whole surface in the
+   album's colour made it look like a different app every track, and a notch
+   is supposed to read as part of the bezel. So the mood colour goes where
+   colour belongs on a dark surface: the linework, the artwork's aura, and
+   the playback readout. Everything else stays black.
 
-@property --panel { syntax: '<color>'; inherits: true; initial-value: #080809; }
-@property --surface-rest { syntax: '<color>'; inherits: true; initial-value: #050506; }
-@property --surface-open { syntax: '<color>'; inherits: true; initial-value: #080809; }
-@property --surface-sheen { syntax: '<color>'; inherits: true; initial-value: #0e0e0f; }
+   Registering the colour tokens is what lets one album hand over to the next
+   as a fade instead of a jump. --mood is the album's colour after
+   NotchAppearance.colors() has held it to the readability floor. */
+
 @property --accent { syntax: '<color>'; inherits: true; initial-value: #aac4ef; }
+@property --mood { syntax: '<color>'; inherits: true; initial-value: #aac4ef; }
 
 :root {
   transition:
-    --panel 620ms cubic-bezier(.4, 0, .2, 1),
-    --surface-rest 620ms cubic-bezier(.4, 0, .2, 1),
-    --surface-open 620ms cubic-bezier(.4, 0, .2, 1),
-    --surface-sheen 620ms cubic-bezier(.4, 0, .2, 1),
-    --accent 620ms cubic-bezier(.4, 0, .2, 1);
+    --accent 620ms cubic-bezier(.4, 0, .2, 1),
+    --mood 620ms cubic-bezier(.4, 0, .2, 1);
 }
 
-/* While the cover is dressing the notch, let a little of that colour reach
-   the rim and the shoulders too, so the tint reads as the whole object being
-   lit rather than one card changing shade. */
+/* The aura. box-shadow rather than a pseudo-element because .art clips its
+   own overflow to keep the cover's corners, and a glow has to escape that.
+   It breathes, slowly, so the panel is never completely still. */
+body.is-dressed-by-music .np .art-lg {
+  box-shadow:
+    0 6px 20px -4px color-mix(in srgb, var(--mood) 48%, transparent),
+    0 0 26px -6px color-mix(in srgb, var(--mood) 34%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--mood) 30%, transparent);
+  animation: aura-breathe 5.6s ease-in-out infinite;
+}
+
+@keyframes aura-breathe {
+  50% {
+    box-shadow:
+      0 8px 28px -4px color-mix(in srgb, var(--mood) 64%, transparent),
+      0 0 38px -6px color-mix(in srgb, var(--mood) 46%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--mood) 38%, transparent);
+  }
+}
+
+/* Where the track has got to, in the colour of the track. */
+body.is-dressed-by-music #np-time { color: var(--mood); }
+body.is-dressed-by-music .np-bar { background: color-mix(in srgb, var(--mood) 16%, #ffffff18); }
+#np-fill { background: var(--mood); opacity: 1; }
+body.is-dressed-by-music .peek-np .art-sm { box-shadow: 0 0 12px -2px color-mix(in srgb, var(--mood) 55%, transparent); }
+
+/* The equalizer on the resting notch is linework too. */
+body.is-dressed-by-music .equalizer i { background: var(--mood); }
+
+/* A single faint line of the album's colour along the free edge: enough to
+   tie the object to what is playing without colouring the surface. */
 body.is-dressed-by-music.state-open .shell-content::after {
   box-shadow:
     inset 1px 0 0 #ffffff14,
     inset -1px 0 0 #ffffff14,
-    inset 0 -1px 0 color-mix(in srgb, var(--accent) 46%, #ffffff2e);
-}
-
-body.is-dressed-by-music.state-open #card {
-  box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--accent) 22%, #000000cc);
+    inset 0 -1px 0 color-mix(in srgb, var(--mood) 38%, #ffffff2e);
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root { transition-duration: 1ms; }
+  body.is-dressed-by-music .np .art-lg { animation: none; }
+}
+
+/* --- one colour per agent --------------------------------------------------
+
+   Codex and Claude sit in the same panel and are read at a glance, so the
+   fastest way to tell whose number you are looking at is colour, not a label
+   you have to stop and read. Each agent owns a hue; the quota card, its bars
+   and its figures take it, and the daily chart follows whichever agent the
+   filter is on. The pressure colour still wins on a nearly-spent window,
+   because running out matters more than whose quota it is. */
+
+.ai-limit-block { --agent: #7fd1b9; display: block; }
+.ai-limit-block + .ai-limit-block { margin-top: 13px; padding-top: 12px; border-top: 1px solid #ffffff0c; }
+.ai-limit-block[data-agent="codex"] { --agent: #7fd1b9; }
+.ai-limit-block[data-agent="claude"] { --agent: #e8a87c; }
+
+.ai-limit-block .ai-provider-codex,
+.ai-limit-block .ai-provider-claude { color: var(--agent); font-weight: 600; }
+.ai-limit-block .ai-window strong { color: var(--agent); }
+.ai-limit-block progress::-webkit-progress-value { background: var(--agent); }
+.ai-limit-block .ai-window.ai-low progress::-webkit-progress-value { background: #e2aa73; }
+.ai-limit-block .ai-window.ai-stale progress::-webkit-progress-value { background: #6b6b74; }
+
+.ai-limit-note { display: block; margin-top: 7px; font-size: 9px; color: var(--faint); }
+
+/* The rest of the panel follows the filter: one agent selected, one colour. */
+#ai-dashboard { --agent: var(--accent); }
+#ai-dashboard[data-agent="codex"] { --agent: #7fd1b9; }
+#ai-dashboard[data-agent="claude"] { --agent: #e8a87c; }
+
+#ai-dashboard .ai-trend i { background: color-mix(in srgb, var(--agent) 42%, #2a2a31); }
+#ai-dashboard .ai-trend i.is-today { background: var(--agent); }
+#ai-dashboard .ai-total { color: var(--agent); }
+#ai-dashboard .ai-ranking progress::-webkit-progress-value { background: color-mix(in srgb, var(--agent) 72%, transparent); }
+
+/* The provider buttons wear their own colour when they are the active one. */
+#ai-dashboard [data-ai-provider="codex"][aria-pressed="true"] { color: #7fd1b9; }
+#ai-dashboard [data-ai-provider="claude"][aria-pressed="true"] { color: #e8a87c; }
+
+/* --- the files panel, at the source's density -----------------------------
+
+   The empty shelf used to be one large dashed rectangle, which is why the
+   panel read as stiff: a single big void with a label floating in it. The
+   source keeps its surfaces dense and its tiles consistent — 86px high, 16px
+   radius, 8px apart — so the empty state now shows outlines at exactly that
+   size. The space is the same; what fills it has rhythm. */
+
+.shelf.is-empty {
+  background: #ffffff04;
+  border: 0;
+  box-shadow: inset 0 0 0 1px #ffffff0e;
+  min-height: 0;
+  padding: 12px 0 11px;
+}
+
+.drop-empty { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+
+.drop-ghosts { display: flex; gap: 8px; margin-bottom: 10px; }
+
+.ghost-tile {
+  /* The same width as a real file tile, so this is a preview of the layout
+     rather than a decoration that happens to sit nearby. */
+  width: 83px;
+  height: 72px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: #ffffff05;
+  box-shadow: inset 0 0 0 1px #ffffff12;
+  /* The three outlines lift in turn, so the panel is quietly alive while it
+     waits rather than frozen. */
+  animation: ghost-settle 3.4s ease-in-out infinite;
+  animation-delay: calc(var(--ghost-index, 0) * 240ms);
+}
+
+@keyframes ghost-settle {
+  0%, 62%, 100% { transform: translateY(0); background: #ffffff05; }
+  28% { transform: translateY(-4px); background: #ffffff09; }
+}
+
+.ghost-tile .drop-symbol {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.ghost-tile .drop-symbol svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.ghost-tile .drop-symbol::before, .ghost-tile .drop-symbol::after { content: none; }
+
+.drop-empty .drop-title { font-size: 13px; font-weight: 550; color: #e7e7ec; }
+.drop-empty .drop-caption { font-size: 11px; color: #9c9ca5; }
+
+/* While a file is over the notch the outlines step aside for the real
+   message, which already covers the shelf. */
+body.dragging .ghost-tile { animation: none; transform: none; }
+
+/* A device row shape for the row that is still looking for devices, so the
+   section keeps its rhythm instead of dropping to a bare line. */
+.device-empty { display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 13px; background: #ffffff05; box-shadow: inset 0 0 0 1px #ffffff0a; }
+.device-empty > span:last-child { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.device-empty strong { font-size: 12px; font-weight: 500; color: #d8d8df; }
+.device-empty small { font-size: 10px; color: #9c9ca5; }
+
+.device-badge {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  background: #ffffff08;
+  color: #9c9ca5;
+}
+
+.device-badge svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; }
+.device-badge.is-searching { animation: searching 2.2s ease-in-out infinite; }
+
+@keyframes searching {
+  50% { color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+}
+
+/* Rows answer the pointer. Nothing here moved before, which is most of why
+   the panel felt like a printed page. */
+.device:hover:not(:disabled) { transform: translateY(-1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ghost-tile, .device-badge.is-searching { animation: none; }
+  .device:hover:not(:disabled) { transform: none; }
 }
