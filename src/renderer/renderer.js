@@ -359,6 +359,13 @@ async function chooseFiles() {
 }
 document.getElementById('choose-files').addEventListener('click', chooseFiles);
 
+document.getElementById('paste-text').addEventListener('click', async () => {
+  const result = await notch.addText();
+  focusSendTab();
+  if (result.added) flashFooter('Text parked. Choose a device.');
+  else showStatus(result.rejected[0]?.reason || 'Nothing to paste', null, 'error');
+});
+
 function collapseNotch() {
   activityQueue.resume();
   clearTimeout(mediaPreviewTimer);
@@ -501,21 +508,28 @@ function renderShelf(items) {
     node.draggable = true;
     node.tabIndex = 0;
     const extension = (item.ext || '').replace(/^\./, '').toLowerCase();
-    node.dataset.kind = /^(png|jpg|jpeg|gif|webp|heic|svg)$/.test(extension) ? 'image'
-      : /^(zip|rar|7z|tar|gz)$/.test(extension) ? 'archive'
-        : /^(mp4|mov|mkv|webm)$/.test(extension) ? 'video' : extension === 'pdf' ? 'pdf' : 'file';
+    node.dataset.kind = item.kind === 'folder' ? 'folder' : item.kind === 'text' ? 'text'
+      : /^(png|jpg|jpeg|gif|webp|heic|svg)$/.test(extension) ? 'image'
+        : /^(zip|rar|7z|tar|gz)$/.test(extension) ? 'archive'
+          : /^(mp4|mov|mkv|webm)$/.test(extension) ? 'video' : extension === 'pdf' ? 'pdf' : 'file';
 
     const ext = document.createElement('div');
     ext.className = 'file-icon';
-    ext.textContent = (extension || 'FILE').slice(0, 5).toUpperCase();
+    ext.textContent = item.kind === 'folder' ? '' : item.kind === 'text' ? 'TXT'
+      : (extension || 'FILE').slice(0, 5).toUpperCase();
+    if (item.kind === 'folder') ext.append(icon('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'));
 
     const name = document.createElement('div');
     name.className = 'name';
-    name.textContent = item.name;
+    name.textContent = item.kind === 'text' && item.preview ? item.preview : item.name;
+    if (item.kind === 'text' && item.preview) node.title = item.preview;
 
     const size = document.createElement('div');
     size.className = 'size';
-    size.textContent = formatBytes(item.size);
+    // A folder's weight is useless without knowing how much is in it.
+    size.textContent = item.kind === 'folder'
+      ? item.count.toLocaleString() + (item.count === 1 ? ' file' : ' files') + (item.truncated ? '+' : '') + ' · ' + formatBytes(item.size)
+      : formatBytes(item.size);
 
     const drop = document.createElement('button');
     drop.className = 'drop';

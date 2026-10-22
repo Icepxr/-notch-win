@@ -422,3 +422,19 @@ body.dragging .ghost-tile { animation: none; transform: none; }
   .ghost-tile, .device-badge.is-searching { animation: none; }
   .device:hover:not(:disabled) { transform: none; }
 }
+
+/* Folders and messages are not files, and should not have to pretend to be. */
+.item[data-kind="folder"] .file-icon {
+  background: linear-gradient(145deg, #cbd9ef, #93a8cc);
+  color: #2b3b57;
+  border-radius: 4px 10px 5px 5px;
+}
+.item[data-kind="folder"] .file-icon svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.5; }
+.item[data-kind="folder"] .file-icon::after { background: #7f93b4; }
+
+.item[data-kind="text"] .file-icon { background: linear-gradient(145deg, #e3dcc9, #bdb093); color: #4a4330; }
+/* A message is worth reading on the shelf, so it gets the room a filename
+   does not need. */
+.item[data-kind="text"] .name { -webkit-line-clamp: 3; font-size: 10px; line-height: 1.35; color: #c9c9d2; }
+
+#paste-text { margin-left: 6px; }

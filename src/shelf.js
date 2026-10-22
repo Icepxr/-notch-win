@@ -9,6 +9,51 @@ const crypto = require('node:crypto');
 const { EventEmitter } = require('node:events');
 
 const MAX_ITEMS = 24;
+// A dropped folder is walked, not refused. The caps are there so a stray drop
+// of a repository or a home directory cannot hang the notch or hand a
+// receiver tens of thousands of files.
+const MAX_FOLDER_FILES = 500;
+const MAX_FOLDER_DEPTH = 12;
+
+/**
+ * Every file under `root`, with the path each one should arrive as.
+ * Symbolic links are skipped rather than followed: a link out of the folder
+ * is not part of what the user dropped, and a link back into it loops.
+ */
+function walkFolder(root, { maxFiles = MAX_FOLDER_FILES, maxDepth = MAX_FOLDER_DEPTH } = {}) {
+  const base = path.basename(root) || 'folder';
+  const files = [];
+  let truncated = false;
+
+  const visit = (dir, relative, depth) => {
+    if (truncated || depth > maxDepth) return;
+    let entries;
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // an unreadable subfolder is skipped, not fatal
+    }
+    for (const entry of entries) {
+      if (truncated) return;
+      if (entry.isSymbolicLink()) continue;
+      const full = path.join(dir, entry.name);
+      // Receivers join this onto a download directory, so it travels with
+      // forward slashes and never with a drive letter or a leading slash.
+      const name = relative + '/' + entry.name;
+      if (entry.isDirectory()) {
+        visit(full, name, depth + 1);
+      } else if (entry.isFile()) {
+        if (files.length >= maxFiles) { truncated = true; return; }
+        let size = 0;
+        try { size = fs.statSync(full).size; } catch { continue; }
+        files.push({ path: full, name, size });
+      }
+    }
+  };
+
+  visit(root, base, 0);
+  return { files, truncated };
+}
 
 class Shelf extends EventEmitter {
   constructor(storePath) {
@@ -59,12 +104,32 @@ class Shelf extends EventEmitter {
       }
 
       if (stat.isDirectory()) {
-        rejected.push({ path: resolved, reason: 'Only individual files are supported.' });
+        const { files, truncated } = walkFolder(resolved);
+        if (!files.length) {
+          rejected.push({ path: resolved, reason: 'That folder has no files in it.' });
+          continue;
+        }
+        if (truncated) {
+          this.emit('log', path.basename(resolved) + ': only the first ' + MAX_FOLDER_FILES + ' files were parked');
+        }
+        this.items.unshift({
+          id: crypto.randomUUID(),
+          kind: 'folder',
+          path: resolved,
+          name: path.basename(resolved),
+          ext: '',
+          size: files.reduce((total, file) => total + file.size, 0),
+          count: files.length,
+          truncated,
+          addedAt: Date.now(),
+        });
+        added += 1;
         continue;
       }
 
       this.items.unshift({
         id: crypto.randomUUID(),
+        kind: 'file',
         path: resolved,
         name: path.basename(resolved),
         ext: path.extname(resolved).replace('.', '').toLowerCase(),
@@ -104,10 +169,60 @@ class Shelf extends EventEmitter {
 
   /** Paths that still exist, newest last so transfers read in drop order. */
   paths() {
-    return this.items
-      .filter((it) => fs.existsSync(it.path))
-      .map((it) => it.path)
-      .reverse();
+    return this.entries().map((entry) => entry.path);
+  }
+
+  /**
+   * What to actually send: one entry per file, newest shelf item last so
+   * transfers read in drop order. A folder expands here rather than at drop
+   * time, so its contents are whatever is on disk when Send is pressed.
+   */
+  entries() {
+    const out = [];
+    for (const item of [...this.items].reverse()) {
+      if (!fs.existsSync(item.path)) continue;
+      if (item.kind === 'folder') {
+        for (const file of walkFolder(item.path).files) out.push({ path: file.path, name: file.name });
+      } else {
+        out.push({ path: item.path, name: item.name });
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Park a piece of text as a real file. The protocol has no notion of a text
+   * message, so the only thing every receiver understands is a .txt.
+   */
+  addText(text, outbox) {
+    if (typeof text !== 'string' || !text.trim()) {
+      return { added: 0, rejected: [{ path: '', reason: 'There is no text on the clipboard.' }] };
+    }
+    const stamp = new Date();
+    const pad = (value) => String(value).padStart(2, '0');
+    const name = 'Message ' + stamp.getFullYear() + '-' + pad(stamp.getMonth() + 1) + '-' + pad(stamp.getDate())
+      + ' ' + pad(stamp.getHours()) + pad(stamp.getMinutes()) + pad(stamp.getSeconds()) + '.txt';
+    const target = path.join(outbox, name);
+    try {
+      fs.mkdirSync(outbox, { recursive: true });
+      fs.writeFileSync(target, text, 'utf8');
+    } catch (err) {
+      return { added: 0, rejected: [{ path: target, reason: 'Could not save the text: ' + err.message }] };
+    }
+    this.items.unshift({
+      id: crypto.randomUUID(),
+      kind: 'text',
+      path: target,
+      name,
+      ext: 'txt',
+      size: Buffer.byteLength(text, 'utf8'),
+      preview: text.replace(/\s+/g, ' ').trim().slice(0, 120),
+      addedAt: Date.now(),
+    });
+    if (this.items.length > MAX_ITEMS) this.items.length = MAX_ITEMS;
+    this.save();
+    this._emit();
+    return { added: 1, rejected: [] };
   }
 
   /** Forget entries whose file vanished behind our back. */
@@ -125,4 +240,4 @@ class Shelf extends EventEmitter {
   }
 }
 
-module.exports = { Shelf, MAX_ITEMS };
+module.exports = { Shelf, MAX_ITEMS, MAX_FOLDER_FILES, walkFolder };

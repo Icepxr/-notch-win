@@ -141,22 +141,37 @@ function request(device, { pathname, query, method = 'POST', json, bodyStream, b
  * Send files to a discovered device.
  * @param {object} device   a device from Discovery
  * @param {object} selfInfo our own device info, sent as the `info` field
- * @param {string[]} files  absolute paths
+ * @param {Array<string|{path:string, name?:string}>} files  absolute paths, or
+ *   a path with the name it should arrive as. A name carrying forward slashes
+ *   is how a folder's structure travels: receivers join it onto their download
+ *   directory, so "photos/trip/a.jpg" lands in a photos/trip folder.
  * @param {{pin?:string, onProgress?:(p:object)=>void, identity?:object}} opts
  *   identity carries the client certificate; required for https receivers.
  */
+/**
+ * A name that cannot escape the receiver's download directory. Separators are
+ * normalised to the forward slashes the structure travels as, and anything
+ * that would climb out of the folder is dropped rather than trusted.
+ */
+function safeName(name) {
+  const parts = String(name || '').split(/[\\/]+/)
+    .filter((part) => part && part !== '.' && part !== '..' && !/^[a-zA-Z]:$/.test(part));
+  return parts.join('/') || 'file';
+}
+
 async function sendFiles(device, selfInfo, files, { pin, onProgress, identity } = {}) {
   if (!files.length) throw new TransferError('No files to send.', { kind: 'empty' });
 
-  const entries = files.map((filePath) => {
+  const entries = files.map((file) => {
+    const filePath = typeof file === 'string' ? file : file.path;
     const stat = fs.statSync(filePath);
     if (stat.isDirectory()) {
-      throw new TransferError(path.basename(filePath) + ' is a folder. Choose individual files.', { kind: 'directory' });
+      throw new TransferError(path.basename(filePath) + ' is a folder. Expand it before sending.', { kind: 'directory' });
     }
     return {
       id: crypto.randomUUID(),
       path: filePath,
-      fileName: path.basename(filePath),
+      fileName: safeName(typeof file === 'string' ? path.basename(filePath) : file.name || path.basename(filePath)),
       size: stat.size,
       fileType: mimeFor(filePath),
       modified: stat.mtime.toISOString(),
@@ -249,4 +264,4 @@ async function sendFiles(device, selfInfo, files, { pin, onProgress, identity } 
   return { sessionId, sent, skipped };
 }
 
-module.exports = { sendFiles, TransferError, mimeFor };
+module.exports = { sendFiles, safeName, TransferError, mimeFor };

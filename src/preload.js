@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('notch', {
   openSettings: () => ipcRenderer.send('notch:open-settings'),
   onPreferences: (cb) => ipcRenderer.on('notch:preferences', (_e, value) => cb(value)),
   addFiles: (paths) => ipcRenderer.invoke('notch:add-files', paths),
+  addText: () => ipcRenderer.invoke('notch:add-text'),
   chooseFiles: () => ipcRenderer.invoke('notch:choose-files'),
   sendTo: (fingerprint, pin) => ipcRenderer.invoke('notch:send', { fingerprint, pin }),
   removeItem: (id) => ipcRenderer.send('notch:shelf-remove', id),

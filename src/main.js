@@ -560,6 +560,11 @@ function registerIpc() {
     return result.canceled ? { added: 0, rejected: [] } : shelf.add(result.filePaths);
   });
 
+  ipcMain.handle('notch:add-text', () => {
+    const text = electronClipboard.readText();
+    return shelf.addText(text, userFile('outbox'));
+  });
+
   ipcMain.on('notch:shelf-remove', (_event, id) => shelf.remove(id));
   ipcMain.on('notch:shelf-clear', () => shelf.clear());
 
@@ -602,7 +607,7 @@ function registerIpc() {
       return { ok: false, kind: 'gone', message: 'This device is no longer available.' };
     }
 
-    const files = shelf.paths();
+    const files = shelf.entries();
     if (!files.length) {
       return { ok: false, kind: 'empty', message: 'Your shelf is empty.' };
     }
