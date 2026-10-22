@@ -35,3 +35,14 @@ Adapted files and concepts:
 Platform integrations are implemented for Windows/Electron. Islet is
 an independent adaptation; it is not an official Vorssaint release. Vorssaint's
 name, icons, logo, signing identity and update feed are not used as this app's branding.
+
+# Provider marks
+
+`src/renderer/provider-marks.js` carries Claude's mark, taken from
+[simple-icons](https://github.com/simple-icons/simple-icons), whose icon files
+are dedicated under CC0 1.0. The mark is a trademark of Anthropic and is used
+only to identify Anthropic's product.
+
+No OpenAI mark is included. simple-icons does not carry one, which is what
+happens when a brand asks to be left out, so Codex is shown with a mark of our
+own rather than a logo lifted from a brand page against that signal.

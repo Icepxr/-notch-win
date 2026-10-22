@@ -120,11 +120,59 @@ function geometryFor(name) {
   return SIZES.closed;
 }
 
-/** Nothing playing, parked, running or in flight: the notch paints nothing. */
+/**
+ * What the resting notch is for, when several things are happening at once.
+ *
+ * Music, a working agent and a countdown all want the same few pixels, and
+ * before this they simply drew on top of each other. Only one of them gets
+ * the notch: the one the user asked for if it is live, otherwise the first
+ * of these that is.
+ *
+ * The order follows what the notch already did. A transfer has an end
+ * someone is waiting on. A countdown was set deliberately and already took
+ * the notch from music. Music is the thing people glance down at constantly.
+ * A working agent is the newest of the four and the least glanceable, so it
+ * yields by default — and the preference is there for anyone who disagrees.
+ */
+const FOCUS_ORDER = ['transfer', 'timer', 'music', 'agent'];
+
+function liveActivities() {
+  return FOCUS_ORDER.filter((name) => (
+    name === 'transfer' ? transferActive
+      : name === 'agent' ? document.body.classList.contains('ai-working')
+        : name === 'timer' ? timerState.hasSession
+          : mediaVisible));
+}
+
+let focusOverride = null;
+
 function refreshIdle() {
-  const busy = mediaVisible || activeNotice || shelfItems.length || timerState.hasSession || transferActive
-    || document.body.classList.contains('ai-working') || document.body.classList.contains('ai-waiting');
+  const live = liveActivities();
+  const busy = live.length || activeNotice || shelfItems.length
+    || document.body.classList.contains('ai-waiting');
   document.body.classList.toggle('is-idle', !busy);
+
+  // The override only survives while the thing it points at is still live.
+  if (focusOverride && !live.includes(focusOverride)) focusOverride = null;
+  const preferred = preferences.notchFocus && preferences.notchFocus !== 'auto' ? preferences.notchFocus : null;
+  const focus = focusOverride
+    || (preferred && live.includes(preferred) ? preferred : null)
+    || live[0] || 'none';
+  document.body.dataset.focus = focus;
+  // More than one live activity is what makes the notch worth cycling.
+  document.body.classList.toggle('multi-activity', live.length > 1);
+  els.closedTrigger.dataset.live = String(live.length);
+}
+
+/** Step to the next live activity, so a crowded notch stays browsable. */
+function cycleFocus() {
+  const live = liveActivities();
+  if (live.length < 2) return false;
+  const current = document.body.dataset.focus;
+  focusOverride = live[(live.indexOf(current) + 1) % live.length];
+  refreshIdle();
+  renderAiSessions();
+  return true;
 }
 
 function applyVisualState() {
@@ -425,6 +473,7 @@ function flashFooter(message) {
 function setMediaVisible(visible) {
   if (visible === mediaVisible) return;
   mediaVisible = visible;
+  refreshIdle();
   if (state !== 'peek') {
     document.body.classList.toggle('has-media', visible);
     return;
@@ -797,8 +846,19 @@ card.addEventListener('mouseleave', pointerLeft);
 notch.onPointer((inside) => inside ? pointerEntered() : pointerLeft());
 notch.onDismiss(dismissOutside);
 
+const FOCUS_TAB = { transfer: 'send', agent: 'ai', timer: 'timer', music: 'media' };
+
 els.closedTrigger.addEventListener('click', () => {
-  openNotch(timerState.hasSession ? 'timer' : mediaVisible ? 'media' : 'send');
+  // Open whatever the notch is currently showing, so the click lands where
+  // the user is looking rather than on a fixed guess.
+  openNotch(FOCUS_TAB[document.body.dataset.focus] || (shelfItems.length ? 'send' : activeTab));
+});
+
+// Several things live at once: the right button steps between them. The left
+// button keeps opening the panel, which is the gesture people already know.
+els.closedTrigger.addEventListener('contextmenu', (event) => {
+  if (!cycleFocus()) return;
+  event.preventDefault();
 });
 document.querySelector('.layer-peek').addEventListener('keydown', (event) => {
   if (event.target !== event.currentTarget) return;
@@ -1196,9 +1256,12 @@ function paintClosedAgent(now = Date.now()) {
   const running = AiState.sortSessions(aiSessions, now)
     .filter((session) => AiState.kindOf(session, now) === 'working')
     .sort((a, b) => (a.startedAt || now) - (b.startedAt || now))[0];
-  els.closedAgent.hidden = !running;
+  els.closedAgent.hidden = !running || document.body.dataset.focus !== 'agent';
   if (!running) return;
   const provider = running.provider === 'codex' ? 'codex' : 'claude';
+  if (els.closedAgent.dataset.agent !== provider) {
+    els.closedAgent.querySelector('.agent-mark').replaceChildren(ProviderMarks.markElement(provider, document));
+  }
   els.closedAgent.dataset.agent = provider;
   els.closedAgent.title = (provider === 'codex' ? 'Codex' : 'Claude') + ' · ' + running.name;
   els.closedAgentTime.textContent = running.startedAt

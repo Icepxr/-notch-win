@@ -562,26 +562,49 @@ body.ai-working.state-closed:not(.has-files):not(.has-media):not(.has-timer) .cl
   width: 13px;
   height: 13px;
   flex: 0 0 auto;
-  background: currentColor;
+  display: grid;
+  place-items: center;
   /* A quiet pulse, so a long run never looks frozen. */
   animation: agent-pulse 2.4s ease-in-out infinite;
 }
 
-.closed-agent[data-agent="claude"] .agent-mark {
-  -webkit-mask: conic-gradient(from 0deg,
-    currentColor 0 7deg, transparent 7deg 53deg, currentColor 53deg 67deg, transparent 67deg 113deg,
-    currentColor 113deg 127deg, transparent 127deg 173deg, currentColor 173deg 187deg, transparent 187deg 233deg,
-    currentColor 233deg 247deg, transparent 247deg 293deg, currentColor 293deg 307deg, transparent 307deg 353deg,
-    currentColor 353deg 360deg) center / 100% 100% no-repeat;
-}
-
-.closed-agent[data-agent="codex"] .agent-mark {
-  -webkit-mask:
-    radial-gradient(closest-side, transparent 52%, currentColor 54% 72%, transparent 74%) center / 100% 100% no-repeat;
-}
+.agent-mark svg { width: 100%; height: 100%; fill: currentColor; }
 
 .agent-time { color: #c2c2cc; }
 
 @keyframes agent-pulse { 50% { opacity: .5; } }
 
 @media (prefers-reduced-motion: reduce) { .agent-mark { animation: none; } }
+
+/* --- one activity at a time ------------------------------------------------
+
+   Music, a working agent and a countdown all want the same strip of pixels.
+   They used to draw on top of each other; now exactly one of them has the
+   notch, chosen by the Settings preference when it is live and by urgency
+   otherwise. The right button steps to the next one. */
+
+body[data-focus="agent"] #closed-art,
+body[data-focus="agent"] .equalizer,
+body[data-focus="timer"] #closed-art,
+body[data-focus="timer"] .equalizer,
+body[data-focus="transfer"] #closed-art,
+body[data-focus="transfer"] .equalizer,
+body[data-focus="transfer"] .closed-agent { display: none !important; }
+
+body[data-focus="music"] .closed-agent,
+body[data-focus="timer"] .closed-agent { display: none !important; }
+
+/* With more than one thing live, a pair of dots says the notch has another
+   page behind it, and the right button turns it. */
+body.multi-activity.state-closed .layer-closed::after {
+  content: '';
+  position: absolute;
+  right: 7px;
+  bottom: 4px;
+  width: 9px;
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, currentColor 0 3px, transparent 3px 6px, #ffffff2e 6px 9px);
+  color: #ffffff6e;
+  pointer-events: none;
+}

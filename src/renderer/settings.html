@@ -54,6 +54,19 @@
       <div id="color-presets" class="color-presets" role="group" aria-label="Color presets"></div>
       <div class="custom-colors"><label class="color-control" for="surface-tint"><input id="surface-tint" type="color" value="#080809" data-appearance="surfaceTint" /><span>Surface tint<small id="surface-tint-value">#080809</small></span></label><label class="color-control" for="accent-color"><input id="accent-color" type="color" value="#aac4ef" data-appearance="accentColor" /><span>Accent<small id="accent-color-value">#AAC4EF</small></span></label></div>
       <p class="control-detail color-detail">Choose any hue. Surface and accent brightness adapt to keep text readable.</p>
+      <div class="row">
+        <div class="row-text">
+          <span class="row-title">When several things are happening</span>
+          <span class="row-detail">The resting notch shows one at a time. Right-click it to step to the next.</span>
+        </div>
+        <select data-preference="notchFocus" aria-label="What the resting notch shows">
+          <option value="auto">Most urgent</option>
+          <option value="transfer">Transfers</option>
+          <option value="timer">Timer</option>
+          <option value="music">Music</option>
+          <option value="agent">AI agent</option>
+        </select>
+      </div>
       <label class="row">
         <div class="row-text">
           <span class="row-title">Follow the music</span>

@@ -97,6 +97,12 @@ function solidCover([r, g, b], size = 64) {
   return require('../src/png').encodePNG(size, size, rgba);
 }
 
+/** The control panel opens later in the run; skip quietly until it does. */
+async function pjsOrSkip(source) {
+  if (!panelWin || panelWin.isDestroyed()) return null;
+  return pjs(source);
+}
+
 async function cssColor(token) {
   const value = await js(`getComputedStyle(document.documentElement).getPropertyValue(${JSON.stringify(token)}).trim()`);
   const rgb = value.match(/\d+/g);
@@ -204,9 +210,30 @@ app.whenReady().then(async () => {
     check(!agent.hidden && agent.shown && agent.provider === 'claude' && /^\d+:\d\d$/.test(agent.time) && !agent.idle,
       'a working agent shows its provider and running time on the resting notch (' + agent.time + ')');
     await snapshot('closed-agent');
+    // Two things live at once used to mean two things drawn on top of each
+    // other. Exactly one gets the notch, and the user can choose which.
+    emit('now-playing', { type: 'state', session: true, title: 'A Quiet Morning', artist: 'Local artist',
+      app: 'Spotify.exe', status: 'Playing', duration: 240, position: 12, thumb: fixtureArt,
+      canPause: true, canNext: true, canPrev: true, canSeek: true, sources: ['Spotify.exe'] });
+    await settled();
+    check(await js(`JSON.stringify(liveActivities()) === '["music","agent"]' && document.body.dataset.focus === 'music'
+      && document.getElementById('closed-agent').hidden
+      && document.body.classList.contains('multi-activity')`),
+      'with music and an agent both live the notch shows one of them, not both');
+
+    await js(`els.closedTrigger.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))`);
+    await delay(200);
+    check(await js(`document.body.dataset.focus === 'agent' && !document.getElementById('closed-agent').hidden
+      && getComputedStyle(document.getElementById('closed-art')).display === 'none'`),
+      'the right button steps to the next live activity');
+
+    await pjsOrSkip(`{ const select = document.querySelector('[data-preference="notchFocus"]'); select.value = 'agent'; select.dispatchEvent(new Event('change')); }`);
+    emit('now-playing', { type: 'state', session: false });
+    await settled();
     emit('ai', []);
     await settled();
-    check(await js(`document.getElementById('closed-agent').hidden && document.body.classList.contains('is-idle')`),
+    check(await js(`document.getElementById('closed-agent').hidden && document.body.classList.contains('is-idle')
+      && !document.body.classList.contains('multi-activity')`),
       'the notch goes quiet again when the agent finishes');
 
     await js(`document.getElementById('closed-trigger').click()`);

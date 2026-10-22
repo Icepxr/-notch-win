@@ -96,12 +96,15 @@ function saveSettings() {
 }
 
 const GLASS_LEVELS = ['high', 'medium', 'off'];
+// What the resting notch shows when several things are happening at once.
+const NOTCH_FOCUS = ['auto', 'transfer', 'timer', 'music', 'agent'];
 
 function clientPreferences() {
   return { ...NotchAppearance.normalize(settings), autoDismiss: settings.autoDismiss !== false, musicPreview: settings.musicPreview !== false,
     systemFeedback: settings.systemFeedback !== false, musicColors: settings.musicColors !== false,
     gestures: settings.gestures !== false, silhouette: settings.silhouette === 'capsule' ? 'capsule' : 'notch',
     glass: GLASS_LEVELS.includes(settings.glass) ? settings.glass : 'high',
+    notchFocus: NOTCH_FOCUS.includes(settings.notchFocus) ? settings.notchFocus : 'auto',
     displayMode: DISPLAY_MODES.includes(settings.displayMode) ? settings.displayMode : 'selected',
     displayId: displayController?.snapshot().preferredDisplayId ?? screen.getPrimaryDisplay().id };
 }
@@ -120,6 +123,7 @@ function applyPreferencePatch(patch) {
   }
   if (['notch', 'capsule'].includes(patch?.silhouette)) settings.silhouette = patch.silhouette;
   if (GLASS_LEVELS.includes(patch?.glass)) settings.glass = patch.glass;
+  if (NOTCH_FOCUS.includes(patch?.notchFocus)) settings.notchFocus = patch.notchFocus;
   if (DISPLAY_MODES.includes(patch?.displayMode)) settings.displayMode = patch.displayMode;
   const display = screen.getAllDisplays().find((d) => d.id === patch?.displayId);
   if (display) {
