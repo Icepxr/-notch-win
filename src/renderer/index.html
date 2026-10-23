@@ -35,9 +35,11 @@
 
       <!-- swaps in for the clock while something is playing -->
       <div class="peek-music-head">
-        <button id="peek-files" class="icon-btn" type="button" title="File shelf" aria-label="Open file shelf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m3 9 7-6 7 6v8h-5v-5H8v5H3Z"/></svg></button>
-        <button id="peek-expand" class="icon-btn" type="button" title="Open Music" aria-label="Open Music"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15V5l9-2v10M7 8l9-2"/><circle cx="4.5" cy="15" r="2.5"/><circle cx="13.5" cy="13" r="2.5"/></svg></button>
+        <button id="peek-expand" class="icon-btn" type="button" title="Explore modules" aria-label="Explore modules"><svg class="filled" viewBox="0 0 20 20" aria-hidden="true"><path d="m3 9 7-6 7 6v8h-5v-5H8v5H3Z"/></svg></button>
+        <button id="peek-files" class="icon-btn" type="button" title="File shelf" aria-label="Open file shelf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2.5 6V4h6l2 2h7v11h-15ZM3 9h14"/></svg></button>
         <span id="peek-source"></span>
+        <button id="peek-lyrics-toggle" class="icon-btn" type="button" aria-label="Show synced lyrics" title="Show lyrics from LRCLIB · Shift-click for a local .lrc file"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h12M4 10h9M4 15h6"/></svg></button>
+        <button id="peek-settings" class="icon-btn" type="button" aria-label="Open settings" title="Settings"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m8 2 4 0 .6 2.2 2 .9 2-.6 2 3.4-1.6 1.6v2l1.6 1.6-2 3.4-2-.6-2 .9L12 19H8l-.6-2.2-2-.9-2 .6-2-3.4L3 11.5v-2L1.4 8l2-3.4 2 .6 2-.9Z" transform="translate(1 0) scale(.9)"/><circle cx="10" cy="10" r="3"/></svg></button>
       </div>
       <div class="peek-np">
         <div id="peek-art" class="art art-sm"><img alt="" /><span class="art-fallback">♪</span></div>
@@ -54,6 +56,11 @@
       <button id="peek-next" class="icon-btn" type="button" title="Next track" aria-label="Next track"><svg class="filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3h2v10h-2zM3 3v10l8-5z"/></svg></button>
       </div>
 
+      <aside id="peek-detail" class="peek-detail" aria-label="Song details and lyrics">
+        <div id="peek-album-info"><span class="peek-detail-label">FROM THE ALBUM</span><strong id="peek-album"></strong><span id="peek-playback-note"></span></div>
+        <div id="peek-lyrics" hidden><span id="peek-lyric-before"></span><strong id="peek-lyric"></strong><span id="peek-lyric-after"></span></div>
+        <span id="peek-lyrics-status" role="status" hidden></span>
+      </aside>
       <span class="peek-spacer"></span>
 
       <!-- Live activities are selected here; AI session counts stay on the AI page. -->
@@ -231,6 +238,7 @@
   <script src="notch-activity.js"></script>
   <script src="media-state.js"></script>
   <script src="media-artwork.js"></script>
+  <script src="lyrics-state.js"></script>
   <script src="media-playback.js"></script>
   <script src="ai-state.js"></script>
   <script src="panel-clipboard.js"></script>

@@ -11,7 +11,7 @@
   const sizes = {
     closed: { width: 184, height: 28 },
     peek: { width: 300, height: 46 },
-    peekMedia: { width: 520, height: 192 },
+    peekMedia: { width: 520, height: 164 },
     open: { width: 520, height: 390 },
     openAi: { width: 520, height: 510 },
     openMusic: { width: 520, height: 260 },

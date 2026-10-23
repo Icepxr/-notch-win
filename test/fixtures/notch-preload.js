@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld('notch', {
   sendTo: () => ipcRenderer.invoke('fixture:send'),
   removeItem: () => {}, clearShelf: () => {}, reveal: () => {},
   mediaCommand: (action, value, playback) => ipcRenderer.invoke('fixture:media', { action, value, playback }), dragOut: () => {}, quit: () => {},
+  chooseLyrics: () => ipcRenderer.invoke('fixture:choose-lyrics'),
+  lyrics: (enabled) => ipcRenderer.invoke('fixture:lyrics', enabled === true),
   clipPick: (id) => ipcRenderer.invoke('fixture:clip-pick', id), clipRemove: () => {},
   clipPin: (id) => ipcRenderer.invoke('fixture:clip-pin', id),
   clipClear: (keepPinned) => ipcRenderer.invoke('fixture:clip-clear', keepPinned), clipPause: () => {},

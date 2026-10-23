@@ -42,6 +42,8 @@ contextBridge.exposeInMainWorld('notch', {
   clearShelf: () => ipcRenderer.send('notch:shelf-clear'),
   reveal: (id) => ipcRenderer.send('notch:reveal', id),
   mediaCommand: (action, value, playback) => ipcRenderer.invoke('notch:media', { action, value, playback }),
+  chooseLyrics: () => ipcRenderer.invoke('notch:choose-lyrics'),
+  lyrics: (enabled) => ipcRenderer.invoke('notch:lyrics', enabled === true),
   dragOut: (id) => ipcRenderer.send('notch:drag-out', id),
   quit: () => ipcRenderer.send('notch:quit'),
 

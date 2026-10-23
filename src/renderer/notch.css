@@ -111,7 +111,7 @@ body.state-peek #card {
 }
 body.state-peek.has-media #card {
   width: var(--peekMedia-width, 520px);
-  height: var(--peekMedia-height, 192px);
+  height: var(--peekMedia-height, 164px);
 }
 body.state-open #card {
   width: var(--open-width, 520px);

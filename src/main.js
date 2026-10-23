@@ -13,6 +13,10 @@ const { sendFiles, TransferError } = require('./sender');
 const { Shelf } = require('./shelf');
 const { loadOrCreate } = require('./identity');
 const { MediaBridge } = require('./media');
+const { readLyricsFile } = require('./lyrics-file');
+const { LyricsService } = require('./lyrics');
+const LyricsState = require('./renderer/lyrics-state');
+const lyrics = new LyricsService();
 const { AiMonitor } = require('./aimon');
 const { AiDashboard } = require('./ai-dashboard');
 const { ClipboardWatcher } = require('./clipboard');
@@ -49,6 +53,7 @@ let settings = {};
 let devices = [];
 let identity = null;
 let media = null;
+let choosingLyrics = false;
 let systemActions = null;
 let aimon = null;
 let aiSessions = [];
@@ -447,7 +452,12 @@ function startMedia() {
   systemActions.on('unavailable', () => console.log('[system-actions] System feedback unavailable'));
   systemActions.start();
   media = new MediaBridge({ scriptPath: bridgeScript('nowplaying.ps1') });
-  media.on('message', (message) => send('notch:now-playing', message));
+  let lyricsTrack = '';
+  media.on('message', (message) => {
+    const key = LyricsState.key(media.state);
+    if (key !== lyricsTrack || !media.state.active || media.state.awaiting) { lyrics.cancel(); lyricsTrack = key; }
+    send('notch:now-playing', message);
+  });
   media.on('command', (result) => send('notch:media-result', result));
   media.on('log', (line) => console.log('[media]', line));
   media.on('unsupported', () => console.log('[media] Now Playing unavailable on this machine'));
@@ -624,6 +634,19 @@ function registerIpc() {
   });
 
   ipcMain.on('notch:focus', () => { if (win && !win.isDestroyed()) win.focus(); });
+  ipcMain.handle('notch:lyrics', (_event, enabled) => {
+    if (enabled !== true) { lyrics.cancel(); return { status: 'off' }; }
+    return lyrics.get(media?.state);
+  });
+  ipcMain.handle('notch:choose-lyrics', async () => {
+    if (choosingLyrics || !media?.state.active) return { status: 'cancelled' };
+    choosingLyrics = true;
+    try {
+      const result = await dialog.showOpenDialog(win, { title: 'Choose timed lyrics for ' + media.state.title,
+        properties: ['openFile'], filters: [{ name: 'Timed lyrics', extensions: ['lrc'] }] });
+      return result.canceled ? { status: 'cancelled' } : await readLyricsFile(result.filePaths[0]);
+    } finally { choosingLyrics = false; }
+  });
   ipcMain.on('notch:release-focus', () => { if (win && !win.isDestroyed()) win.blur(); });
   ipcMain.on('notch:interaction', (_event, state) => { if (['closed', 'peek', 'open'].includes(state)) notchExpanded = state !== 'closed'; });
 
@@ -843,6 +866,7 @@ if (!app.requestSingleInstanceLock()) {
     globalShortcut.unregisterAll();
     discovery?.stop();
     media?.stop();
+    lyrics.cancel();
     systemActions?.stop();
     aimon?.stop();
     aiDashboard?.stop();

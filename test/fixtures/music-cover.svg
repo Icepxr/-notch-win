@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <defs><linearGradient id="room" x2="0" y2="1"><stop stop-color="#474c44"/><stop offset="1" stop-color="#272b2c"/></linearGradient><linearGradient id="light" x2="1" y2="1"><stop stop-color="#f5dcb1"/><stop offset="1" stop-color="#b98d58"/></linearGradient></defs>
+  <path fill="url(#room)" d="M0 0h240v240H0z"/>
+  <path fill="#a0784c" d="M13 0h8v185h-8zM124 0h8v185h-8zM0 44h138v6H0zm0 53h138v6H0zm0 51h138v6H0z"/>
+  <g fill="#a89a68"><path d="M26 9h8v33h-8zm35 2h6v31h-6zm27-8h8v39h-8zM26 63h8v32h-8zm30 2h6v30h-6zm38-8h7v38h-7zM25 113h9v34h-9zm43-3h8v37h-8zm37 10h8v27h-8z"/></g>
+  <g fill="#758879"><path d="M36 4h10v38H36zm33 4h9v34h-9zm32 5h8v29h-8zM37 59h8v36h-8zm33 4h9v32h-9zm36-9h9v41h-9zM38 109h9v38h-9zm43 8h9v30h-9z"/></g>
+  <g fill="#b1795a"><path d="M48 8h9v34h-9zm32-1h6v35h-6zm31-4h8v39h-8zM48 63h6v32h-6zm33-6h8v38h-8zM50 118h9v29h-9zm44-4h7v33h-7z"/></g>
+  <path fill="#b58a57" d="M151 0h78v151h-78z"/><path fill="#777f79" d="M157 0h66v144h-66z"/><path fill="#c2c4af" d="M160 2h25v136h-25z"/><path fill="#afb9ae" d="M191 2h28v136h-28z"/><path fill="#d5b68b" d="M185 0h6v149h-6zM155 72h70v5h-70z"/>
+  <path fill="#647669" opacity=".7" d="M157 142v-22l12-38 9 16 7-48 11 40 11-34 16 41v45z"/>
+  <path fill="#c6ae84" d="m0 186 240-27v81H0z"/><path fill="#8b694c" d="m0 203 240-25v62H0z"/>
+  <path fill="#d0b293" d="m128 114 14-14 18 6 13 30 11 48-67 7 1-47z"/><ellipse cx="147" cy="96" rx="17" ry="22" fill="#c7aa88"/>
+  <path fill="#484437" d="M128 101c-8-32 12-47 27-28 13 4 14 35 2 46l-3-24-12-12-2 39-15 5z"/>
+  <path fill="url(#light)" d="m121 139 18 10 12 28-15 9-27-15zM162 132l12 15 16 28-12 8-21-27z"/>
+  <path fill="#e0d7bc" d="m99 176 29-8 24 12-28 12z"/><path fill="#f5ebd1" d="m124 192 28-12 28 6-28 15z"/><path fill="#6f6952" d="m124 190 28-11v3l-28 11z"/>
+  <path fill="#e1c393" d="M31 149h29l11 24H20z"/><path stroke="#b59e77" stroke-width="4" d="M45 173v25m-13 0h26"/>
+  <path fill="#788375" d="M198 181c-12-17-7-30 1-22 4-28 12-22 10 1 16-15 20-2 1 18z"/><path fill="#bc9369" d="M193 177h22l-4 23h-14z"/>
+</svg>

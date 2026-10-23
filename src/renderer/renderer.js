@@ -112,6 +112,9 @@ let timerState = { hasSession: false };
 let exploring = false;
 let activeNotice = null;
 let choosingFiles = false;
+let choosingLyrics = false;
+const lyricsByTrack = new Map();
+const onlineLyrics = { enabled: false, key: '', version: 0, status: 'off', lines: [] };
 const PAGE_NAMES = { send: 'Files', media: 'Music', clipboard: 'Clipboard', system: 'System', ai: 'AI Agents', timer: 'Timer', notes: 'Notes' };
 const PAGE_ORDER = Object.keys(PAGE_NAMES);
 const pageSwipe = new NotchActivity.Swipe();
@@ -586,7 +589,7 @@ function setPinned(value) {
 
 function dismissOutside() {
   if (state === 'closed') return;
-  if (!preferences.autoDismiss || pinned || dragDepth > 0 || choosingFiles) return;
+  if (!preferences.autoDismiss || pinned || dragDepth > 0 || choosingFiles || choosingLyrics) return;
   if (transferActive) { outsideDuringTransfer = true; return; }
   collapseNotch();
 }
@@ -1001,7 +1004,7 @@ function pointerLeft() {
   pointerInside = false;
   hoverSuppressed = false;
   clearTimeout(hoverTimer);
-  if (pinned || openedByClick || dragDepth > 0 || transferActive) return;
+  if (pinned || openedByClick || dragDepth > 0 || transferActive || choosingLyrics) return;
   scheduleCollapse(300);
 }
 card.addEventListener('mouseenter', pointerEntered);
@@ -1190,6 +1193,87 @@ notch.onToggle(() => {
 
 // --- now playing ------------------------------------------------------------
 
+function refreshOnlineLyrics() {
+  if (!onlineLyrics.enabled || lyricsByTrack.has(LyricsState.key(media))) return;
+  if (!MediaState.isActive(media, Date.now()) || media.awaiting) {
+    if (onlineLyrics.key) { onlineLyrics.key = ''; onlineLyrics.version++; onlineLyrics.lines = []; }
+    return;
+  }
+  const key = JSON.stringify([LyricsState.key(media), Math.round(media.duration)]);
+  if (onlineLyrics.key === key) return;
+  onlineLyrics.key = key; onlineLyrics.status = 'loading'; onlineLyrics.lines = [];
+  const version = ++onlineLyrics.version;
+  Promise.resolve().then(() => notch.lyrics(true)).then(result => {
+    if (version !== onlineLyrics.version || !onlineLyrics.enabled) return;
+    onlineLyrics.status = result?.status || 'unavailable';
+    onlineLyrics.lines = result?.status === 'synced' && Array.isArray(result.lines) ? result.lines : [];
+    paintPeekDetail(MediaState.positionAt(media, Date.now()));
+  }, () => {
+    if (version !== onlineLyrics.version || !onlineLyrics.enabled) return;
+    onlineLyrics.status = 'unavailable'; paintPeekDetail(MediaState.positionAt(media, Date.now()));
+  });
+}
+
+function paintPeekDetail(position) {
+  refreshOnlineLyrics();
+  const key = LyricsState.key(media), lines = lyricsByTrack.get(key) || (onlineLyrics.enabled && onlineLyrics.lines.length ? onlineLyrics.lines : null);
+  const status = document.getElementById('peek-lyrics-status');
+  if (status.dataset.track !== key) { status.hidden = true; status.dataset.track = key; }
+  const index = lines ? LyricsState.indexAt(lines, position) : -1;
+  const showLyrics = !!lines && index >= 0 && !!lines[index].text;
+  document.getElementById('peek-album-info').hidden = showLyrics;
+  document.getElementById('peek-lyrics').hidden = !showLyrics;
+  const toggle = document.getElementById('peek-lyrics-toggle');
+  const enabled = onlineLyrics.enabled || !!lines;
+  toggle.setAttribute('aria-pressed', String(enabled));
+  toggle.title = enabled ? 'Hide lyrics · Shift-click to load a local .lrc file' : 'Show lyrics · sends song metadata to LRCLIB · Shift-click for a local .lrc file';
+  toggle.setAttribute('aria-label', enabled ? 'Hide lyrics' : 'Show synced lyrics');
+  if (onlineLyrics.enabled && !lyricsByTrack.has(key)) {
+    const messages = { loading: 'Finding lyrics…', missing: 'No synced lyrics', instrumental: 'Instrumental', unavailable: 'Lyrics unavailable', limited: 'Try lyrics later', cancelled: 'Lyrics unavailable' };
+    const message = messages[onlineLyrics.status] || '';
+    if (status.textContent !== message) status.textContent = message;
+    status.hidden = !message;
+  }
+  if (showLyrics) {
+    for (const [id, text] of [['peek-lyric-before', lines[index - 1]?.text || ''], ['peek-lyric', lines[index].text], ['peek-lyric-after', lines[index + 1]?.text || '']]) {
+      const element = document.getElementById(id);
+      if (element.textContent !== text) element.textContent = text;
+    }
+  } else {
+    document.getElementById('peek-album').textContent = media.album || media.artist || 'Music';
+    document.querySelector('.peek-detail-label').textContent = media.album ? 'FROM THE ALBUM' : 'NOW PLAYING';
+    document.getElementById('peek-playback-note').textContent = media.awaiting ? 'Reconnecting…' : media.playing ? 'Now playing' : 'Paused';
+  }
+}
+
+document.getElementById('peek-settings').addEventListener('click', () => notch.openSettings());
+document.getElementById('peek-lyrics-toggle').addEventListener('click', async (event) => {
+  if (choosingLyrics || !MediaState.isActive(media, Date.now())) return;
+  const key = LyricsState.key(media), button = document.getElementById('peek-lyrics-toggle'), status = document.getElementById('peek-lyrics-status');
+  status.hidden = true;
+  if (!event.shiftKey) {
+    const turnOff = onlineLyrics.enabled || lyricsByTrack.has(key);
+    onlineLyrics.enabled = !turnOff; onlineLyrics.version++; onlineLyrics.key = ''; onlineLyrics.lines = []; onlineLyrics.status = turnOff ? 'off' : 'loading';
+    if (turnOff) { lyricsByTrack.delete(key); Promise.resolve(notch.lyrics(false)).catch(() => {}); }
+    tickNowPlaying(); return;
+  }
+  if (lyricsByTrack.has(key)) { lyricsByTrack.delete(key); tickNowPlaying(); return; }
+  choosingLyrics = true; button.disabled = true; button.setAttribute('aria-busy', 'true');
+  clearTimeout(collapseTimer);
+  try {
+    const result = await notch.chooseLyrics();
+    if (key !== LyricsState.key(media) || !media.active) return;
+    if (result?.status === 'ready' && Array.isArray(result.lines) && result.lines.length <= 2000) {
+      lyricsByTrack.set(key, result.lines);
+      if (lyricsByTrack.size > 8) lyricsByTrack.delete(lyricsByTrack.keys().next().value);
+      tickNowPlaying();
+    } else if (result?.status !== 'cancelled') {
+      status.textContent = result?.status === 'large' ? 'Lyrics file is too large' : 'No timed lyrics found'; status.hidden = false;
+    }
+  } catch { if (key === LyricsState.key(media)) { status.textContent = 'Could not open lyrics'; status.hidden = false; } }
+  finally { choosingLyrics = false; button.disabled = false; button.removeAttribute('aria-busy'); if (!pointerInside) scheduleCollapse(600); }
+});
+
 const artwork = new MediaArtwork.Presenter({ ready: (host, image) => {
   if (host !== els.npArt) return;
   if (image) {
@@ -1234,6 +1318,10 @@ function renderNowPlaying() {
   document.getElementById('np-unpin').hidden = !media.selectedSource;
 
   if (!active) {
+    if (onlineLyrics.key) {
+      onlineLyrics.key = ''; onlineLyrics.lines = []; onlineLyrics.version++;
+      Promise.resolve(notch.lyrics(false)).catch(() => {});
+    }
     seekPending = null;
     seeking = false;
     setArt(els.closedArt, null);
@@ -1262,6 +1350,7 @@ function renderNowPlaying() {
     .filter(Boolean)
     .join(' · ');
   const changed = els.peekTitle.textContent !== peekHeading || els.npTitle.textContent !== heading;
+  if (changed) document.getElementById('peek-lyrics-status').hidden = true;
   if (els.peekTitle.textContent !== peekHeading) els.peekTitle.textContent = peekHeading;
   if (els.npTitle.textContent !== heading) els.npTitle.textContent = heading;
   if (els.npSub.textContent !== subtitle) els.npSub.textContent = subtitle;
@@ -1319,10 +1408,11 @@ function tickNowPlaying() {
     return;
   }
 
-  if (media.duration > 0) {
-    const position = seeking ? seekingPosition
+  const position = seeking ? seekingPosition
       : seekPending && now < seekPending.until ? Math.min(media.duration, seekPending.position + (media.playing ? (now - seekPending.at) / 1000 : 0))
         : MediaState.positionAt(media, now);
+  paintPeekDetail(position);
+  if (media.duration > 0) {
     els.npProgress.classList.remove('is-live');
     els.npFill.style.width = (Math.min(1, position / media.duration) * 100).toFixed(2) + '%';
     if (!seeking) for (const input of [els.npSeek, els.peekSeek]) input.value = String(Math.floor(position));
@@ -1333,7 +1423,7 @@ function tickNowPlaying() {
     document.querySelector('.peek-progress').classList.remove('is-live');
     els.peekFill.style.width = els.npFill.style.width;
     els.peekTime.textContent = els.npTime.textContent;
-    els.peekRemaining.textContent = els.npRemaining.textContent;
+    els.peekRemaining.textContent = MediaState.formatClock(media.duration);
   } else {
     // Live streams report no length, so there is no bar to draw.
     els.npProgress.classList.add('is-live');
@@ -1366,7 +1456,7 @@ els.peekToggle.addEventListener('click', (event) => { event.stopPropagation(); m
 els.peekPrev.addEventListener('click', () => mediaCommand('prev'));
 els.peekNext.addEventListener('click', () => mediaCommand('next'));
 document.getElementById('peek-files').addEventListener('click', () => openNotch('send'));
-document.getElementById('peek-expand').addEventListener('click', () => openNotch('media'));
+document.getElementById('peek-expand').addEventListener('click', () => { openNotch(); setExploring(true); });
 function commitSeek(value) {
   const position = Math.max(0, Math.min(media.duration, Number(value)));
   seeking = false;
