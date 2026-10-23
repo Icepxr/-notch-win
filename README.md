@@ -8,6 +8,24 @@
 
 ## ใช้งาน
 
+สร้าง shortcut ชื่อ **Islet** บน Desktop เพื่อดับเบิลคลิกเปิดแอปได้:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-shortcuts.ps1
+```
+
+หากต้องการให้เปิดอัตโนมัติหลังลงชื่อเข้า Windows ให้เพิ่ม `-Startup`:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\create-shortcuts.ps1 -Startup
+```
+
+รันจากโฟลเดอร์โปรเจกต์หลัง `npm install` สคริปต์สร้าง shortcut ของผู้ใช้ปัจจุบัน
+โดยชี้เข้า Electron พร้อม path โปรเจกต์แบบเต็ม จึงเปิดจาก Desktop/Startup ได้โดยตรง
+การใช้ `ExecutionPolicy Bypass` มีผลเฉพาะคำสั่งนี้ ไม่ได้เปลี่ยน policy ถาวร
+ถ้าต้องการปิดการเปิดอัตโนมัติ กด **Win+R** พิมพ์ `shell:startup` แล้วลบ `Islet`
+ในโฟลเดอร์นั้น หากย้ายโฟลเดอร์โปรเจกต์ ให้ลบ shortcut เดิมแล้วสร้างใหม่ให้ชี้ที่อยู่ใหม่
+
 The current UI is ported from the Vorssaint source structure for the features
 already implemented in Islet. Settings now has a sidebar, search and **Dynamic
 Island → Layout / Content / Activity / Behavior**. Content can reorder or hide
