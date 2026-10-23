@@ -32,21 +32,23 @@ body.has-media:not(.has-timer) .layer-peek {
   column-gap: 16px; row-gap: 4px; padding: 10px 20px 14px; align-content: center;
 }
 body.has-media:not(.has-timer) .peek-music-head { display: flex; grid-column: 1 / -1; grid-row: 1; align-items: center; gap: 2px; }
-.peek-music-head .icon-btn { width: 28px; height: 28px; color: #b9b9c1; border-radius: 8px; flex-shrink: 0; }
+.peek-music-head .icon-btn { width: 28px; height: 28px; color: #b9b9c1; border-radius: 50%; flex-shrink: 0; }
 .peek-music-head .icon-btn svg { width: 14px; height: 14px; }
 #peek-expand { color: #f5f5f7; }
 #peek-source { margin-left: auto; padding: 0 7px 0 0; font-size: 10px; color: #a8a8b0; max-width: 33%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.multi-activity #peek-source { margin-right: 68px; }
 #peek-lyrics-toggle[aria-pressed="true"] { color: #fff; background: #ffffff12; }
 body.has-media:not(.has-timer) .peek-np { display: contents; }
-body.has-media:not(.has-timer) #peek-art { width: 96px; height: 96px; grid-column: 1; grid-row: 2 / 5; align-self: center; border-radius: 14px; box-shadow: inset 0 0 0 1px #ffffff15; background: #151515; font-size: 24px; }
+body.has-media:not(.has-timer) #peek-art { width: 96px; height: 96px; grid-column: 1; grid-row: 2 / 5; align-self: center; border-radius: 20px; box-shadow: inset 0 0 0 1px #ffffff15; background: #151515; font-size: 24px; }
 body.has-media:not(.has-timer) .peek-track { grid-column: 2; grid-row: 2; min-width: 0; align-self: center; display: flex; flex-direction: column; gap: 3px; }
 .peek-track .marquee-box { font-size: 14px; line-height: 18px; font-weight: 600; letter-spacing: -.15px; }
 body.has-media:not(.has-timer) #peek-artist { display: block; font-size: 12px; line-height: 17px; color: #b8b8c1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.has-media:not(.has-timer) .peek-progress { display: grid; grid-column: 2; grid-row: 3; grid-template-columns: 1fr 1fr; grid-template-rows: 4px 14px; row-gap: 6px; position: relative; align-self: center; font-size: 10px; font-variant-numeric: tabular-nums; color: #aaaab5; }
-.peek-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; overflow: hidden; background: #ffffff28; }
+.peek-bar { grid-column: 1 / -1; height: 3.5px; border-radius: 99px; overflow: hidden; background: #ffffff28; }
 #peek-fill { display: block; height: 100%; border-radius: inherit; background: var(--music-accent,#fff); }
 #peek-remaining { text-align: right; }
+/* Both ends of the timeline carry the music's colour, as the linework does. */
+#peek-time, #peek-remaining { color: var(--music-accent, #aaaab5); }
 #peek-seek { inset: -10px 0 auto; width: 100%; height: 24px; }
 #peek-seek::-webkit-slider-thumb { background: var(--music-accent,#fff); }
 .peek-progress.is-live { visibility: hidden; }
@@ -60,14 +62,83 @@ body.has-media:not(.has-timer) .peek-detail { display: flex; grid-column: 3; gri
 .peek-detail-label { font-size: 9px; line-height: 12px; letter-spacing: 1.1px; color: #a1a1aa; }
 #peek-album { font-size: 17px; line-height: 21px; font-weight: 550; letter-spacing: -.3px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
 #peek-playback-note { font-size: 10px; color: #a1a1aa; }
+/* The cover as atmosphere behind the lyrics: blurred past recognition, run
+   out to the notch's own edge, and faded away before it reaches the controls.
+   It is a child of the layer, not of a column, so the shell's rounded clip
+   shapes its corners and nothing it does can make a column scroll.
+   Hidden unless music is on this layer. */
+.peek-detail-art, .peek-mood { display: none; }
+body.has-media:not(.has-timer) .peek-detail-art {
+  display: block; position: absolute; inset: 0 0 0 54%; overflow: hidden;
+  pointer-events: none; opacity: 0; transition: opacity 320ms ease;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 46%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 46%, #000 100%);
+}
+body.has-media:not(.has-timer) .peek-detail-art.has-art { opacity: 1; }
+.peek-detail-art img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.7); filter: blur(26px) saturate(175%) brightness(.78); }
+/* A scrim over the blur: the cover decides the hue, never the contrast. */
+.peek-detail-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, #000000ef 0%, #000000ae 46%, #0000008c 100%); }
+
+/* The mood as light rather than as a picture: the music's own colour, poured
+   softly behind the cover on the left so the two sides of the player balance.
+   It has no edges of its own - it is a gradient that ends in nothing. */
+body.has-media:not(.has-timer) .peek-mood {
+  /* Wide enough to wrap the cover, spent before it reaches the controls:
+     the middle of the notch stays black. */
+  display: block; position: absolute; inset: 0 auto 0 0; width: 30%;
+  pointer-events: none; opacity: 0; transition: opacity 420ms ease;
+  background:
+    radial-gradient(62% 90% at 30% 50%, color-mix(in srgb, var(--music-accent, #ffffff) 30%, transparent) 0%, transparent 70%),
+    radial-gradient(100% 130% at 0% 50%, color-mix(in srgb, var(--music-accent, #ffffff) 14%, transparent) 0%, transparent 74%);
+  /* Transparent at both ends: the notch's own left edge stays black, and the
+     glow is spent before the controls. The light belongs to the cover, not
+     to the shell. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 20%, #000 46%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 20%, #000 46%, #000 58%, transparent 100%);
+}
+/* The colour only appears when the music actually supplied one. */
+body.has-media:not(.has-timer) .layer-peek.music-tinted .peek-mood { opacity: .92; }
+
+.peek-detail > * { position: relative; z-index: 1; }
+.layer-peek > *:not(.peek-detail-art):not(.peek-mood) { position: relative; z-index: 1; }
+/* Matching the specificity of the rules that switch these on, and placed
+   after them, so asking for less transparency actually removes them. */
+@media (prefers-reduced-transparency: reduce) {
+  body.has-media:not(.has-timer) .peek-detail-art,
+  body.has-media:not(.has-timer) .peek-mood { display: none; }
+}
+
 #peek-lyrics { width: 100%; display: flex; flex-direction: column; gap: 6px; }
-#peek-lyric { font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -.15px; color: #f5f5f7; white-space: pre-line; }
+#peek-lyric { font-size: 17px; line-height: 22px; font-weight: 600; letter-spacing: -.2px; color: #fbfbfd; white-space: pre-line; }
 #peek-lyric-before,#peek-lyric-after { font-size: 11px; line-height: 15px; color: #9999a3; }
 #peek-lyric,#peek-lyric-before,#peek-lyric-after { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-#peek-lyric { -webkit-line-clamp: 3; } #peek-lyric-before,#peek-lyric-after { -webkit-line-clamp: 1; }
+/* The column is 104px tall, which at this size holds two lines of the
+   current lyric plus one dim line either side. Bigger type buys legibility
+   at the cost of the third line; the lines around it keep the thread. */
+#peek-lyric { -webkit-line-clamp: 2; } #peek-lyric-before,#peek-lyric-after { -webkit-line-clamp: 1; }
 #peek-lyrics-status { position: absolute; bottom: -5px; left: 4px; right: 0; color: #b5b5be; font-size: 10px; line-height: 13px; }
 .peek-detail:has(#peek-lyrics-status:not([hidden])) #peek-playback-note { visibility: hidden; }
 body.has-media:not(.has-timer) .layer-peek > .peek-spacer { display: none; }
 body.has-media:not(.has-timer) .layer-peek > .focus-picker { position: absolute; right: 88px; top: 13px; }
 @media (prefers-reduced-motion: reduce) { .peek-controls button:active:not(:disabled) { transform: none; } }
 @media (prefers-reduced-motion: reduce) { [data-panel="media"] .np-buttons button:active:not(:disabled) { transform: none; } }
+
+/* A cover that is not square is shown whole, not cropped and enlarged.
+   The blurred copy behind it fills the tile so the shape stays a square,
+   and the sharp copy on top is scaled down rather than up. */
+.art[data-fit="wide"]::before {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  background-image: var(--art-source); background-size: cover; background-position: center;
+  filter: blur(16px) saturate(130%) brightness(.5); transform: scale(1.3);
+}
+.art[data-fit="wide"] img { object-fit: contain; position: relative; }
+
+/* A title longer than its box used to be guillotined mid-word, flush against
+   the next column, which reads as though something is lying on top of it.
+   It dissolves instead. Only when it actually overflows: a title that fits
+   keeps its last letter at full strength. */
+.peek-track .marquee-box:has(.marquee-track.is-scrolling),
+[data-panel="media"] .np-text .marquee-box:has(.marquee-track.is-scrolling) {
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 38px), transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 38px), transparent 100%);
+}

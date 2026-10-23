@@ -42,6 +42,7 @@ const els = {
   pinForm: document.getElementById('pin-form'),
   pinInput: document.getElementById('pin-input'),
   peekArt: document.getElementById('peek-art'),
+  peekDetailArt: document.getElementById('peek-detail-art'),
   peekTitle: document.getElementById('peek-title'),
   npArt: document.getElementById('np-art'),
   npTitle: document.getElementById('np-title'),
@@ -1321,7 +1322,40 @@ document.getElementById('peek-lyrics-toggle').addEventListener('click', async (e
   finally { choosingLyrics = false; button.disabled = false; button.removeAttribute('aria-busy'); if (!pointerInside) scheduleCollapse(600); }
 });
 
+// How far from square a cover may be before filling a square tile with it
+// costs more than it is worth. Chrome reports a video's thumbnail at about
+// 150x83 (1.8); a real album cover is 1.0.
+const SQUARE_ENOUGH = 1.15;
+
+/**
+ * Decide how a cover should sit in its tile.
+ *
+ * Windows hands us whatever the player supplied, and a browser playing a
+ * video supplies a small, wide thumbnail. Cropping that to a square throws
+ * away most of its width and then enlarges what is left, which is what makes
+ * a cover look soft. A wide source is shown whole instead, over a blurred
+ * copy of itself - and being shown whole, it is scaled down rather than up.
+ */
+function fitArtwork(host, image) {
+  if (!image || !image.naturalWidth || !image.naturalHeight) {
+    delete host.dataset.fit;
+    host.style.removeProperty('--art-source');
+    return;
+  }
+  const ratio = Math.max(image.naturalWidth, image.naturalHeight) / Math.min(image.naturalWidth, image.naturalHeight);
+  if (ratio <= SQUARE_ENOUGH) {
+    delete host.dataset.fit;
+    host.style.removeProperty('--art-source');
+    return;
+  }
+  host.dataset.fit = 'wide';
+  // CSSOM, not a style attribute: the policy forbids the latter.
+  host.style.setProperty('--art-source', 'url("' + image.src + '")');
+}
+
 const artwork = new MediaArtwork.Presenter({ ready: (host, image) => {
+  // The blurred backdrop is meant to fill its box; only real tiles adapt.
+  if (host !== els.peekDetailArt) fitArtwork(host, image);
   if (host !== els.npArt) return;
   if (image) {
       // Source NotchMusicService averages the cover into one sRGB pixel.
@@ -1373,6 +1407,7 @@ function renderNowPlaying() {
     seeking = false;
     setArt(els.closedArt, null);
     setArt(els.peekArt, null);
+    setArt(els.peekDetailArt, null);
     setArt(els.npArt, null);
     els.peekTitle.textContent = '';
     els.peekArtist.textContent = '';
@@ -1416,6 +1451,8 @@ function renderNowPlaying() {
   els.npSource.value = media.selectedSource || '';
 
   setArt(els.peekArt, media.thumb);
+  // Same picture, same load and race handling; only the styling differs.
+  setArt(els.peekDetailArt, media.thumb);
   setArt(els.npArt, media.thumb);
   setArt(els.closedArt, media.thumb);
   if (!timerState.hasSession) {

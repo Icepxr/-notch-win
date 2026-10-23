@@ -28,6 +28,26 @@ app.whenReady().then(async () => {
   const cover = 'data:image/svg+xml;base64,' + fs.readFileSync(path.join(__dirname, 'fixtures', 'music-cover.svg')).toString('base64');
   const state = (values = {}) => ({ type: 'state', session: true, title: 'Midnight in Motion', artist: 'Local Artist', album: 'After Hours', app: 'Spotify.exe', status: 'Playing',
     duration: 240, position: 31, canPlay: true, canPause: true, canNext: true, canPrev: true, canSeek: true, thumb: cover, ...values });
+  /**
+   * Relative luminance of a captured region, as percentiles. The notch is
+   * light-on-dark, so p97 stands for the text and p03 for what it sits on.
+   */
+  async function luminance(rect) {
+    const image = await win.webContents.capturePage({ x: rect[0], y: rect[1], width: rect[2], height: rect[3] });
+    const bytes = image.toBitmap();
+    const channel = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+    const values = [];
+    for (let i = 0; i < bytes.length; i += 4) {
+      values.push(0.2126 * channel(bytes[i + 2]) + 0.7152 * channel(bytes[i + 1]) + 0.0722 * channel(bytes[i]));
+    }
+    values.sort((a, b) => a - b);
+    const at = (q) => values[Math.floor(values.length * q)];
+    return { p03: at(0.03), p50: at(0.5), p97: at(0.97) };
+  }
+  const contrast = (a, b) => (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  const boxOf = (selector) => js(`(()=>{const r=document.querySelector('${selector}').getBoundingClientRect();
+    return [Math.round(r.x),Math.round(r.y),Math.round(r.width),Math.round(r.height)]})()`);
+
   async function snapshot(name) {
     await js(`document.documentElement.style.background='#303036'`); await delay(40);
     const rect = await js(`(()=>{const r=card.getBoundingClientRect();return{x:Math.floor(r.x-18),y:0,width:Math.ceil(r.width+36),height:Math.ceil(r.height+24)}})()`);
@@ -48,6 +68,85 @@ app.whenReady().then(async () => {
     await localLyrics(); await delay(80);
     check(await js(`!document.getElementById('peek-lyrics').hidden&&document.getElementById('peek-lyric').textContent.includes('Let the night unfold')&&document.getElementById('peek-lyrics-toggle').getAttribute('aria-pressed')==='true'`), 'a selected local LRC supplies the live lyric column');
     check(await js(`document.getElementById('peek-lyric').textContent.split(String.fromCharCode(10)).length===2&&document.getElementById('peek-detail').scrollHeight<=document.getElementById('peek-detail').clientHeight+1`), 'simultaneous lyric lines share the center of the detail column without overflow');
+    // The cover glows faintly behind the lyrics and nowhere else: the rest of
+    // the notch is still a black surface. Both halves are measured, because
+    // "faint" and "black" are the two ways this can go wrong.
+    {
+      const column = await luminance(await boxOf('#peek-detail'));
+      const lyric = await luminance(await boxOf('#peek-lyric'));
+      const controls = await luminance(await boxOf('.peek-controls'));
+      check(column.p50 > 0.003, 'the cover reaches the lyric column rather than being lost in the black (' + column.p50.toFixed(4) + ')');
+      check(column.p50 < 0.05, 'and stays atmosphere, not a picture (' + column.p50.toFixed(4) + ')');
+      check(controls.p03 < 0.0015, 'the surface under the transport controls is still black (' + controls.p03.toFixed(5) + ')');
+      const readable = contrast(lyric.p97, lyric.p03);
+      check(readable >= 4.5, 'the lyric stays readable over it, at ' + readable.toFixed(2) + ':1');
+      check(await js(`(()=>{const h=document.getElementById('peek-detail-art');const d=document.getElementById('peek-detail');
+        return h.classList.contains('has-art') && d.scrollHeight<=d.clientHeight+1})()`),
+        'the backdrop is loaded and stays inside its column instead of making it scroll');
+      check(await js(`(()=>{const r=document.getElementById('peek-detail-art').getBoundingClientRect();
+        const c=card.getBoundingClientRect();return Math.abs(r.right-c.right)<=1})()`),
+        'and runs out to the notch edge rather than stopping short of it');
+
+      // The cover is also the source of the light on the left. The notch's
+      // own edge stays black; the glow belongs to the artwork.
+      const aura = await luminance(await boxOf('#peek-art'));
+      const edge = await luminance(await js(`(()=>{const c=card.getBoundingClientRect();
+        return [Math.round(c.x+2),Math.round(c.y+c.height/2-8),4,16]})()`));
+      check(await js(`document.querySelector('.layer-peek').classList.contains('music-tinted')`),
+        'the hover layer carries the music colour');
+      check(aura.p50 > 0.01, 'light gathers around the cover (' + aura.p50.toFixed(4) + ')');
+      check(edge.p97 < 0.002, 'while the notch edge itself stays black (' + edge.p97.toFixed(5) + ')');
+    }
+    // A long title, with an emoji in it, is what a browser actually reports.
+    // An emoji raises the line box, and the row it sits in is a fixed height,
+    // so this is where the title starts colliding with its neighbours.
+    {
+      const long = 'acting fine." ' + String.fromCodePoint(0x1f494) + ' | Sad Lofi Playlist for late nights';
+      emit('now-playing', state({ title: long, artist: 'GABBI' })); await delay(420);
+      const hit = await js(`(()=>{
+        const box = (sel) => { const r = document.querySelector(sel).getBoundingClientRect();
+          return { top: r.top, bottom: r.bottom, left: r.left, right: r.right }; };
+        const track = box('.peek-track'), head = box('.peek-music-head'),
+              bar = box('.peek-progress'), detail = box('#peek-detail'),
+              title = box('.peek-track .marquee-box');
+        return { intoHead: track.top < head.bottom - 0.5,
+                 intoBar: track.bottom > bar.top + 0.5,
+                 intoDetail: title.right > detail.left - 0.5,
+                 clipped: document.querySelector('.peek-track .marquee-box').scrollWidth
+                   > document.querySelector('.peek-track .marquee-box').clientWidth };
+      })()`);
+      check(!hit.intoHead, 'a tall title does not ride up into the header');
+      check(!hit.intoBar, 'and does not push down onto the timeline');
+      check(!hit.intoDetail, 'and never reaches the lyrics column');
+      check(hit.clipped, 'it is held inside its own box rather than spilling');
+      check(await js(`getComputedStyle(document.querySelector('.peek-track .marquee-box')).maskImage.includes('gradient')`),
+        'and fades out at the edge instead of being cut off mid-word');
+      await snapshot('music-hover-long-title');
+      emit('now-playing', state()); await delay(320);
+    }
+
+    // A browser playing a video reports a small, wide thumbnail - this
+    // machine's Chrome reports 150x83. Cropping that to a square throws away
+    // its width and then enlarges the remainder, which is what makes a cover
+    // look soft. A wide source is shown whole over a blurred copy instead.
+    {
+      const wide = 'data:image/svg+xml;base64,' + Buffer.from(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="150" height="83">'
+        + '<rect width="150" height="83" fill="#2b3a4a"/>'
+        + '<circle cx="110" cy="30" r="22" fill="#d8a46a"/></svg>').toString('base64');
+      emit('now-playing', state({ thumb: wide })); await delay(420);
+      check(await js(`document.getElementById('peek-art').dataset.fit === 'wide'`),
+        'a wide thumbnail is recognised rather than cropped to a square');
+      check(await js(`getComputedStyle(document.querySelector('#peek-art img')).objectFit === 'contain'`),
+        'so it is shown whole, which scales it down instead of up');
+      check(await js(`document.getElementById('peek-art').style.getPropertyValue('--art-source').startsWith('url(')`),
+        'and a blurred copy of it fills the rest of the tile');
+      await snapshot('music-hover-wide-art');
+
+      emit('now-playing', state()); await delay(420);
+      check(await js(`!document.getElementById('peek-art').dataset.fit`),
+        'a square cover still fills its tile edge to edge');
+    }
     await snapshot('music-hover');
     check(await js(`els.peekToggle.click();state==='peek'&&els.peekToggle.getAttribute('aria-label')==='Play'`), 'hover Pause responds synchronously without opening the notch');
     await delay(40); check(commands.at(-1).action === 'pause' && commands.at(-1).playback.app === 'Spotify.exe', 'hover playback targets the displayed source');

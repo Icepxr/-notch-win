@@ -29,6 +29,12 @@
     </button>
 
     <div class="layer layer-peek" role="group" tabindex="0" aria-label="Notch preview">
+      <!-- The cover, blurred past recognition, running out to the notch edge
+           behind the lyrics. It sits on the layer rather than inside a column
+           so the shell's own rounded clip shapes it, and it is absolutely
+           positioned so it takes no place in the layout. -->
+      <span id="peek-detail-art" class="peek-detail-art" aria-hidden="true"><img alt="" /></span>
+      <span id="peek-mood" class="peek-mood" aria-hidden="true"></span>
       <span id="peek-clock">--:--</span>
       <span class="peek-dot"></span>
       <span id="peek-shelf">Empty</span>
