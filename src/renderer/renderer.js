@@ -115,6 +115,9 @@ const NOTICE_INSISTS = 50;
 let networkTrouble = null;
 const wheelGesture = new NotchMotion.Gesture();
 let currentMorph = null;
+// The plan behind currentMorph, kept so an interruption can read the speed the
+// shell is travelling at rather than restarting it from a standstill.
+let currentPlan = null;
 let preferences = { autoDismiss: true, musicPreview: true, gestures: true, silhouette: 'notch' };
 let timerState = { hasSession: false };
 let exploring = false;
@@ -282,8 +285,21 @@ async function updateGeometry() {
   const revision = ++geometryRevision;
   const drawn = card.getBoundingClientRect();
   document.body.classList.toggle('is-shrinking', target.width < drawn.width || target.height < drawn.height);
-  const motion = NotchMotion.plan({ width: drawn.width, height: drawn.height }, target);
+
+  // If a morph is already running, take the speed it is carrying with us.
+  // Starting the new one from rest is what made a reversal look like a stall.
+  let speed = null;
+  if (currentMorph && currentPlan && currentMorph.playState === 'running') {
+    const elapsed = Number(currentMorph.currentTime) / 1000;
+    if (Number.isFinite(elapsed)) speed = currentPlan.speedAt(elapsed);
+  }
+
+  const motion = NotchMotion.plan({ width: drawn.width, height: drawn.height }, target, speed);
+  currentPlan = motion;
   currentMorph?.cancel();
+  // The content follows the shell rather than racing ahead of it: the layers
+  // read this to time their own fade.
+  card.style.setProperty('--morph-duration', Math.round(motion.duration) + 'ms');
   card.style.width = drawn.width + 'px';
   card.style.height = drawn.height + 'px';
   applyVisualState();
@@ -295,16 +311,59 @@ async function updateGeometry() {
   // corners let media-preview CSS square the capsule's top when fill was removed.
   card.style.borderRadius = NotchGeometry.borderRadiusFor(target.height, preferences.silhouette);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const morph = card.animate(motion.sizes.map((size) => ({
-    width: size.width + 'px', height: size.height + 'px',
-    '--notch-shoulder': NotchGeometry.shoulderFor(size.height) + 'px',
-    borderRadius: NotchGeometry.borderRadiusFor(size.height, preferences.silhouette),
-  })), { duration: reduced ? 1 : motion.duration, easing: 'linear', fill: 'both' });
+  if (reduced) {
+    // Someone who asked for less motion gets the end state, not the same
+    // journey compressed into a millisecond.
+    currentMorph = null;
+    currentPlan = null;
+    document.body.classList.remove('is-shrinking', 'is-morphing');
+    updateHitRegion();
+    return;
+  }
+
+  // Two animations, because the two axes travel on different curves: width
+  // is slower and bounces more than height. Each carries its own spring as a
+  // CSS easing, so the compositor samples the real curve at the display's own
+  // refresh rate instead of walking a list of points we picked in advance.
+  // The contour rides with height, which is what it is derived from.
+  const morphs = [];
+  if (motion.easing.width) {
+    morphs.push(card.animate(
+      [{ width: drawn.width + 'px' }, { width: target.width + 'px' }],
+      { duration: motion.duration, easing: motion.easing.width, fill: 'both' }));
+  }
+  if (motion.easing.height) {
+    morphs.push(card.animate([
+      { height: drawn.height + 'px',
+        '--notch-shoulder': NotchGeometry.shoulderFor(drawn.height) + 'px',
+        borderRadius: NotchGeometry.borderRadiusFor(drawn.height, preferences.silhouette) },
+      { height: target.height + 'px',
+        '--notch-shoulder': NotchGeometry.shoulderFor(target.height) + 'px',
+        borderRadius: NotchGeometry.borderRadiusFor(target.height, preferences.silhouette) },
+    ], { duration: motion.duration, easing: motion.easing.height, fill: 'both' }));
+  }
+
+  // The two run as one as far as the rest of the code is concerned. Both
+  // readings are getters: a snapshot would go stale the moment it was taken,
+  // which is exactly when an interruption asks for it.
+  const morph = morphs.length ? {
+    get playState() { return morphs[0].playState; },
+    get currentTime() { return morphs[0].currentTime; },
+    finished: Promise.all(morphs.map((one) => one.finished)),
+    cancel: () => { for (const one of morphs) one.cancel(); },
+  } : null;
   currentMorph = morph;
+  if (!morph) {
+    currentPlan = null;
+    document.body.classList.remove('is-shrinking', 'is-morphing');
+    updateHitRegion();
+    return;
+  }
   await morph.finished.catch(() => {});
   if (revision !== geometryRevision) return;
   morph.cancel();
   currentMorph = null;
+  currentPlan = null;
   document.body.classList.remove('is-shrinking');
   document.body.classList.remove('is-morphing');
   updateHitRegion(); // A silhouette-only change need not trigger ResizeObserver.

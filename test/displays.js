@@ -57,3 +57,28 @@ async function settle() { await new Promise((resolve) => setTimeout(resolve, 150
     console.log('Displays: mixed DPI, negative coordinates, docking, primary/cursor modes, fitted zoom and click-through passed');
   } finally { controller.stop(); assert.equal(screen.listenerCount('display-added'), 0); }
 })().catch((error) => { console.error(error); process.exitCode = 1; });
+
+// Leaving is judged against a slightly larger region than entering, so a
+// pointer resting on the boundary does not flip the answer on every poll.
+{
+  const { growRegion, pointerInside } = require('../src/displays');
+  const region = { x: 100, y: 0, width: 200, height: 40, radius: 12, topRadius: 0 };
+  const bounds = { x: 0, y: 0 };
+  const at = (x, y, r = region) => pointerInside(r, { x, y }, bounds, 1);
+
+  assert.equal(at(200, 20), true, 'well inside is inside');
+  assert.equal(at(200, 44), false, 'four pixels below the edge is outside');
+  assert.equal(at(200, 44, growRegion(region, 6)), true, 'but still within the margin that keeps hover held');
+  assert.equal(at(200, 52, growRegion(region, 6)), false, 'and far enough out is out even with the margin');
+
+  const grown = growRegion(region, 6);
+  assert.equal(grown.width, region.width + 12);
+  assert.equal(grown.height, region.height + 12);
+  assert.equal(grown.x, region.x - 6);
+  assert.equal(grown.radius, region.radius + 6, 'the corners grow with it, or the margin would square them off');
+
+  assert.equal(growRegion(region, 0), region, 'no margin returns the region untouched');
+  assert.equal(growRegion(null, 6), null);
+  assert.equal(growRegion(region, NaN), region, 'and nonsense is ignored rather than producing NaN edges');
+}
+console.log('Hover hysteresis: the leave test uses a larger region than the enter test');

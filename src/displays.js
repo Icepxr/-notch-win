@@ -36,6 +36,25 @@ function placement(display, silhouette = 'notch', preferences = {}, reserveWidth
 function pointerInside(region, point, bounds, zoomFactor = 1) {
   return Geometry.contains(region, (point.x - bounds.x) / zoomFactor, (point.y - bounds.y) / zoomFactor);
 }
+
+/**
+ * The same region with a margin around it, used for the test that decides the
+ * pointer has *left*. Asking the same question for entering and leaving makes
+ * a pointer resting on the boundary flip the answer every time it is polled;
+ * a margin means it has to mean it.
+ */
+function growRegion(region, by) {
+  if (!region || !Number.isFinite(by) || by <= 0) return region;
+  return {
+    ...region,
+    x: region.x - by,
+    y: region.y - by,
+    width: region.width + by * 2,
+    height: region.height + by * 2,
+    radius: Math.max(0, (region.radius || 0) + by),
+    topRadius: Math.max(0, (region.topRadius || 0) + by),
+  };
+}
 class DisplayController extends EventEmitter {
   constructor({ screen, settings, canFollow = () => true, now = Date.now }) {
     super(); this.screen = screen; this.settings = settings; this.canFollow = canFollow; this.now = now;
@@ -108,4 +127,4 @@ class DisplayController extends EventEmitter {
         primary: d.id === primaryId, internal: !!d.internal, scaleFactor: d.scaleFactor || 1 })) };
   }
 }
-module.exports = { DisplayController, selectDisplay, placement, pointerInside, MODES };
+module.exports = { DisplayController, selectDisplay, placement, pointerInside, growRegion, MODES };

@@ -167,7 +167,19 @@ body.state-open .layer-open {
   opacity: 1;
   transform: none;
   pointer-events: auto;
-  transition-delay: 75ms, 75ms, 0s;
+  /* The incoming content is timed from the shell's own morph, which the
+     renderer publishes as --morph-duration. With fixed timings the content
+     used to be fully settled while the shell was still travelling, so the
+     two read as separate events; now it arrives just before the shell lands.
+     The fallback covers the very first paint, before any morph has run. */
+  transition-duration:
+    calc(var(--morph-duration, 300ms) * .46),
+    calc(var(--morph-duration, 300ms) * .72),
+    0s;
+  transition-delay:
+    calc(var(--morph-duration, 300ms) * .24),
+    calc(var(--morph-duration, 300ms) * .16),
+    0s;
 }
 /* Retire the outgoing album/preview before the shell reaches compact height.
    A slow exit leaves a full-sized cover apparently frozen behind the clipping. */

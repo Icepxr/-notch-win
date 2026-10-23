@@ -98,3 +98,54 @@ console.log('Notch source ports: spring bounds, gesture sequences and timer life
   assert.ok(!reordered.includes('clipboard'), 'a hidden module takes no shortcut slot');
   assert.equal(reordered.length, Modules.ids.length - 1);
 }
+
+// A morph that is interrupted carries its speed into the next one. Without
+// this the shell stops dead at the point of interruption and sets off again,
+// which is what a reversal used to look like.
+{
+  const closed = { width: 184, height: 28 };
+  const open = { width: 520, height: 390 };
+
+  const growing = plan(closed, open);
+  const at = growing.duration / 1000 * 0.33;
+  const here = growing.sizeAt(at);
+  const carried = growing.speedAt(at);
+  assert.ok(carried.height > 100, 'the shell is genuinely moving when we interrupt it');
+  assert.ok(here.height > closed.height && here.height < open.height, 'and is part way there');
+
+  const cold = plan(here, closed);
+  const warm = plan(here, closed, carried);
+
+  // Starting from rest, the first thing the new spring does is reverse: its
+  // speed at the instant of handover has the opposite sign to the speed the
+  // shell actually had. Carrying the speed keeps the sign.
+  assert.ok(cold.speedAt(0).height < 0, 'from rest, the motion flips direction instantly');
+  assert.ok(warm.speedAt(0).height > 0, 'carrying the speed, it still travels the way it was going');
+
+  for (const planned of [cold, warm]) {
+    assert.deepEqual(planned.sizes.at(-1), closed, 'every plan lands exactly on its target');
+    assert.equal(Math.round(planned.sizes[0].height), Math.round(here.height), 'and starts where the shell is');
+  }
+
+  // Carried speed must not become a slingshot.
+  const lowest = Math.min(...warm.sizes.map((size) => size.height));
+  assert.ok(lowest >= closed.height - 1, 'a reversal does not undershoot its target (' + lowest.toFixed(1) + ')');
+
+  const onward = plan(here, { width: 520, height: 520 }, carried);
+  const peak = Math.max(...onward.sizes.map((size) => size.height));
+  assert.ok(peak <= 520 + 12, 'and carrying speed into a longer move keeps the overshoot capped (' + peak.toFixed(1) + ')');
+  assert.deepEqual(onward.sizes.at(-1), { width: 520, height: 520 });
+
+  // A plan with no speed given behaves exactly as it did before.
+  const a = plan(closed, open), b = plan(closed, open, { width: 0, height: 0 });
+  assert.equal(a.sizes.length, b.sizes.length);
+  assert.ok(a.sizes.every((size, i) => Math.abs(size.height - b.sizes[i].height) < 1e-9),
+    'omitting the speed is the same as handing it zero');
+
+  // Rubbish in place of a speed is ignored rather than producing NaN sizes.
+  for (const bad of [{ width: NaN, height: NaN }, { width: 'x', height: null }]) {
+    const safe = plan(closed, open, bad);
+    assert.ok(safe.sizes.every((size) => Number.isFinite(size.width) && Number.isFinite(size.height)),
+      JSON.stringify(bad) + ' does not poison the plan');
+  }
+}

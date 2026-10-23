@@ -29,7 +29,7 @@ const NotchGeometry = require('./renderer/notch-geometry');
 const NotchAppearance = require('./renderer/notch-appearance');
 const NotchModules = require('./renderer/notch-modules');
 const NotesTools = require('./renderer/notes-tools');
-const { DisplayController, pointerInside, MODES: DISPLAY_MODES } = require('./displays');
+const { DisplayController, pointerInside, growRegion, MODES: DISPLAY_MODES } = require('./displays');
 const { chooseProfile } = require('./profile');
 const { SystemActions } = require('./system-actions');
 const { findClaude, signInCommand } = require('./ai-claude');
@@ -66,6 +66,16 @@ let activeTransfer = null;
 let pointerTimer = null;
 let hitRegion = { x: NotchGeometry.gutter, y: 0, ...NotchGeometry.sizes.closed };
 let mouseInside = null;
+// Whether the window is currently taking clicks, tracked apart from the
+// visible hover so routing stays instant while the hover is allowed to settle.
+let clickable = null;
+let hoverSince = 0;
+// A pointer must mean it. Entering is quick enough not to feel sticky;
+// leaving is slower, and judged against a region a few pixels larger, so the
+// notch does not blink when the cursor rests on its edge.
+const HOVER_ENTER_MS = 70;
+const HOVER_LEAVE_MS = 130;
+const HOVER_SLACK = 6;
 let timer = null;
 let notes = null;
 let displayController = null;
@@ -259,11 +269,31 @@ function createWindow() {
     displayController.tick();
     const point = screen.getCursorScreenPoint();
     const bounds = win.getBounds();
-    const inside = pointerInside(hitRegion, point, bounds, win.webContents.getZoomFactor());
-    if (inside === mouseInside) return;
-    mouseInside = inside;
-    win.setIgnoreMouseEvents(!inside, { forward: true });
-    send('notch:pointer', inside);
+    const zoom = win.webContents.getZoomFactor();
+
+    // Clicks are routed on the plain answer, with no delay: a notch that has
+    // decided to wait before admitting the pointer is over it would spend
+    // that time passing the user's click to whatever is underneath.
+    const over = pointerInside(hitRegion, point, bounds, zoom);
+    if (over !== clickable) {
+      clickable = over;
+      win.setIgnoreMouseEvents(!over, { forward: true });
+    }
+
+    // The visible hover is steadier than that. Leaving is judged against a
+    // slightly larger region, and both directions have to hold for a moment,
+    // so a pointer sitting on the edge or crossing the notch on its way
+    // somewhere else does not make it flicker.
+    const held = mouseInside
+      ? pointerInside(growRegion(hitRegion, HOVER_SLACK), point, bounds, zoom)
+      : over;
+    if (held === mouseInside) { hoverSince = 0; return; }
+    const now = Date.now();
+    if (!hoverSince) { hoverSince = now; return; }
+    if (now - hoverSince < (held ? HOVER_ENTER_MS : HOVER_LEAVE_MS)) return;
+    hoverSince = 0;
+    mouseInside = held;
+    send('notch:pointer', held);
   }, 50);
   pointerTimer.unref();
 
