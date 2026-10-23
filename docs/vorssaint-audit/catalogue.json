@@ -1,0 +1,2752 @@
+{
+  "metadata": {
+    "date": "2026-10-23",
+    "revision": "e916961092686d32d455d12494ab10f65a43b73a",
+    "kind": "static-source-audit",
+    "notRunOnMacOS": true,
+    "previousIsletReference": "02a13224062342f289753733487f6da85db4e332",
+    "groups": 19,
+    "items": 282,
+    "appFeatureIDs": 77
+  },
+  "groups": [
+    {
+      "prefix": "D",
+      "title": "รูปทรง พื้นผิว สี และรายละเอียดภาพ",
+      "sources": [
+        "UI/Notch/NotchComponents.swift",
+        "UI/Notch/NotchView.swift",
+        "Services/Notch/NotchSupport.swift",
+        "UI/Theme.swift"
+      ],
+      "notes": "สีที่ source มีเป็นรายการอ้างอิงเท่านั้น: Islet ยังคงพื้นดำตามคำสั่งล่าสุด; สีมาสคอตหรือสถานะเป็นคนละส่วนกับสีพื้น notch",
+      "items": [
+        {
+          "id": "D01",
+          "name": "พื้นดำของ notch",
+          "detail": "Solid black เป็นฐาน แยกจากธีมของหน้าต่าง Settings/เมนูหลัก",
+          "status": "มี"
+        },
+        {
+          "id": "D02",
+          "name": "Capsule ลอย",
+          "detail": "ทรงแคปซูลแยกจากขอบบน ไม่มีไหล่เว้า ใช้มุม min(height/2,28)",
+          "status": "มี"
+        },
+        {
+          "id": "D03",
+          "name": "Notch ชิดขอบ",
+          "detail": "มุมบนตรง ไหล่เว้าต่อขอบจอ มุมล่าง min(28,height×.34)",
+          "status": "มี"
+        },
+        {
+          "id": "D04",
+          "name": "ไหล่ปรับตามความสูง",
+          "detail": "Shoulder min(14,height×.19) ไม่ใช้ขนาดเดียวทุกสถานะ",
+          "status": "มี"
+        },
+        {
+          "id": "D05",
+          "name": "ขนาด Compact/Spacious/Custom",
+          "detail": "เลือกรูปแบบสำเร็จรูปหรือกำหนดเอง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D06",
+          "name": "ความกว้างและความสูงสูงสุด",
+          "detail": "Source custom width 360–600 และ height 260–640 pt; Islet ใช้ช่วงของตัวเอง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D07",
+          "name": "ปรับ capsule ละเอียด",
+          "detail": "ปรับ width -40…40, height -4…4, ระยะจากบน 0…20 pt",
+          "status": "ใหม่"
+        },
+        {
+          "id": "D08",
+          "name": "ปรับให้พอดีกล้องจริง",
+          "detail": "ชดเชยความกว้าง/สูง housing และซ่อนช่องว่างแถบเมนู; เป็นเรื่องของ Mac ที่มีกล้องบาก",
+          "status": "macOS"
+        },
+        {
+          "id": "D09",
+          "name": "เส้นขอบรอบ notch",
+          "detail": "เปิด outline ได้ มีค่าความหนาใน NotchLayout",
+          "status": "ใหม่"
+        },
+        {
+          "id": "D10",
+          "name": "พื้นโปร่งใส",
+          "detail": "Translucent เป็นตัวเลือกแยกจาก solid black",
+          "status": "ข้อกำหนด"
+        },
+        {
+          "id": "D11",
+          "name": "Liquid Glass",
+          "detail": "มีเงื่อนไข macOS/SDK และ Reduce Transparency; ไม่ใช่สีธีม preset",
+          "status": "ข้อกำหนด"
+        },
+        {
+          "id": "D12",
+          "name": "แสง/สีจากปกเพลง",
+          "detail": "source มี artwork tint และชั้นภาพเพลง; ของเราจำกัด timeline/equalizer เท่านั้น",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D13",
+          "name": "ปรับสีตามบริบท",
+          "detail": "แบตต่ำแดง เตือนก่อนต่ำส้ม timer ส้ม provider มีสีเฉพาะ ไม่ใช่ย้อมทั้งแอป",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D14",
+          "name": "ตัวอักษรตามระบบ",
+          "detail": "ใช้ system fonts, semibold/medium และเลข monospaced ตามบริบท; Mac กับ Windows ใช้คนละฟอนต์",
+          "status": "มี"
+        },
+        {
+          "id": "D15",
+          "name": "ผิวการ์ดย่อย",
+          "detail": "ขาวโปร่งบาง เส้นขอบละเอียด และสถานะ selected/disabled",
+          "status": "มี"
+        },
+        {
+          "id": "D16",
+          "name": "ปกเพลงมีเส้นขอบบาง",
+          "detail": "Artwork corner radius ตามขนาด เส้นขอบขาว .5pt 12%",
+          "status": "มี"
+        },
+        {
+          "id": "D17",
+          "name": "ปุ่มมีสถานะ hover/pressed",
+          "detail": "ไฮไลต์พื้นบาง ยก/ย่อเล็กน้อยตามชนิดปุ่ม ไม่ใช้เอฟเฟกต์เดียวกันทั้งหมด",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D18",
+          "name": "ไอคอนระบบ",
+          "detail": "SF Symbols และไอคอนแอปจริง; Windows ต้องใช้ไอคอนที่มีสิทธิ์และรูปแบบใกล้เคียง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D19",
+          "name": "Light/Dark ของ panel",
+          "detail": "หน้าต่างเมนูใช้ surface/สี metric ที่เปลี่ยนตาม color scheme; notch มี presentation ของตนเอง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "D20",
+          "name": "Increase Contrast",
+          "detail": "เพิ่มความชัดเส้นขอบเมื่อระบบขอ ไม่อาศัยสีเพียงอย่างเดียว",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D21",
+          "name": "Reduce Motion/Transparency",
+          "detail": "ลดแอนิเมชันและลดความโปร่งใสตาม accessibility",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D22",
+          "name": "Empty/loading/error states",
+          "detail": "ใช้สัญลักษณ์ ข้อความ สถานะรอและปุ่มไปขั้นถัดไปแทนพื้นที่ว่าง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "D23",
+          "name": "จำกัดรอบแอนิเมชันตกแต่ง",
+          "detail": "NotchDecorativeClock เป็นตัวจัดจังหวะ animation ที่จำกัดอัตราและผูกกับการมองเห็น ไม่ใช่ widget นาฬิกา",
+          "status": "ใหม่"
+        },
+        {
+          "id": "D24",
+          "name": "ขอบรายการค่อยๆ จาง",
+          "detail": "Fade 16pt เฉพาะด้านที่ยังเลื่อนได้ 180ms; lyrics ใช้ระยะของตัวเอง",
+          "status": "มี"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchComponents.swift",
+          "line": 1,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchComponents.swift"
+        },
+        {
+          "file": "UI/Notch/NotchView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchView.swift#L7"
+        },
+        {
+          "file": "Services/Notch/NotchSupport.swift",
+          "line": 1641,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchSupport.swift#L1641"
+        },
+        {
+          "file": "UI/Theme.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Theme.swift#L7"
+        }
+      ]
+    },
+    {
+      "prefix": "B",
+      "title": "สถานะ การเปิดปิด Hover และหลายจอ",
+      "sources": [
+        "Services/Notch/NotchService.swift",
+        "Services/Notch/NotchWindowHost.swift",
+        "UI/Notch/NotchMirrorView.swift",
+        "UI/Settings/NotchSettings.swift",
+        "Services/Notch/NotchSupport.swift"
+      ],
+      "notes": "การวางจอและ native window ต้องปรับใช้ Windows; ไม่ควรนำระดับหน้าต่างหรือ API macOS มาใช้ตรงตัว",
+      "items": [
+        {
+          "id": "B01",
+          "name": "Rest/compact/peek/open",
+          "detail": "แยกสถานะพัก กิจกรรมย่อ พรีวิว และหน้าขยาย",
+          "status": "มี"
+        },
+        {
+          "id": "B02",
+          "name": "เลือกสิ่งแสดงตอนพัก",
+          "detail": "None / Battery / Music / Agents",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "B03",
+          "name": "คลิกเพื่อเปิด",
+          "detail": "เปิดเนื้อหาจากจุดที่ผู้ใช้กำลังดู",
+          "status": "มี"
+        },
+        {
+          "id": "B04",
+          "name": "Hover preview",
+          "detail": "เลื่อนเมาส์ผ่านแล้วแสดงพรีวิวแทนเปิดทั้งหน้า",
+          "status": "มี"
+        },
+        {
+          "id": "B05",
+          "name": "Hover expand",
+          "detail": "เลือกให้ hover เปิดหน้าขยายได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B06",
+          "name": "ซ่อนจนกว่าจะ hover",
+          "detail": "ซ่อนพื้นผิวพัก รอ pointer หรือ shortcut",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B07",
+          "name": "กิจกรรมขณะซ่อน",
+          "detail": "เลือกให้กิจกรรมยังแสดงเมื่อใช้ hidden-until-hover",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B08",
+          "name": "ตั้ง hover delay",
+          "detail": "ปรับเวลารอก่อนแสดงเมื่อชี้เมาส์",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B09",
+          "name": "ตั้ง close delay",
+          "detail": "ปรับเวลารอก่อนปิดหน้าที่เปิดด้วย hover",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "B10",
+          "name": "Pin/Keep open",
+          "detail": "ปักหมุด ป้องกันการย่อจากเมาส์ออก",
+          "status": "มี"
+        },
+        {
+          "id": "B11",
+          "name": "คลิกด้านนอกย่อ",
+          "detail": "ปล่อยพื้นที่ให้หน้าต่างเดิม โดยไม่ยกเลิกงานเบื้องหลัง",
+          "status": "มี"
+        },
+        {
+          "id": "B12",
+          "name": "เปิดโดยไม่แย่ง focus",
+          "detail": "hover/readout ไม่ควรดึงคีย์บอร์ดจากงานที่ใช้อยู่",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "B13",
+          "name": "เปิดกลับหน้าล่าสุด",
+          "detail": "จำหน้าที่กำลังใช้",
+          "status": "มี"
+        },
+        {
+          "id": "B14",
+          "name": "กำหนดหน้าบ้าน",
+          "detail": "เลือก Controls/โมดูลอื่น/Explore/App panel เป็นปลายทางเปิดใหม่",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B15",
+          "name": "เปิดกิจกรรมปัจจุบัน",
+          "detail": "เลือกให้คลิกเปิดโมดูลของกิจกรรมที่กำลังแสดง",
+          "status": "มี"
+        },
+        {
+          "id": "B16",
+          "name": "เลือกจอ Automatic/Built-in/Main/Pointer",
+          "detail": "ของเรามี selected/primary/cursor และเลือกจอรายตัว",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "B17",
+          "name": "แสดงทุกจอพร้อมกัน",
+          "detail": "All ใช้ compact mirror บนจออื่น; คลิกที่ mirror เพื่อย้าย island มาเปิดบนจอนั้น ไม่ใช่เปิดหน้าขยายอิสระทุกจอ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B18",
+          "name": "ต่อ/ถอดจอและ lid changes",
+          "detail": "คำนวณ geometry ใหม่ พร้อมรองรับสภาพกล้อง/ไม่มีบาก",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "B19",
+          "name": "ซ่อนใน fullscreen",
+          "detail": "มีตัวเลือกและเงื่อนไข compact presentation ระหว่าง fullscreen",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B20",
+          "name": "พฤติกรรมกับ menu bar",
+          "detail": "การคลุมเมนู การเว้นช่อง และการเข้าถึงเมนูเป็น logic เฉพาะ Mac",
+          "status": "macOS"
+        },
+        {
+          "id": "B21",
+          "name": "แสดง/ซ่อนในภาพจับหน้าจอ",
+          "detail": "เลือกให้ overlay อยู่ใน capture หรือไม่",
+          "status": "ใหม่"
+        },
+        {
+          "id": "B22",
+          "name": "Destination ของหน้าต่างย่อย",
+          "detail": "เลือกเปิด shelf/clipboard/notes/tools/capture controls ใน island หรือหน้าต่างแยก",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "B23",
+          "name": "Lock-screen presentation",
+          "detail": "มี overlay และกิจกรรมที่อนุญาตบนล็อกสกรีนตามข้อจำกัดของ Mac",
+          "status": "macOS"
+        },
+        {
+          "id": "B24",
+          "name": "Lock/unlock sounds",
+          "detail": "เสียงเหตุการณ์ล็อกแยกเปิดปิดได้",
+          "status": "macOS"
+        }
+      ],
+      "references": [
+        {
+          "file": "Services/Notch/NotchService.swift",
+          "line": 105,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchService.swift#L105"
+        },
+        {
+          "file": "Services/Notch/NotchWindowHost.swift",
+          "line": 22,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchWindowHost.swift#L22"
+        },
+        {
+          "file": "UI/Notch/NotchMirrorView.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchMirrorView.swift#L8"
+        },
+        {
+          "file": "UI/Settings/NotchSettings.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L7"
+        },
+        {
+          "file": "Services/Notch/NotchSupport.swift",
+          "line": 1641,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchSupport.swift#L1641"
+        }
+      ]
+    },
+    {
+      "prefix": "A",
+      "title": "การเคลื่อนไหว Gesture และ microinteraction",
+      "sources": [
+        "Services/Notch/NotchSupport.swift",
+        "Services/Notch/NotchGestureSupport.swift",
+        "UI/Notch/NotchComponents.swift",
+        "UI/Notch/NotchView.swift"
+      ],
+      "notes": "ค่าระยะเป็น pt ของ source ไม่ใช่คำสั่งให้เปลี่ยนขนาด Islet; การ swipe เปลี่ยนโมดูลของ Islet เป็นส่วนที่เราประยุกต์ ไม่เหมารวมว่า source ใช้เหมือนกัน",
+      "items": [
+        {
+          "id": "A01",
+          "name": "Spring แยกแกน",
+          "detail": "ขยาย width .44s bounce .25 และ height .38s bounce .22",
+          "status": "มี"
+        },
+        {
+          "id": "A02",
+          "name": "ย่อแบบไม่เด้ง",
+          "detail": "width .30s และ height .26s ไม่มี bounce",
+          "status": "มี"
+        },
+        {
+          "id": "A03",
+          "name": "จำกัด overshoot",
+          "detail": "ไม่ให้ overshoot เกิน 12pt และกำหนดเกณฑ์ settle .5pt",
+          "status": "มี"
+        },
+        {
+          "id": "A04",
+          "name": "กลับทิศกลางแอนิเมชัน",
+          "detail": "เริ่มจากขนาดที่วาดอยู่และ retarget ได้",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A05",
+          "name": "รักษาทรงขณะ hover",
+          "detail": "capsule คงมุมครบสี่ด้าน ไม่เผยทรง notch หลัง animation จบ",
+          "status": "มี"
+        },
+        {
+          "id": "A06",
+          "name": "เนื้อหาแยกจากเปลือก",
+          "detail": "จัด content ให้พอดีในผิวที่กำลัง morph ลดปก/ตัวอักษรเด้ง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A07",
+          "name": "Fade through black",
+          "detail": "สลับ companion/activity ผ่านดำเมื่อ crossfade จะทำให้ข้อความซ้อน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "A08",
+          "name": "Blur replacement",
+          "detail": "บางช่วงสลับแถวกิจกรรมใช้ blurReplace ตามระบบ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "A09",
+          "name": "Hover โตโดยคงแถบเดิม",
+          "detail": "ขยายพื้นที่รอบ strip โดยไม่ขยายปกและ bars กระโดดทันที",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A10",
+          "name": "กดปุ่มยุบตัว",
+          "detail": "NotchButtonStyle มี pressed scale และ spring เฉพาะปุ่ม",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A11",
+          "name": "Slider editing feedback",
+          "detail": "แยกสถานะกำลังปรับ เพื่อไม่ปิด/สลับเนื้อหากลางการลาก",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A12",
+          "name": "เลื่อนลงเปิด/ขึ้นปิด",
+          "detail": "มี threshold และจำพื้นที่เริ่ม gesture",
+          "status": "มี"
+        },
+        {
+          "id": "A13",
+          "name": "Swipe เพลงซ้ายขวา",
+          "detail": "เปลี่ยน previous/next บน music surface เมื่อรองรับ",
+          "status": "มี"
+        },
+        {
+          "id": "A14",
+          "name": "ล็อกแกนและหนึ่ง action ต่อ gesture",
+          "detail": "สะสมระยะเริ่ม จับ intent และป้องกัน firing ซ้ำใน sequence",
+          "status": "มี"
+        },
+        {
+          "id": "A15",
+          "name": "แยก momentum ของ trackpad",
+          "detail": "โมเมนตัมช่วยจบเปิด/ปิดได้ แต่ไม่สร้างการเปลี่ยนเพลงใหม่",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A16",
+          "name": "ไม่แย่ง scroll/editor/control",
+          "detail": "ตรวจ native control, text editor และ scroll view ก่อนใช้ gesture",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "A17",
+          "name": "Haptic feedback",
+          "detail": "มีตัวเลือก feedback บนฮาร์ดแวร์ที่รองรับ; Windows ต้องหาอุปกรณ์/API ที่เหมาะสม",
+          "status": "macOS"
+        },
+        {
+          "id": "A18",
+          "name": "Keyboard/navigation",
+          "detail": "shortcut เปิด island เลือกหน้า คุมปุ่มและช่องค้นหา โดยไม่บังคับใช้ hover อย่างเดียว",
+          "status": "บางส่วน"
+        }
+      ],
+      "references": [
+        {
+          "file": "Services/Notch/NotchSupport.swift",
+          "line": 1641,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchSupport.swift#L1641"
+        },
+        {
+          "file": "Services/Notch/NotchGestureSupport.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchGestureSupport.swift#L8"
+        },
+        {
+          "file": "UI/Notch/NotchComponents.swift",
+          "line": 1,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchComponents.swift"
+        },
+        {
+          "file": "UI/Notch/NotchView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchView.swift#L7"
+        }
+      ]
+    },
+    {
+      "prefix": "E",
+      "title": "Explore และการจัดหน้า/ทางลัด",
+      "sources": [
+        "UI/Notch/NotchSectionsView.swift",
+        "UI/Notch/NotchQuickAccessView.swift",
+        "UI/Settings/NotchLayoutEditor.swift",
+        "UI/Settings/NotchContentEditor.swift"
+      ],
+      "notes": "โมดูลตาม enum มี 16 ตัว; Explore และ App panel เป็นปลายทาง/การนำทาง ไม่ใช่โมดูลเพิ่มอีกสองตัว",
+      "items": [
+        {
+          "id": "E01",
+          "name": "Explore grid",
+          "detail": "รวมโมดูลเป็น tiles 86pt และระยะ 8pt",
+          "status": "มี"
+        },
+        {
+          "id": "E02",
+          "name": "เลื่อนเป็นชุดแถว",
+          "detail": "วัดจำนวน columns/rows ให้รายการเต็ม ไม่ตัดครึ่งแถว",
+          "status": "มี"
+        },
+        {
+          "id": "E03",
+          "name": "ชื่อ ไอคอน shortcut",
+          "detail": "แต่ละ tile มีตัวช่วยบอกปลายทางและการเปิดด้วยคีย์",
+          "status": "มี"
+        },
+        {
+          "id": "E04",
+          "name": "จัดลำดับโมดูล",
+          "detail": "ลากเรียงและบันทึกลำดับ",
+          "status": "มี"
+        },
+        {
+          "id": "E05",
+          "name": "เปิด/ซ่อนโมดูล",
+          "detail": "ไม่แสดงของที่ไม่เลือกหรือ feature ยังไม่ติดตั้ง",
+          "status": "มี"
+        },
+        {
+          "id": "E06",
+          "name": "Live layout editor",
+          "detail": "preview หน้า notch กับรายการควบคุมประกอบกันได้",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "E07",
+          "name": "Quick access layout",
+          "detail": "จัด configuration ของปุ่มลัดที่แสดงในหน้า home",
+          "status": "ใหม่"
+        },
+        {
+          "id": "E08",
+          "name": "จัดลำดับ Controls",
+          "detail": "primary level cards และ shortcut tiles ปรับแยกกัน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "E09",
+          "name": "Options ตามโมดูล",
+          "detail": "เมื่อเลือก Music/Calendar/Clipboard ฯลฯ จะแสดงตัวเลือกเฉพาะส่วนนั้น",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "E10",
+          "name": "ป้ายบอก dependency",
+          "detail": "ของที่ยังใช้ไม่ได้มีเหตุผลและทางไปติดตั้ง/ให้สิทธิ์",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "E11",
+          "name": "Settings จากบริบท",
+          "detail": "เข้าตั้งค่าหน้าที่กำลังใช้โดยตรง ไม่ต้องไล่กลับเอง",
+          "status": "บางส่วน"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchSectionsView.swift",
+          "line": 12,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchSectionsView.swift#L12"
+        },
+        {
+          "file": "UI/Notch/NotchQuickAccessView.swift",
+          "line": 63,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchQuickAccessView.swift#L63"
+        },
+        {
+          "file": "UI/Settings/NotchLayoutEditor.swift",
+          "line": 6,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchLayoutEditor.swift#L6"
+        },
+        {
+          "file": "UI/Settings/NotchContentEditor.swift",
+          "line": 1,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchContentEditor.swift"
+        }
+      ]
+    },
+    {
+      "prefix": "M",
+      "title": "เพลง Player เนื้อเพลง และคิว",
+      "sources": [
+        "UI/Notch/NotchMusicView.swift",
+        "UI/Notch/NotchMusicStrip.swift",
+        "UI/Notch/NotchLyricsView.swift",
+        "UI/Notch/NotchQueueView.swift",
+        "Services/Notch/NotchMusicService.swift"
+      ],
+      "notes": "SMTC ของ Windows ไม่รับประกัน lyrics/queue/shuffle ของทุก player; ต้องตรวจ capability และมี fallback ตามจริง",
+      "items": [
+        {
+          "id": "M01",
+          "name": "ชื่อเพลง ศิลปิน แอป และปก",
+          "detail": "layout เฉพาะ open/compact/camera/capsule",
+          "status": "มี"
+        },
+        {
+          "id": "M02",
+          "name": "Play/Pause ทันที",
+          "detail": "แยก requestedPlaying จาก reading ให้ไอคอนตอบสนองก่อน state จริงกลับมา",
+          "status": "มี"
+        },
+        {
+          "id": "M03",
+          "name": "Previous/Next",
+          "detail": "แสดงและ enable ตามความสามารถของ source",
+          "status": "มี"
+        },
+        {
+          "id": "M04",
+          "name": "Scrub timeline",
+          "detail": "ลาก seek พร้อมเวลาที่อ่านได้ และติดตาม context ของ track",
+          "status": "มี"
+        },
+        {
+          "id": "M05",
+          "name": "Elapsed/remaining time",
+          "detail": "เลขเวลาใช้ monospaced ลดการขยับ",
+          "status": "มี"
+        },
+        {
+          "id": "M06",
+          "name": "เลือก playback source",
+          "detail": "source อัตโนมัติหรือเลือก player ที่พบ",
+          "status": "มี"
+        },
+        {
+          "id": "M07",
+          "name": "ตั้ง preferred player",
+          "detail": "เลือกแอปที่จะเปิดเมื่อไม่มีอะไรเล่น; Automatic จำแอปเพลงล่าสุดแล้ว fallback ไป Spotify/Apple Music ของ Mac",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M08",
+          "name": "คลิกเปิดแอปเพลง",
+          "detail": "เปิด player ของเพลงปัจจุบันโดยตรง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "M09",
+          "name": "Shuffle",
+          "detail": "ปุ่มสุ่มขึ้นกับ source และการอนุญาต automation",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M10",
+          "name": "เลือก output",
+          "detail": "เปิดตัวเลือก audio output จากหน้าเพลง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M11",
+          "name": "Tint เฉลี่ยจากปก",
+          "detail": "หนึ่ง pixel sRGB → ตรวจความมืด/อิ่มสี → normalize ช่วงสี",
+          "status": "มี"
+        },
+        {
+          "id": "M12",
+          "name": "ชื่อเพลงเลื่อนเมื่อยาว",
+          "detail": "เลื่อนเฉพาะกรณีพื้นที่ไม่พอ",
+          "status": "มี"
+        },
+        {
+          "id": "M13",
+          "name": "ชื่อเพลงตอน compact hover",
+          "detail": "หน่วงการแสดงชื่อและคำนวณปีกตามชื่อ ลดการกระโดดเมื่อชี้",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "M14",
+          "name": "Track-change activity",
+          "detail": "เปลี่ยนเพลงแสดงช่วงสั้นโดยไม่เปิดหน้าใหญ่",
+          "status": "มี"
+        },
+        {
+          "id": "M15",
+          "name": "Grace period metadata",
+          "detail": "ช่วง source ไม่ส่งข้อมูลสั้นๆ ไม่ทำให้ UI หายทันที",
+          "status": "มี"
+        },
+        {
+          "id": "M16",
+          "name": "ปกจาก browser",
+          "detail": "Firefox/Zen ใช้ saved session หาแท็บ YouTube แล้วโหลด thumbnail; fallback บางกรณีใช้ iTunes lookup จึงมี network request",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M17",
+          "name": "Equalizer ตกแต่ง",
+          "detail": "แท่งเคลื่อนไหวแสดงสถานะ playing ไม่ใช่การวัดเสียงจริง",
+          "status": "มี"
+        },
+        {
+          "id": "M18",
+          "name": "Live equalizer",
+          "detail": "เมื่อเปิด feature และจับ audio ได้ แท่งใช้ band levels จริง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M19",
+          "name": "Lyrics sync",
+          "detail": "เนื้อเพลงตาม timestamp เลื่อนบรรทัดกลางและไฮไลต์บรรทัดร้อง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M20",
+          "name": "Lyrics plain/instrumental",
+          "detail": "fallback เมื่อไม่มีตำแหน่ง/เพลงบรรเลง มีข้อความอธิบาย",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M21",
+          "name": "นำเข้าเนื้อเพลง",
+          "detail": "import timed lyrics และรายงานไฟล์ผิด/ว่าง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M22",
+          "name": "Online lyrics แบบ opt-in",
+          "detail": "ส่ง metadata เพลงไป lrclib.net และอาจตรวจชื่อกับ musicbrainz.org เฉพาะเมื่อเปิดใช้; มี retry/loading",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M23",
+          "name": "ปรับ lyrics offset",
+          "detail": "เพิ่ม/ลด .25 วินาที และรีเซ็ต offset",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M24",
+          "name": "Upcoming queue",
+          "detail": "แสดงปกย่อ ชื่อ ศิลปิน และ loading/empty/unavailable แยกกัน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M25",
+          "name": "Play queued item",
+          "detail": "เล่นจากคิวเมื่อ player ยอมให้สั่ง และกันคำสั่งซ้อน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "M26",
+          "name": "Refresh queue",
+          "detail": "รีเฟรชคิวพร้อมสถานะงานค้าง/ผิดพลาด",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchMusicView.swift",
+          "line": 6,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchMusicView.swift#L6"
+        },
+        {
+          "file": "UI/Notch/NotchMusicStrip.swift",
+          "line": 21,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchMusicStrip.swift#L21"
+        },
+        {
+          "file": "UI/Notch/NotchLyricsView.swift",
+          "line": 6,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchLyricsView.swift#L6"
+        },
+        {
+          "file": "UI/Notch/NotchQueueView.swift",
+          "line": 6,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchQueueView.swift#L6"
+        },
+        {
+          "file": "Services/Notch/NotchMusicService.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchMusicService.swift#L7"
+        }
+      ]
+    },
+    {
+      "prefix": "F",
+      "title": "File shelf ลากวาง และงานไฟล์",
+      "sources": [
+        "UI/Notch/NotchFilesView.swift",
+        "UI/Shelf/ShelfTilesView.swift",
+        "Services/Shelf/ShelfService.swift",
+        "Services/Notch/NotchFileToolsSupport.swift"
+      ],
+      "notes": "AirDrop ใน Mac กับ LocalSend ของ Islet เป็นคนละระบบ; การส่งไป iPad ที่เรามีเป็นความสามารถของ Islet ไม่อ้างว่า source ใช้ LocalSend",
+      "items": [
+        {
+          "id": "F01",
+          "name": "ลากเข้าเพื่อพักไฟล์",
+          "detail": "reveal shelf เมื่อ drag ผ่านบริเวณ island",
+          "status": "มี"
+        },
+        {
+          "id": "F02",
+          "name": "Empty tray แบบเส้นประ",
+          "detail": "สัญลักษณ์ถาด เส้นขอบ dash และคำแนะนำสั้น",
+          "status": "มี"
+        },
+        {
+          "id": "F03",
+          "name": "การ์ดไฟล์แนวนอน",
+          "detail": "thumbnail/icon ชื่อ ชนิด และ selection",
+          "status": "มี"
+        },
+        {
+          "id": "F04",
+          "name": "พัก text/link",
+          "detail": "รับของจาก clipboard/drag นอกเหนือจาก file URL",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "F05",
+          "name": "ลากไฟล์ออก",
+          "detail": "ส่ง item กลับไปแอปอื่นผ่าน native drag",
+          "status": "มี"
+        },
+        {
+          "id": "F06",
+          "name": "เลือกหลายรายการ",
+          "detail": "selected items มีคำแนะนำและ actions ตาม selection",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "F07",
+          "name": "Batch grouping",
+          "detail": "รวมชุดไฟล์และขยาย/ยุบ batch",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "F08",
+          "name": "Pin shelf items",
+          "detail": "เก็บ item ไม่ให้ถูกเอาออกตามการใช้งานทั่วไป",
+          "status": "ใหม่"
+        },
+        {
+          "id": "F09",
+          "name": "Open/Reveal/Quick preview",
+          "detail": "เมนูและการกระทำตามชนิดไฟล์ผ่านระบบ",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "F10",
+          "name": "Share sheet",
+          "detail": "แชร์ผ่าน macOS services; ถ้าทำบน Windows ต้องใช้ Share/LocalSend ของเรา",
+          "status": "ใหม่"
+        },
+        {
+          "id": "F11",
+          "name": "Clear ยืนยันใน menu",
+          "detail": "เมนูลบชุดและ Cancel ไม่ใช้ sheet ที่ทำพื้นโปร่งใสเสีย",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "F12",
+          "name": "Archive ZIP",
+          "detail": "เลือกปลายทาง สร้าง archive แสดง progress/cancel และกัน output ทับ input",
+          "status": "ใหม่"
+        },
+        {
+          "id": "F13",
+          "name": "Drop destination สองฝั่ง",
+          "detail": "เลือกพัก shelf หรือ Optimize Media ด้วยพื้นที่ drop แยก",
+          "status": "ใหม่"
+        },
+        {
+          "id": "F14",
+          "name": "Media workspace ใน notch",
+          "detail": "บีบอัดภาพ/วิดีโอหรือ tool ที่รับไฟล์นั้นได้ เปิดต่อ/ปิดต่อโดยไม่ทิ้งงาน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "F15",
+          "name": "งานไฟล์ไม่ถูก hover ปิด",
+          "detail": "คงปฏิสัมพันธ์ขณะ native menu/save dialog หรือกำลังลาก",
+          "status": "บางส่วน"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchFilesView.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchFilesView.swift#L8"
+        },
+        {
+          "file": "UI/Shelf/ShelfTilesView.swift",
+          "line": 89,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Shelf/ShelfTilesView.swift#L89"
+        },
+        {
+          "file": "Services/Shelf/ShelfService.swift",
+          "line": 19,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Shelf/ShelfService.swift#L19"
+        },
+        {
+          "file": "Services/Notch/NotchFileToolsSupport.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchFileToolsSupport.swift#L8"
+        }
+      ]
+    },
+    {
+      "prefix": "C",
+      "title": "Clipboard",
+      "sources": [
+        "UI/Notch/NotchClipboardView.swift",
+        "Services/Clipboard/ClipboardHistoryService.swift",
+        "Services/Clipboard/ClipboardHistorySupport.swift"
+      ],
+      "notes": "ของเราจงใจเก็บเพียง bounded text/preview และไม่เก็บ full image history; source รองรับมากกว่า",
+      "items": [
+        {
+          "id": "C01",
+          "name": "Text/image/file history",
+          "detail": "แสดงรายการต่างชนิดพร้อม preview ตามข้อมูลจริง",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "C02",
+          "name": "ค้นหาในหน้า",
+          "detail": "พิมพ์เพื่อค้นหาและใช้คีย์บอร์ดเลือกผล",
+          "status": "มี"
+        },
+        {
+          "id": "C03",
+          "name": "Pin และ Pinned filter",
+          "detail": "เลือกแสดงเฉพาะของที่ปักไว้",
+          "status": "มี"
+        },
+        {
+          "id": "C04",
+          "name": "Copy/paste กับ copied feedback",
+          "detail": "source มี paste flow กับ focus ของแอปเดิม; Islet มี copy กลับ clipboard",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "C05",
+          "name": "Clear recent โดยเก็บ pins",
+          "detail": "ล้างประวัติทั่วไปแยกจากรายการปักหมุด",
+          "status": "มี"
+        },
+        {
+          "id": "C06",
+          "name": "Card size Compact/Comfortable",
+          "detail": "source เลือก 52/104pt card density",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "C07",
+          "name": "Hover lifted preview",
+          "detail": "pointer dwell 700ms / keyboard 1.4s แล้วแสดงรายละเอียด",
+          "status": "มี"
+        },
+        {
+          "id": "C08",
+          "name": "ออกจาก preview หน่วงสั้น",
+          "detail": "ปิดหลังออก 150ms และ Escape คืน focus",
+          "status": "มี"
+        },
+        {
+          "id": "C09",
+          "name": "เรียง/จัดรายการ",
+          "detail": "source history มี order/pin behavior; ตรวจผลต่อรายการจริงก่อนพอร์ต",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "C10",
+          "name": "Privacy retention",
+          "detail": "จำกัดรายการ แยก cache และเงื่อนไขไม่เก็บข้อมูลบางประเภท",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "C11",
+          "name": "Auto-clear system clipboard",
+          "detail": "มี delay/sleep/lock โดยไม่เหมารวมว่าลบ history ทั้งหมด",
+          "status": "ใหม่"
+        },
+        {
+          "id": "C12",
+          "name": "Paste plain text",
+          "detail": "วางแบบตัด formatting แล้วรักษา clipboard เดิม",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchClipboardView.swift",
+          "line": 9,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchClipboardView.swift#L9"
+        },
+        {
+          "file": "Services/Clipboard/ClipboardHistoryService.swift",
+          "line": 21,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Clipboard/ClipboardHistoryService.swift#L21"
+        },
+        {
+          "file": "Services/Clipboard/ClipboardHistorySupport.swift",
+          "line": 1,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Clipboard/ClipboardHistorySupport.swift"
+        }
+      ]
+    },
+    {
+      "prefix": "N",
+      "title": "Scratchpad/Notes",
+      "sources": [
+        "UI/Notch/NotchScratchpadView.swift",
+        "Services/QuickTools/ScratchpadService.swift",
+        "Services/QuickTools/ScratchpadSupport.swift"
+      ],
+      "notes": "ฐานของเราเป็นโน้ตเดียว; multi-pad และ Markdown ต้องเปลี่ยน data model จึงระบุใหม่แยกจาก autosave ที่มีแล้ว",
+      "items": [
+        {
+          "id": "N01",
+          "name": "Autosave",
+          "detail": "เก็บโน้ตและแสดงสถานะบันทึก/ข้อผิดพลาด",
+          "status": "มี"
+        },
+        {
+          "id": "N02",
+          "name": "Find ในโน้ต",
+          "detail": "ค้นหา/ถัดไป/ก่อนหน้า และเลื่อนไปผลลัพธ์",
+          "status": "มี"
+        },
+        {
+          "id": "N03",
+          "name": "ปรับ text size",
+          "detail": "ขนาดตัวอักษรที่บันทึกไว้ได้",
+          "status": "มี"
+        },
+        {
+          "id": "N04",
+          "name": "Copy all พร้อม feedback",
+          "detail": "ใช้ icon check ชั่วคราวเมื่อสำเร็จ",
+          "status": "มี"
+        },
+        {
+          "id": "N05",
+          "name": "หลายแท็บ/หลาย pad",
+          "detail": "สร้าง เลือก เปลี่ยนชื่อ และปิด pad",
+          "status": "ใหม่"
+        },
+        {
+          "id": "N06",
+          "name": "Markdown preview",
+          "detail": "สลับแก้ไขกับอ่าน Markdown",
+          "status": "ใหม่"
+        },
+        {
+          "id": "N07",
+          "name": "Format bar",
+          "detail": "แถบช่วยจัดรูปแบบข้อความ/Markdown",
+          "status": "ใหม่"
+        },
+        {
+          "id": "N08",
+          "name": "Export โน้ต",
+          "detail": "ส่งออกเนื้อหาจาก pad ปัจจุบัน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "N09",
+          "name": "Clear/Close confirmation",
+          "detail": "ยืนยันการกระทำกับเอกสารที่มีข้อมูล",
+          "status": "ใหม่"
+        },
+        {
+          "id": "N10",
+          "name": "เปิดหน้าต่างแยก",
+          "detail": "เลือกเปิด Scratchpad นอก notch ได้",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchScratchpadView.swift",
+          "line": 14,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchScratchpadView.swift#L14"
+        },
+        {
+          "file": "Services/QuickTools/ScratchpadService.swift",
+          "line": 15,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/QuickTools/ScratchpadService.swift#L15"
+        },
+        {
+          "file": "Services/QuickTools/ScratchpadSupport.swift",
+          "line": 208,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/QuickTools/ScratchpadSupport.swift#L208"
+        }
+      ]
+    },
+    {
+      "prefix": "T",
+      "title": "Timer Focus และ Stopwatch",
+      "sources": [
+        "UI/Notch/NotchTimerView.swift",
+        "UI/Notch/NotchTimerRuler.swift",
+        "Services/Notch/NotchTimerSupport.swift",
+        "Services/Notch/NotchTimerService.swift"
+      ],
+      "notes": "หน้าที่มีอยู่ต้องรักษา session ใน main process; ข้อที่เรียกว่ามี หมายถึงมีพฤติกรรมเทียบเคียง ไม่รับรอง pixel-identical",
+      "items": [
+        {
+          "id": "T01",
+          "name": "Timer ตั้งนาที",
+          "detail": "เลือกเวลาบน ruler กึ่งกลางหน้าขยาย",
+          "status": "มี"
+        },
+        {
+          "id": "T02",
+          "name": "Ruler ลาก/scroll/keyboard",
+          "detail": "ตัวเลขและเข็มสัมพันธ์กับ minute ที่เลือก",
+          "status": "มี"
+        },
+        {
+          "id": "T03",
+          "name": "จำ Timer/Focus แยกกัน",
+          "detail": "สลับโหมดไม่ทับ duration กัน",
+          "status": "มี"
+        },
+        {
+          "id": "T04",
+          "name": "Focus cycle",
+          "detail": "งาน พักสั้น พักยาว และจำนวนรอบ",
+          "status": "มี"
+        },
+        {
+          "id": "T05",
+          "name": "Start/Pause/Resume/Reset",
+          "detail": "สถานะและปุ่มหลักเปลี่ยนตาม session",
+          "status": "มี"
+        },
+        {
+          "id": "T06",
+          "name": "Stopwatch",
+          "detail": "จับเวลาแบบนับขึ้น",
+          "status": "มี"
+        },
+        {
+          "id": "T07",
+          "name": "Compact countdown",
+          "detail": "แสดงเวลาขณะ notch ย่อ พร้อมเปิดกลับหน้าของตัวเอง",
+          "status": "มี"
+        },
+        {
+          "id": "T08",
+          "name": "ซ่อน compact countdown",
+          "detail": "มี setting ซ่อนการนับโดย session ยังทำงาน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "T09",
+          "name": "Completion notice และเสียง",
+          "detail": "source มี timer sound option; ของเรามีแจ้งเตือนภาพ",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "T10",
+          "name": "Next phase แบบ explicit",
+          "detail": "เวลาเสร็จรอผู้ใช้เริ่มช่วงถัดไป",
+          "status": "มี"
+        },
+        {
+          "id": "T11",
+          "name": "Digit transition",
+          "detail": "เลขเปลี่ยนแบบ numeric motion และเคารพ Reduce Motion",
+          "status": "มี"
+        },
+        {
+          "id": "T12",
+          "name": "งานเดินต่อเมื่อปิด UI",
+          "detail": "service เป็นเจ้าของนาฬิกา ไม่เริ่มงานซ้ำเมื่อโหลดหน้าใหม่",
+          "status": "มี"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchTimerView.swift",
+          "line": 6,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchTimerView.swift#L6"
+        },
+        {
+          "file": "UI/Notch/NotchTimerRuler.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchTimerRuler.swift#L8"
+        },
+        {
+          "file": "Services/Notch/NotchTimerSupport.swift",
+          "line": 174,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchTimerSupport.swift#L174"
+        },
+        {
+          "file": "Services/Notch/NotchTimerService.swift",
+          "line": 9,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchTimerService.swift#L9"
+        }
+      ]
+    },
+    {
+      "prefix": "AI",
+      "title": "AI Agents และ quota dashboard",
+      "sources": [
+        "UI/Notch/NotchAgentsView.swift",
+        "UI/Notch/NotchAgentComponents.swift",
+        "UI/Notch/NotchAgentStrip.swift",
+        "Services/Notch/NotchAgentSupport.swift",
+        "UI/Settings/NotchAgentsSettings.swift"
+      ],
+      "notes": "นี่เป็นตัวติดตาม agent/usage ไม่ใช่ chatbot ใหม่ ข้อมูล limits ขึ้นกับ provider/บัญชี; API value เป็น estimate ไม่ใช่ยอดบิลจริง",
+      "items": [
+        {
+          "id": "AI01",
+          "name": "Claude และ Codex",
+          "detail": "provider cards, โลโก้ และข้อมูลจาก integration ของแต่ละตัว",
+          "status": "มี"
+        },
+        {
+          "id": "AI02",
+          "name": "OpenCode",
+          "detail": "provider เพิ่มใน source พร้อมข้อมูลที่ integration อ่านได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "AI03",
+          "name": "GitHub Copilot",
+          "detail": "ข้อมูล local CLI/app session; token totals บางส่วนรอ shutdown metrics",
+          "status": "ใหม่"
+        },
+        {
+          "id": "AI04",
+          "name": "หลายบัญชี Codex",
+          "detail": "เพิ่ม CODEX_HOME ให้แต่ละ account มี limits card",
+          "status": "ใหม่"
+        },
+        {
+          "id": "AI05",
+          "name": "Session/weekly limits",
+          "detail": "หน้าต่าง quota และเวลาที่รีเซ็ต เมื่อ provider ส่งมา",
+          "status": "มี"
+        },
+        {
+          "id": "AI06",
+          "name": "Used/Remaining",
+          "detail": "สลับวิธีแสดงเปอร์เซ็นต์",
+          "status": "มี"
+        },
+        {
+          "id": "AI07",
+          "name": "เลือก limit focus",
+          "detail": "Most-used / session / weekly",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI08",
+          "name": "แถบเวลาใน quota window",
+          "detail": "elapsed-time marker แยกจาก quota percentage",
+          "status": "มี"
+        },
+        {
+          "id": "AI09",
+          "name": "Fresh/stale/signed-out",
+          "detail": "ข้อมูลเก่า/ขาด/ต้อง sign-in ไม่ถูกตีเป็น 0",
+          "status": "มี"
+        },
+        {
+          "id": "AI10",
+          "name": "Refresh พร้อม cooldown",
+          "detail": "ตรวจบัญชีด้วยสถานะ pending/error",
+          "status": "มี"
+        },
+        {
+          "id": "AI11",
+          "name": "Limits card",
+          "detail": "quota ของ provider/account",
+          "status": "มี"
+        },
+        {
+          "id": "AI12",
+          "name": "Spend card",
+          "detail": "ค่าประเมิน API แยกจากจำนวน token",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI13",
+          "name": "Live sessions card",
+          "detail": "model/project/status/เวลาทำงานของ session จริง",
+          "status": "มี"
+        },
+        {
+          "id": "AI14",
+          "name": "Trend card",
+          "detail": "กราฟ usage ตามช่วงเวลาและ inspector",
+          "status": "มี"
+        },
+        {
+          "id": "AI15",
+          "name": "Models breakdown",
+          "detail": "สรุปแยก model และ usage/value",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI16",
+          "name": "Projects breakdown",
+          "detail": "สรุปแยก project",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI17",
+          "name": "Activity heatmap",
+          "detail": "ความหนาแน่นการใช้งานรายวัน",
+          "status": "มี"
+        },
+        {
+          "id": "AI18",
+          "name": "Banked resets card",
+          "detail": "แสดง/ใช้ Codex banked resets ตามสิทธิ์ของบัญชี",
+          "status": "ใหม่"
+        },
+        {
+          "id": "AI19",
+          "name": "เลือกช่วงวัน",
+          "detail": "period selector ใน dashboard",
+          "status": "มี"
+        },
+        {
+          "id": "AI20",
+          "name": "จัดลำดับ/ซ่อน cards",
+          "detail": "ลากเรียงและมีวิธีคืนค่าเมื่อซ่อนหมด",
+          "status": "มี"
+        },
+        {
+          "id": "AI21",
+          "name": "Compact readout 4 แบบ",
+          "detail": "elapsed / tokens / cost / limit; ของเรามี elapsed กับ limit",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI22",
+          "name": "ตัวบอกกำลังทำงาน",
+          "detail": "provider mark และ status animation ไม่ทับ activity อื่น",
+          "status": "มี"
+        },
+        {
+          "id": "AI23",
+          "name": "แจ้งเตือนงานเสร็จ",
+          "detail": "กำหนด minimum task duration ได้ใน source",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI24",
+          "name": "แจ้งเตือน quota ต่ำ",
+          "detail": "เลือก threshold 50/75/80/90/95% ตามค่า source",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "AI25",
+          "name": "Daily budget",
+          "detail": "ตัวเลือกงบ estimate รายวันและค่า 0=ไม่กำหนด",
+          "status": "ใหม่"
+        },
+        {
+          "id": "AI26",
+          "name": "อัปเดตราคา model",
+          "detail": "เลือกให้ service อัปเดต price data สำหรับ estimate",
+          "status": "ใหม่"
+        },
+        {
+          "id": "AI27",
+          "name": "ข้อมูลไม่สูญ focus/scroll",
+          "detail": "UI updates ไม่รื้อ card ทุก poll",
+          "status": "มี"
+        },
+        {
+          "id": "AI28",
+          "name": "Connect/setup guidance",
+          "detail": "เส้นทางติดตั้ง/sign-in/แก้ CLI outdated ตามสาเหตุ",
+          "status": "บางส่วน"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchAgentsView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchAgentsView.swift#L7"
+        },
+        {
+          "file": "UI/Notch/NotchAgentComponents.swift",
+          "line": 1,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchAgentComponents.swift"
+        },
+        {
+          "file": "UI/Notch/NotchAgentStrip.swift",
+          "line": 9,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchAgentStrip.swift#L9"
+        },
+        {
+          "file": "Services/Notch/NotchAgentSupport.swift",
+          "line": 66,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchAgentSupport.swift#L66"
+        },
+        {
+          "file": "UI/Settings/NotchAgentsSettings.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L8"
+        }
+      ]
+    },
+    {
+      "prefix": "S",
+      "title": "System monitoring ใน notch",
+      "sources": [
+        "UI/Notch/NotchSystemView.swift",
+        "UI/MenuPanel/MetricDetailView.swift",
+        "Services/Notch/NotchSupport.swift"
+      ],
+      "notes": "GPU/temp/fan/power ต้องพึ่ง Windows sensors หรือ service เพิ่ม ไม่สรุปว่ามีเพียงเพราะ Windows แสดง CPU ได้",
+      "items": [
+        {
+          "id": "S01",
+          "name": "CPU overview/history",
+          "detail": "ภาพรวมแล้วเปิดรายละเอียดการใช้งาน",
+          "status": "มี"
+        },
+        {
+          "id": "S02",
+          "name": "Memory overview/pressure",
+          "detail": "แยก memory/pressure และ history",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "S03",
+          "name": "Disk/storage detail",
+          "detail": "พื้นที่ว่างและข้อมูล storage",
+          "status": "มี"
+        },
+        {
+          "id": "S04",
+          "name": "GPU metric",
+          "detail": "ข้อมูล GPU เมื่อระบบรองรับ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "S05",
+          "name": "Network detail",
+          "detail": "traffic/history และ local network readings",
+          "status": "ใหม่"
+        },
+        {
+          "id": "S06",
+          "name": "Power/battery health",
+          "detail": "กำลังไฟ ชาร์จ สุขภาพแบตและเวลาที่ประมาณได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "S07",
+          "name": "Temperatures",
+          "detail": "sensor readings ตาม metric ที่มีอยู่",
+          "status": "ใหม่"
+        },
+        {
+          "id": "S08",
+          "name": "Connected-device battery",
+          "detail": "อุปกรณ์ที่ระบบรู้จักและแบตที่อ่านได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "S09",
+          "name": "Adaptive overview cards",
+          "detail": "card สูง 72pt ปรับแถว/คอลัมน์ตามพื้นที่",
+          "status": "มี"
+        },
+        {
+          "id": "S10",
+          "name": "Fan control",
+          "detail": "เป็น feature แยก มี RPM/manual/curve; การรองรับฮาร์ดแวร์ต้องสำรวจ",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchSystemView.swift",
+          "line": 6,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchSystemView.swift#L6"
+        },
+        {
+          "file": "UI/MenuPanel/MetricDetailView.swift",
+          "line": 147,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/MenuPanel/MetricDetailView.swift#L147"
+        },
+        {
+          "file": "Services/Notch/NotchSupport.swift",
+          "line": 1641,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchSupport.swift#L1641"
+        }
+      ]
+    },
+    {
+      "prefix": "CAL",
+      "title": "Calendar",
+      "sources": [
+        "UI/Notch/NotchCalendarView.swift",
+        "UI/Notch/NotchCalendarMonthView.swift",
+        "UI/Notch/NotchCalendarStrip.swift",
+        "UI/Settings/NotchCalendarSelection.swift"
+      ],
+      "notes": "source ใช้ EventKit; Windows ต้องตัดสินใจแหล่ง calendar และสิทธิ์ใหม่ก่อนสร้าง",
+      "items": [
+        {
+          "id": "CAL01",
+          "name": "Agenda",
+          "detail": "เหตุการณ์ตามวัน พร้อม all-day/current/ended state",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL02",
+          "name": "Week strip",
+          "detail": "เลือกวันและเลื่อนสัปดาห์",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL03",
+          "name": "Month grid",
+          "detail": "หน้าปฏิทินเดือนเมื่อพื้นที่พอ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL04",
+          "name": "Previous/Next/Today",
+          "detail": "นำทางและกลับวันที่ปัจจุบัน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL05",
+          "name": "เลือก calendars",
+          "detail": "เลือกแหล่งปฏิทินที่แสดง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL06",
+          "name": "Event countdown",
+          "detail": "นับถอยหลังเหตุการณ์และเลือกเป็นราย event",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL07",
+          "name": "Time remaining",
+          "detail": "แสดงเวลาที่เหลือของเหตุการณ์ปัจจุบัน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL08",
+          "name": "Week numbers",
+          "detail": "เปิดเลขสัปดาห์ได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL09",
+          "name": "เปิด event ใน Calendar",
+          "detail": "เชื่อมกลับแอปเจ้าของข้อมูล",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAL10",
+          "name": "Compact calendar activity",
+          "detail": "แสดงเหตุการณ์ในแถบย่อและใช้ร่วมกับ activity อื่น",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchCalendarView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchCalendarView.swift#L7"
+        },
+        {
+          "file": "UI/Notch/NotchCalendarMonthView.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchCalendarMonthView.swift#L8"
+        },
+        {
+          "file": "UI/Notch/NotchCalendarStrip.swift",
+          "line": 10,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchCalendarStrip.swift#L10"
+        },
+        {
+          "file": "UI/Settings/NotchCalendarSelection.swift",
+          "line": 9,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchCalendarSelection.swift#L9"
+        }
+      ]
+    },
+    {
+      "prefix": "NF",
+      "title": "Notifications และ system feedback",
+      "sources": [
+        "UI/Notch/NotchNotificationsView.swift",
+        "UI/Notch/NotchNoticeView.swift",
+        "Services/Notch/NotchNotificationService.swift",
+        "UI/Settings/NotchSettings.swift"
+      ],
+      "notes": "ต้องแยก internal activity ของ Islet ที่มีแล้วออกจากการอ่าน system notifications ซึ่งเรายังไม่มี; การแทน native banner เป็นงานเฉพาะแพลตฟอร์ม",
+      "items": [
+        {
+          "id": "NF01",
+          "name": "System notification inbox",
+          "detail": "อ่านแจ้งเตือนของแอปอื่นมาแสดงใน notch",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF02",
+          "name": "ไอคอนแอป ชื่อ ข้อความ เวลา",
+          "detail": "แสดงข้อมูลแจ้งเตือนตามที่อ่านได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF03",
+          "name": "Open/Dismiss/Clear all",
+          "detail": "เปิดแอปต้นทาง ลบรายรายการ/ล้างรวม",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF04",
+          "name": "ขยาย notice",
+          "detail": "เปิดข้อความหรือ actions เพิ่มตาม notification ที่รองรับ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF05",
+          "name": "Hide system banner",
+          "detail": "source มีตัวเลือก dismiss native banners เพื่อไม่ซ้ำ",
+          "status": "macOS"
+        },
+        {
+          "id": "NF06",
+          "name": "Volume/mute HUD",
+          "detail": "readout สั้นพร้อมระดับจริง",
+          "status": "มี"
+        },
+        {
+          "id": "NF07",
+          "name": "Brightness HUD",
+          "detail": "แสดงค่าความสว่างจริงที่อ่านได้",
+          "status": "มี"
+        },
+        {
+          "id": "NF08",
+          "name": "Keyboard backlight HUD",
+          "detail": "ระดับแสงคีย์บอร์ดบนอุปกรณ์ที่รองรับ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF09",
+          "name": "Microphone HUD",
+          "detail": "feedback เปิด/ปิดไมค์",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF10",
+          "name": "Input-source feedback",
+          "detail": "แจ้งเมื่อสลับภาษา/รูปแบบคีย์บอร์ด",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF11",
+          "name": "Battery/accessory notices",
+          "detail": "แบตต่ำ ต่อชาร์จ/เชื่อมอุปกรณ์ ตาม service",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF12",
+          "name": "Clipboard activity",
+          "detail": "แสดงผลการ copy ตามการตั้งค่าความเป็นส่วนตัว",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "NF13",
+          "name": "Capture result activity",
+          "detail": "แจ้งภาพ/งาน capture พร้อมขั้นถัดไป",
+          "status": "ใหม่"
+        },
+        {
+          "id": "NF14",
+          "name": "กิจกรรมหลายอย่างเลือกได้",
+          "detail": "เลือก music/timer/watch/downloads/agents/calendar/keep-awake หรือ companion combination",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "NF15",
+          "name": "Notice ไม่รื้อหน้าปัจจุบัน",
+          "detail": "แยก transient feedback จาก page ที่เปิด",
+          "status": "มี"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchNotificationsView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchNotificationsView.swift#L7"
+        },
+        {
+          "file": "UI/Notch/NotchNoticeView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchNoticeView.swift#L7"
+        },
+        {
+          "file": "Services/Notch/NotchNotificationService.swift",
+          "line": 10,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchNotificationService.swift#L10"
+        },
+        {
+          "file": "UI/Settings/NotchSettings.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L7"
+        }
+      ]
+    },
+    {
+      "prefix": "DL",
+      "title": "Downloads",
+      "sources": [
+        "UI/Notch/NotchDownloadsView.swift",
+        "Services/Notch/NotchDownloadSupport.swift",
+        "Services/Notch/NotchDownloadService.swift"
+      ],
+      "notes": "นี่คือตรวจโฟลเดอร์/งานดาวน์โหลดที่เห็นได้ ไม่ได้แปลว่าอ่านเปอร์เซ็นต์ของทุก browser ได้ทั้งหมด",
+      "items": [
+        {
+          "id": "DL01",
+          "name": "เลือกโฟลเดอร์เฝ้าดู",
+          "detail": "เลือก/ลืม folder พร้อมสิทธิ์เข้าถึง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "DL02",
+          "name": "รายการกำลังโหลด/โหลดเสร็จ",
+          "detail": "รวม partial files กับ file results ที่ตรวจพบ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "DL03",
+          "name": "Compact progress",
+          "detail": "ชื่อ ไอคอน เปอร์เซ็นต์/แถบเมื่อข้อมูลเพียงพอ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "DL04",
+          "name": "เสร็จ/ล้มเหลว feedback",
+          "detail": "สถานะผลลัพธ์และ activity",
+          "status": "ใหม่"
+        },
+        {
+          "id": "DL05",
+          "name": "Open/Reveal",
+          "detail": "เปิดไฟล์หรือโฟลเดอร์เมื่อมีไฟล์ปลายทาง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "DL06",
+          "name": "ย้ายเข้าสู่ shelf",
+          "detail": "ส่งไฟล์ที่โหลดแล้วไปหน้า Files",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchDownloadsView.swift",
+          "line": 123,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchDownloadsView.swift#L123"
+        },
+        {
+          "file": "Services/Notch/NotchDownloadSupport.swift",
+          "line": 108,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchDownloadSupport.swift#L108"
+        },
+        {
+          "file": "Services/Notch/NotchDownloadService.swift",
+          "line": 8,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchDownloadService.swift#L8"
+        }
+      ]
+    },
+    {
+      "prefix": "W",
+      "title": "Watch พื้นที่หน้าจอ",
+      "sources": [
+        "UI/Notch/NotchWatchView.swift",
+        "Services/Notch/NotchWatchSupport.swift",
+        "Services/Notch/NotchWatchService.swift"
+      ],
+      "notes": "เป็นการอ่านพื้นที่ที่ผู้ใช้เลือกด้วย screen capture/OCR ในเครื่อง ไม่ใช่ AI ที่เข้าใจทุกแอป และไม่ได้ติดตามหน้าต่างที่ปิด/ซ่อนได้เสมอ",
+      "items": [
+        {
+          "id": "W01",
+          "name": "Choose Area",
+          "detail": "เลือกส่วนหนึ่งของหน้าต่าง เช่น progress/build/score",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W02",
+          "name": "เตือนเมื่อเปลี่ยน",
+          "detail": "ตรวจการเปลี่ยนค่าหรือภาพที่เลือก",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W03",
+          "name": "เตือนเมื่อหยุดเปลี่ยน",
+          "detail": "ต้องเปลี่ยนก่อน แล้วนิ่งครบช่วงที่ source กำหนด",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W04",
+          "name": "เตือนเมื่อพบข้อความ",
+          "detail": "contains เป้าหมายที่ผู้ใช้ใส่",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W05",
+          "name": "เตือนตัวเลขถึงเป้า",
+          "detail": "เปรียบเทียบค่าตัวเลขที่อ่านได้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W06",
+          "name": "Live activity",
+          "detail": "แสดง reading ย่อ เปิดดู/เลือกพื้นที่ใหม่/Stop/Watch Again",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W07",
+          "name": "สถานะ hidden/closed",
+          "detail": "บอกเมื่อหน้าต่างซ่อนและเมื่อปิด ไม่แกล้งแสดงค่าต่อ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "W08",
+          "name": "เสียงเตือนแยก",
+          "detail": "เลือกเปิด/ปิดเสียงเหตุการณ์ Watch",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchWatchView.swift",
+          "line": 29,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchWatchView.swift#L29"
+        },
+        {
+          "file": "Services/Notch/NotchWatchSupport.swift",
+          "line": 146,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchWatchSupport.swift#L146"
+        },
+        {
+          "file": "Services/Notch/NotchWatchService.swift",
+          "line": 37,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchWatchService.swift#L37"
+        }
+      ]
+    },
+    {
+      "prefix": "CAP",
+      "title": "Captures Camera และ Camera mirror",
+      "sources": [
+        "UI/Notch/NotchCaptureControlsView.swift",
+        "UI/Notch/NotchCameraView.swift",
+        "Services/QuickTools/CameraPreviewService.swift",
+        "UI/Notch/NotchView.swift"
+      ],
+      "notes": "บริการจับภาพ/กล้องใช้ API macOS ในต้นฉบับ ต้องแทนด้วย Windows capture/media APIs; Camera mirror คือภาพกล้อง ส่วน NotchMirrorView คือสำเนา island บนจออื่น",
+      "items": [
+        {
+          "id": "CAP01",
+          "name": "Recent captures ใน notch",
+          "detail": "รายการ capture ที่ทำไว้ เปิดกลับมาใช้งาน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP02",
+          "name": "Capture tool selector",
+          "detail": "เลือก screenshot/record/OCR/color จากแถบเดียว",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP03",
+          "name": "Capture controls ใน island",
+          "detail": "collapse/cancel/tool และคีย์บอร์ดสำหรับ controls",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP04",
+          "name": "Repeat last region",
+          "detail": "ตัวเลือกทำซ้ำบริเวณที่เคยเลือกเมื่อ service มีข้อมูล",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP05",
+          "name": "Recording audio options",
+          "detail": "เปิด system audio/microphone แยก",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP06",
+          "name": "Camera preview",
+          "detail": "เริ่มดูภาพกล้องใน notch",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP07",
+          "name": "เลือก camera device",
+          "detail": "เมนูอุปกรณ์และอุปกรณ์ปัจจุบัน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP08",
+          "name": "Mirror preview",
+          "detail": "ภาพสำหรับตรวจหน้ากล้อง และเปิดหน้าต่างแยก",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CAP09",
+          "name": "Capture privacy",
+          "detail": "hide/show island ในผล capture และ permission/empty state",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchCaptureControlsView.swift",
+          "line": 12,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchCaptureControlsView.swift#L12"
+        },
+        {
+          "file": "UI/Notch/NotchCameraView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchCameraView.swift#L7"
+        },
+        {
+          "file": "Services/QuickTools/CameraPreviewService.swift",
+          "line": 13,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/QuickTools/CameraPreviewService.swift#L13"
+        },
+        {
+          "file": "UI/Notch/NotchView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchView.swift#L7"
+        }
+      ]
+    },
+    {
+      "prefix": "CTL",
+      "title": "Controls Mixer และ Tools",
+      "sources": [
+        "UI/Notch/NotchControlsView.swift",
+        "UI/Notch/NotchMixerView.swift",
+        "UI/Notch/NotchKeepAwakeStrip.swift",
+        "UI/Notch/NotchQuickAccessView.swift",
+        "Services/Notch/NotchSupport.swift"
+      ],
+      "notes": "ต้องไม่เปลี่ยน HUD อ่านค่าเฉยๆ ของเราเป็นปุ่มเปิด Settings โดยอัตโนมัติ; interactive Controls เป็นคนละหน้า",
+      "items": [
+        {
+          "id": "CTL01",
+          "name": "Volume control card",
+          "detail": "slider แบบใช้งานได้จริง พร้อมตัวเลือก output",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL02",
+          "name": "Brightness control card",
+          "detail": "slider/อุปกรณ์ตาม brightness service",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL03",
+          "name": "Keyboard light card",
+          "detail": "ซ่อนเมื่อฮาร์ดแวร์ไม่รองรับ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL04",
+          "name": "Music control card",
+          "detail": "readout/playback ในหน้า home controls",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL05",
+          "name": "Keep awake controls/activity",
+          "detail": "เปิด/ปิดและแสดงงานย่อพร้อมระยะเวลา",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL06",
+          "name": "Shortcut tiles 15 ชนิด",
+          "detail": "volume/brightness/keyboardLight/music/mixer/keepAwake/timer/calendar/microphone/screenshot/recording/speedTest/panel/commandBar/scratchpad",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "CTL07",
+          "name": "Per-app volume faders",
+          "detail": "ระดับเสียงแยกแอปในหน้ามิกเซอร์",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL08",
+          "name": "Pin/reorder mixer apps",
+          "detail": "จัดแอปที่ใช้บ่อยและเรียง faders",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL09",
+          "name": "Mixer output/routing",
+          "detail": "แยก output และตัวเลือกแต่ละ app ตามระบบที่รองรับ",
+          "status": "ใหม่"
+        },
+        {
+          "id": "CTL10",
+          "name": "Launch tools rail",
+          "detail": "เรียกเครื่องมือที่ติดตั้งจาก quick-launcher ใน notch",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchControlsView.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchControlsView.swift#L7"
+        },
+        {
+          "file": "UI/Notch/NotchMixerView.swift",
+          "line": 13,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchMixerView.swift#L13"
+        },
+        {
+          "file": "UI/Notch/NotchKeepAwakeStrip.swift",
+          "line": 10,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchKeepAwakeStrip.swift#L10"
+        },
+        {
+          "file": "UI/Notch/NotchQuickAccessView.swift",
+          "line": 63,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchQuickAccessView.swift#L63"
+        },
+        {
+          "file": "Services/Notch/NotchSupport.swift",
+          "line": 1641,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchSupport.swift#L1641"
+        }
+      ]
+    },
+    {
+      "prefix": "PET",
+      "title": "Companion/Mascot และของตกแต่งมีชีวิต",
+      "sources": [
+        "UI/Notch/NotchMascotView.swift",
+        "Services/Notch/NotchMascotSupport.swift",
+        "UI/Settings/NotchMascotSettings.swift"
+      ],
+      "notes": "สีของมาสคอตไม่ใช่สีพื้น notch; source วาดตัวละครด้วย geometry/vector ไม่จำเป็นต้องพึ่งรูป bitmap",
+      "items": [
+        {
+          "id": "PET01",
+          "name": "เปิด/ปิด companion",
+          "detail": "เลือกให้มีตัวละครบน island",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET02",
+          "name": "Minimal/Robot",
+          "detail": "สองรูปแบบหน้าตา",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET03",
+          "name": "Body shapes",
+          "detail": "Ball/Egg/Squircle/Pill",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET04",
+          "name": "7 palettes",
+          "detail": "Pearl/Lemon/Peach/Rose/Lilac/Sky/Mint",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET05",
+          "name": "เลือกฝั่ง",
+          "detail": "ซ้าย/ขวาของพื้นที่พัก",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET06",
+          "name": "ซ่อนตอน idle",
+          "detail": "ไม่บัง content เมื่อไม่มีกิจกรรม",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET07",
+          "name": "Visit frequency",
+          "detail": "Rare/Normal/Frequent",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET08",
+          "name": "Visits เปิดปิดแยก",
+          "detail": "ตัวละครเดิน/แวะ/กลับที่พักตาม track ที่คำนวณไว้",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET09",
+          "name": "Reactions เปิดปิดแยก",
+          "detail": "มี celebrate/love/surprised/flash/confused/wake/yawn/perk/bounce/hush/ready/groove",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET10",
+          "name": "Mood/eyes",
+          "detail": "idle/happy/wink/love/sleepy/determined/surprised/searching/thinking/confused/alert",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET11",
+          "name": "ปฏิกิริยาตามเหตุการณ์",
+          "detail": "timer/music/agent/event/download/capture ฯลฯ มี moment mapping และ rate gate",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET12",
+          "name": "Countdown performance",
+          "detail": "มีช่วงก่อนหมดเวลาและพักค้างสั้น ไม่ใช่สุ่ม animation ตลอดเวลา",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET13",
+          "name": "หลบเนื้อหาและส่งคืนพื้นที่",
+          "detail": "content steps aside/fade through ขณะตัวละครผ่าน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET14",
+          "name": "Command Bar presentation",
+          "detail": "เลือก Droplet หรือ Island สำหรับ command bar integration",
+          "status": "ใหม่"
+        },
+        {
+          "id": "PET15",
+          "name": "Live preview ใน Settings",
+          "detail": "ดูรูปร่าง/สี/อารมณ์ก่อนเลือก",
+          "status": "ใหม่"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Notch/NotchMascotView.swift",
+          "line": 1186,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Notch/NotchMascotView.swift#L1186"
+        },
+        {
+          "file": "Services/Notch/NotchMascotSupport.swift",
+          "line": 1162,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/Services/Notch/NotchMascotSupport.swift#L1162"
+        },
+        {
+          "file": "UI/Settings/NotchMascotSettings.swift",
+          "line": 9,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L9"
+        }
+      ]
+    },
+    {
+      "prefix": "SET",
+      "title": "Config panel / Settings ทั้งระบบ",
+      "sources": [
+        "UI/Settings/SettingsView.swift",
+        "UI/Settings/SettingsDirectory.swift",
+        "UI/Settings/SettingsCard.swift",
+        "UI/Settings/NotchSettings.swift",
+        "UI/Settings/FeatureHubSettings.swift"
+      ],
+      "notes": "Settings ใช้ธีมของหน้าต่างระบบ แยกจากการล็อกพื้น notch เป็นดำ; Appendix แนบทุก @AppStorage declaration ที่พบใน UI/Settings",
+      "items": [
+        {
+          "id": "SET01",
+          "name": "Sidebar แบ่งหมวด",
+          "detail": "workspace/tools และรายละเอียดที่เลื่อนแยก",
+          "status": "มี"
+        },
+        {
+          "id": "SET02",
+          "name": "Search ถึง control",
+          "detail": "ค้นหาชื่อ feature/keyword แล้วไปหน้าหรือ section ที่เกี่ยวข้อง",
+          "status": "มี"
+        },
+        {
+          "id": "SET03",
+          "name": "History/back-forward",
+          "detail": "ย้อนกลับ/ไปหน้าเดิมโดยไม่หลงตำแหน่ง",
+          "status": "มี"
+        },
+        {
+          "id": "SET04",
+          "name": "Collapsible sidebar groups",
+          "detail": "ยุบหมวดที่ไม่ได้ใช้งาน",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET05",
+          "name": "Dynamic Island tabs",
+          "detail": "Layout/Content/Activity/Behavior และ Companion เมื่อ feature พร้อม",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "SET06",
+          "name": "Rounded grouped cards",
+          "detail": "radius16 padding16 หัวข้อและ row hierarchy",
+          "status": "มี"
+        },
+        {
+          "id": "SET07",
+          "name": "Row icon tile",
+          "detail": "26pt tile, gap12 และคำอธิบายใต้ชื่อ",
+          "status": "มี"
+        },
+        {
+          "id": "SET08",
+          "name": "Preview ในตัว",
+          "detail": "live preview ของ layout/content/companion ไม่ใช่ภาพ static อย่างเดียว",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "SET09",
+          "name": "Feature hub",
+          "detail": "ติดตั้ง/ถอนการใช้แต่ละ feature โดย service ที่ปิดไม่โหลด",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET10",
+          "name": "Feature presets",
+          "detail": "เลือกชุดเริ่มต้นแล้วปรับแยกภายหลัง",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET11",
+          "name": "Permission portal",
+          "detail": "บอกว่าฟีเจอร์ไหนต้องการสิทธิ์ใดและทางไปตั้งค่า",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET12",
+          "name": "Dependency/gating",
+          "detail": "รายการที่ยังไม่พร้อมมีเหตุผลและทางแก้ ไม่ปล่อยปุ่มตาย",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "SET13",
+          "name": "Backup/export/import settings",
+          "detail": "ย้ายการตั้งค่าข้ามเครื่องและ restore",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET14",
+          "name": "Languages",
+          "detail": "หลายภาษาใน source; Islet UI เป็นอังกฤษตามคำสั่ง",
+          "status": "ข้อกำหนด"
+        },
+        {
+          "id": "SET15",
+          "name": "Launch at login",
+          "detail": "ตั้งค่าเริ่มเมื่อเข้าระบบ",
+          "status": "มี"
+        },
+        {
+          "id": "SET16",
+          "name": "Global shortcut editor",
+          "detail": "จัด shortcuts รวม ตรวจชน/ลงทะเบียนไม่สำเร็จ",
+          "status": "บางส่วน"
+        },
+        {
+          "id": "SET17",
+          "name": "Panel layout editor",
+          "detail": "เรียง/ซ่อน sections ของเมนูหลัก เลือก density/layout",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET18",
+          "name": "Update/onboarding/what's new",
+          "detail": "หน้าความเปลี่ยนแปลง คำแนะนำเริ่มต้นและตัวอัปเดต",
+          "status": "ใหม่"
+        },
+        {
+          "id": "SET19",
+          "name": "Privacy/data/about",
+          "detail": "ข้อมูลแอป การเก็บ local data และการตั้งค่าที่เกี่ยวข้อง",
+          "status": "บางส่วน"
+        }
+      ],
+      "references": [
+        {
+          "file": "UI/Settings/SettingsView.swift",
+          "line": 52,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsView.swift#L52"
+        },
+        {
+          "file": "UI/Settings/SettingsDirectory.swift",
+          "line": 37,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsDirectory.swift#L37"
+        },
+        {
+          "file": "UI/Settings/SettingsCard.swift",
+          "line": 9,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsCard.swift#L9"
+        },
+        {
+          "file": "UI/Settings/NotchSettings.swift",
+          "line": 7,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L7"
+        },
+        {
+          "file": "UI/Settings/FeatureHubSettings.swift",
+          "line": 12,
+          "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/FeatureHubSettings.swift#L12"
+        }
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "switcher",
+      "name": "App/window switcher",
+      "detail": "สลับแอป/หน้าต่าง live preview ค้นหาและกรองจอ"
+    },
+    {
+      "id": "dockPreview",
+      "name": "Dock previews",
+      "detail": "พรีวิวหน้าต่างเมื่อ hover ไอคอน Dock แล้วเปิด/ปิด/ย้าย"
+    },
+    {
+      "id": "dockClick",
+      "name": "Dock click actions",
+      "detail": "ย่อ ซ่อน หรือวนหน้าต่างจาก Dock"
+    },
+    {
+      "id": "windowMaximizer",
+      "name": "Maximize",
+      "detail": "ใช้ปุ่มเขียวขยายโดยไม่เข้า Space ใหม่"
+    },
+    {
+      "id": "windowLayout",
+      "name": "Window layout",
+      "detail": "snap layouts/edge/shortcut/modifier drag และย้ายจอ"
+    },
+    {
+      "id": "autoQuit",
+      "name": "Quit on last close",
+      "detail": "ปิดแอปที่เลือกเมื่อหน้าต่างสุดท้ายถูกปิด"
+    },
+    {
+      "id": "spacesOrder",
+      "name": "Fixed Spaces order",
+      "detail": "รักษาลำดับ virtual desktops ของ Mac"
+    },
+    {
+      "id": "scrollInverter",
+      "name": "Invert scrolling",
+      "detail": "กลับแนวตั้ง/แนวนอนแยกจาก trackpad"
+    },
+    {
+      "id": "scrollHorizontal",
+      "name": "Modifier horizontal scroll",
+      "detail": "กด modifier แล้วเลื่อนแนวนอน"
+    },
+    {
+      "id": "focusFollowsMouse",
+      "name": "Focus follows pointer",
+      "detail": "ย้าย focus ตาม pointer หลัง delay"
+    },
+    {
+      "id": "smoothScroll",
+      "name": "Smooth wheel",
+      "detail": "ปรับความลื่น ความเร็ว และ response"
+    },
+    {
+      "id": "linearScroll",
+      "name": "Linear scrolling",
+      "detail": "หนึ่ง notch ล้อเลื่อนเท่ากันโดยไม่ขึ้นกับความเร็ว"
+    },
+    {
+      "id": "mouseAcceleration",
+      "name": "Pointer acceleration",
+      "detail": "ปิด acceleration และคืนค่าตอนเลิกใช้"
+    },
+    {
+      "id": "mouseNavigation",
+      "name": "Mouse back/forward",
+      "detail": "ปุ่มด้านข้างกับ Finder/browser ที่รองรับ"
+    },
+    {
+      "id": "mouseButtonShortcuts",
+      "name": "Extra mouse bindings",
+      "detail": "ผูกปุ่ม/side wheel/drag gesture"
+    },
+    {
+      "id": "middleClick",
+      "name": "Trackpad middle click",
+      "detail": "แปลง three-finger press เป็น middle click"
+    },
+    {
+      "id": "mouseClickDebounce",
+      "name": "Click debounce",
+      "detail": "กรองคลิกซ้ำจากสวิตช์เสื่อม"
+    },
+    {
+      "id": "keyboardDebounce",
+      "name": "Key debounce",
+      "detail": "กรองอักษรซ้ำจากปุ่มเสื่อม"
+    },
+    {
+      "id": "textSnippets",
+      "name": "Text snippets",
+      "detail": "trigger → ข้อความ มี clipboard/date/time variables และค้นหา library"
+    },
+    {
+      "id": "superKey",
+      "name": "Super key",
+      "detail": "Caps/right modifier เป็นชุด shortcut พร้อม tap action/exclusions"
+    },
+    {
+      "id": "quitWindowProtection",
+      "name": "Quit/close protection",
+      "detail": "hold/double press/modifier สำหรับ shortcut ปิดแอป/หน้าต่าง"
+    },
+    {
+      "id": "clipboardHistory",
+      "name": "Clipboard history",
+      "detail": "text/image/file local history ค้นหา pin preview/paste"
+    },
+    {
+      "id": "pastePlain",
+      "name": "Paste plain",
+      "detail": "วางไร้ formatting โดยคืน clipboard เดิม"
+    },
+    {
+      "id": "finderCutPaste",
+      "name": "Finder cut/paste",
+      "detail": "ย้ายไฟล์ด้วย shortcut และความคืบหน้า"
+    },
+    {
+      "id": "finderRename",
+      "name": "Finder F2 rename",
+      "detail": "rename ผ่าน F2"
+    },
+    {
+      "id": "shelf",
+      "name": "File shelf",
+      "detail": "พัก file/text/link และลากออกหรือ share"
+    },
+    {
+      "id": "urlCleaner",
+      "name": "URL cleaner",
+      "detail": "ลบ tracking parameters ทั้ง manual/automatic"
+    },
+    {
+      "id": "diskImageInstaller",
+      "name": "DMG installer",
+      "detail": "ติดตั้งจาก disk image และ eject/cleanup"
+    },
+    {
+      "id": "mixer",
+      "name": "Volume mixer",
+      "detail": "ระดับเสียงต่อแอป boost และจัด favorites"
+    },
+    {
+      "id": "soundOutputSwitcher",
+      "name": "Output switcher",
+      "detail": "สลับ audio output ด้วย shortcut และลดเสียงเมื่อ headset หลุด"
+    },
+    {
+      "id": "audioPriority",
+      "name": "Audio priority",
+      "detail": "จัดลำดับ preferred audio input/output ตามอุปกรณ์"
+    },
+    {
+      "id": "micMute",
+      "name": "Microphone tools",
+      "detail": "เลือก input/level ที่รองรับและ mute shortcut"
+    },
+    {
+      "id": "musicBlock",
+      "name": "Block unwanted Music launch",
+      "detail": "กัน Music เปิดจาก playback-button presses ที่ตรวจพบ"
+    },
+    {
+      "id": "keepAwake",
+      "name": "Keep awake",
+      "detail": "timer/lid/app/power/display automation"
+    },
+    {
+      "id": "brightness",
+      "name": "Display brightness",
+      "detail": "คุมรายจอ hardware/software dimming และขั้น brightness keys"
+    },
+    {
+      "id": "extraBrightness",
+      "name": "Extra XDR brightness",
+      "detail": "ใช้ HDR headroom บน MacBook Pro ที่รองรับ"
+    },
+    {
+      "id": "bluetoothSleep",
+      "name": "Bluetooth on sleep",
+      "detail": "ปิดตอน sleep และคืนเฉพาะที่แอปเป็นผู้ปิด"
+    },
+    {
+      "id": "quickLauncher",
+      "name": "Quick launcher",
+      "detail": "palette เครื่องมือโปรดแบบ floating"
+    },
+    {
+      "id": "quickToggles",
+      "name": "Quick toggles",
+      "detail": "appearance/desktop icons/eject/trash/lock และ actions ระบบ"
+    },
+    {
+      "id": "colorPicker",
+      "name": "Screen color picker",
+      "detail": "HEX/RGB/HSL/SwiftUI พร้อม magnifier"
+    },
+    {
+      "id": "screenOCR",
+      "name": "Screen OCR/QR",
+      "detail": "อ่าน text/QR ในเครื่องจากบริเวณหน้าจอ"
+    },
+    {
+      "id": "cleaningMode",
+      "name": "Cleaning mode",
+      "detail": "ล็อก keyboard สำหรับเช็ดจอ มี black screen/indicator"
+    },
+    {
+      "id": "mediaTools",
+      "name": "Local media tools",
+      "detail": "บีบอัด/แปลงภาพ วิดีโอ GIF watermark และ extract text"
+    },
+    {
+      "id": "cleaner",
+      "name": "Cleaner",
+      "detail": "cache/log/leftovers manual/scheduled"
+    },
+    {
+      "id": "uninstaller",
+      "name": "Uninstaller",
+      "detail": "ตรวจ app-related files ก่อนย้าย Trash"
+    },
+    {
+      "id": "homebrew",
+      "name": "Homebrew manager",
+      "detail": "ค้นหา ติดตั้ง ลบ formula/cask"
+    },
+    {
+      "id": "appUpdates",
+      "name": "App updates",
+      "detail": "รวม Store/package/feed updates และเลือกอัปเดต"
+    },
+    {
+      "id": "screenshot",
+      "name": "Screenshot/editor",
+      "detail": "area/window/screen/scrolling annotate/crop/redact/background/watermark/pin/share"
+    },
+    {
+      "id": "cameraPreview",
+      "name": "Camera mirror",
+      "detail": "กล้อง floating/island"
+    },
+    {
+      "id": "radialMenu",
+      "name": "Radial menu",
+      "detail": "วงล้อ app/file/shortcut/tool มี profiles และ submenus"
+    },
+    {
+      "id": "scratchpad",
+      "name": "Scratchpad",
+      "detail": "autosave tabs Markdown preview/export"
+    },
+    {
+      "id": "commandBar",
+      "name": "Command Bar",
+      "detail": "ค้นหา apps/windows/files/clipboard/snippets/menu; calculator/unit/emoji/scripts"
+    },
+    {
+      "id": "screenRecorder",
+      "name": "Screen recorder/editor",
+      "detail": "system/mic audio tracks trim/cut/zoom/blur/video/GIF/share"
+    },
+    {
+      "id": "wallpaper",
+      "name": "Wallpaper",
+      "detail": "feature เปลี่ยน/จัดการ wallpaper ตามตัวเลือก service"
+    },
+    {
+      "id": "killProcess",
+      "name": "Kill Process",
+      "detail": "เลือก process และสั่งหยุดผ่านเครื่องมือ"
+    },
+    {
+      "id": "portManager",
+      "name": "Port Manager",
+      "detail": "แสดง listening ports และ process เจ้าของ"
+    },
+    {
+      "id": "notch",
+      "name": "Dynamic Island",
+      "detail": "ตัว host ของ 16 โมดูลและกิจกรรม"
+    },
+    {
+      "id": "notchCalendar",
+      "name": "Calendar extension",
+      "detail": "agenda/month/countdown"
+    },
+    {
+      "id": "notchNotifications",
+      "name": "Notification extension",
+      "detail": "แสดง system notification ใน island"
+    },
+    {
+      "id": "notchGestures",
+      "name": "Gesture extension",
+      "detail": "scroll open/close และ swipe เพลง"
+    },
+    {
+      "id": "notchTimer",
+      "name": "Timer extension",
+      "detail": "timer/focus/stopwatch"
+    },
+    {
+      "id": "notchAccessories",
+      "name": "Accessory extension",
+      "detail": "สถานะอุปกรณ์และแบต"
+    },
+    {
+      "id": "notchLyrics",
+      "name": "Lyrics extension",
+      "detail": "timed/plain/import/optional online lyrics"
+    },
+    {
+      "id": "notchQueue",
+      "name": "Queue extension",
+      "detail": "upcoming และสั่งเล่นเมื่อ source รองรับ"
+    },
+    {
+      "id": "notchLiveEqualizer",
+      "name": "Live audio levels",
+      "detail": "bars ตามเสียงจริงบนระบบรองรับ"
+    },
+    {
+      "id": "notchDownloads",
+      "name": "Downloads extension",
+      "detail": "เฝ้า folder และ download activity"
+    },
+    {
+      "id": "notchAgents",
+      "name": "Agent extension",
+      "detail": "Claude/Codex/OpenCode/Copilot และ usage/limits"
+    },
+    {
+      "id": "notchWatch",
+      "name": "Watch extension",
+      "detail": "ติดตามบริเวณหน้าต่างและเตือนตามเงื่อนไข"
+    },
+    {
+      "id": "notchMascot",
+      "name": "Companion extension",
+      "detail": "ตัวละคร shape/palette/reaction/visit"
+    },
+    {
+      "id": "monitorCPU",
+      "name": "CPU metrics",
+      "detail": "usage/history/temperature ที่รองรับ"
+    },
+    {
+      "id": "monitorGPU",
+      "name": "GPU metrics",
+      "detail": "GPU readings ที่รองรับ"
+    },
+    {
+      "id": "monitorMemory",
+      "name": "Memory metrics",
+      "detail": "usage/pressure/history"
+    },
+    {
+      "id": "monitorNetwork",
+      "name": "Network metrics",
+      "detail": "traffic/session total/IP/speed test"
+    },
+    {
+      "id": "monitorDisk",
+      "name": "Disk metrics",
+      "detail": "storage/readings/history ตาม service"
+    },
+    {
+      "id": "monitorPower",
+      "name": "Power metrics",
+      "detail": "battery health/time/power/temperature"
+    },
+    {
+      "id": "connectedDevices",
+      "name": "Connected devices",
+      "detail": "อุปกรณ์เชื่อมต่อและข้อมูลที่อ่านได้"
+    },
+    {
+      "id": "fanControl",
+      "name": "Fan Control beta",
+      "detail": "RPM/manual/temperature curves บนฮาร์ดแวร์ที่รองรับ"
+    }
+  ]
+}

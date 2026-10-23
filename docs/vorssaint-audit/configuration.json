@@ -1,0 +1,3797 @@
+{
+  "revision": "e916961092686d32d455d12494ab10f65a43b73a",
+  "declarations": [
+    {
+      "file": "UI/Settings/AppUpdatesSettings.swift",
+      "line": 9,
+      "key": "DefaultsKey.appUpdatesCheckFrequency",
+      "variable": "frequencyRaw",
+      "defaultExpression": "AppUpdatesSupport.CheckFrequency.off.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift#L9"
+    },
+    {
+      "file": "UI/Settings/AppUpdatesSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.appUpdatesNotify",
+      "variable": "notify",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/AppUpdatesSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.appUpdatesIncludeHomebrewApps",
+      "variable": "includeHomebrewApps",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/AppUpdatesSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.appUpdatesIncludeAppStore",
+      "variable": "includeAppStore",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/AppUpdatesSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.appUpdatesIncludeOnlineCatalog",
+      "variable": "includeOnlineCatalog",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/AppUpdatesSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.panelUtilityAppUpdates",
+      "variable": "showInPanel",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AppUpdatesSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/AutoQuitSettings.swift",
+      "line": 10,
+      "key": "DefaultsKey.autoQuitEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/AutoQuitSettings.swift#L10"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.pastePlainEnabled",
+      "variable": "pastePlainEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.clipboardHistoryEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.clipboardHistoryLimit",
+      "variable": "limit",
+      "defaultExpression": "50",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.clipboardHistoryRetentionDays",
+      "variable": "retentionDays",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.clipboardHistoryFilterSensitiveText",
+      "variable": "skipSensitive",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.clipboardHistoryIncludeImagesFiles",
+      "variable": "includeImagesFiles",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.clipboardHistoryShortcutEnabled",
+      "variable": "shortcutEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.clipboardHistoryLayout",
+      "variable": "historyLayout",
+      "defaultExpression": "ClipboardHistoryLayout.list",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.clipboardHistoryMenuBarPreview",
+      "variable": "menuBarPreview",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.clipboardHistoryMenuBarPreviewLength",
+      "variable": "menuBarPreviewLength",
+      "defaultExpression": "Defaults.defaultClipboardMenuBarPreviewLength",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.panelUtilityClipboard",
+      "variable": "showInPanel",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.finderPasteImageAsFile",
+      "variable": "pasteImageAsFile",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.clipboardAutoClearOnDelay",
+      "variable": "autoClearOnDelay",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.clipboardAutoClearDelay",
+      "variable": "autoClearDelay",
+      "defaultExpression": "Defaults.defaultClipboardAutoClearDelay",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.clipboardAutoClearOnSleep",
+      "variable": "autoClearOnSleep",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.clipboardAutoClearOnDisplaySleep",
+      "variable": "autoClearOnDisplaySleep",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/ClipboardSettings.swift",
+      "line": 31,
+      "key": "DefaultsKey.clipboardAutoClearOnScreenLock",
+      "variable": "autoClearOnScreenLock",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ClipboardSettings.swift#L31"
+    },
+    {
+      "file": "UI/Settings/CodexAccountsSettings.swift",
+      "line": 9,
+      "key": "DefaultsKey.notchAgentsCodexProfiles",
+      "variable": "saved",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CodexAccountsSettings.swift#L9"
+    },
+    {
+      "file": "UI/Settings/CodexAccountsSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.notchAgentsHiddenCards",
+      "variable": "hiddenCards",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CodexAccountsSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/CommandBarAppShortcutsView.swift",
+      "line": 11,
+      "key": "DefaultsKey.commandBarRowShortcuts",
+      "variable": "shortcutsRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarAppShortcutsView.swift#L11"
+    },
+    {
+      "file": "UI/Settings/CommandBarAppShortcutsView.swift",
+      "line": 12,
+      "key": "DefaultsKey.commandBarAliases",
+      "variable": "aliasesRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarAppShortcutsView.swift#L12"
+    },
+    {
+      "file": "UI/Settings/CommandBarAppShortcutsView.swift",
+      "line": 13,
+      "key": "DefaultsKey.commandBarPins",
+      "variable": "pinsRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarAppShortcutsView.swift#L13"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.commandBarShortcutEnabled",
+      "variable": "shortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.commandBarCompactMode",
+      "variable": "compactMode",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.commandBarEmojiSkinTone",
+      "variable": "emojiSkinTone",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.commandBarASCIILayoutEnabled",
+      "variable": "asciiLayoutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.commandBarDisabledSources",
+      "variable": "disabledSources",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.commandBarAliases",
+      "variable": "aliasesRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.commandBarPins",
+      "variable": "pinsRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.commandBarHidden",
+      "variable": "hiddenRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.commandBarLinks",
+      "variable": "linksData",
+      "defaultExpression": "Data()",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.commandBarRowShortcuts",
+      "variable": "rowShortcutsRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.commandBarFileScopes",
+      "variable": "fileScopesRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/CommandBarSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.commandBarFileIgnores",
+      "variable": "fileIgnoresRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CommandBarSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/CutPasteSettings.swift",
+      "line": 10,
+      "key": "DefaultsKey.finderCutPasteEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CutPasteSettings.swift#L10"
+    },
+    {
+      "file": "UI/Settings/CutPasteSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.finderCutPasteShowHUD",
+      "variable": "showHUD",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CutPasteSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/CutPasteSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.finderRenameEnabled",
+      "variable": "renameEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CutPasteSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/CutPasteSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.finderRenameShortcut",
+      "variable": "renameShortcutRaw",
+      "defaultExpression": "GlobalShortcut.finderRenameDefault.storageValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/CutPasteSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/DisplayBrightnessShortcutControls.swift",
+      "line": 9,
+      "key": "DefaultsKey.displayBrightnessShortcutsEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DisplayBrightnessShortcutControls.swift#L9"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.dockPreviewEnabled",
+      "variable": "dockPreviewEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.dockPreviewCurrentSpaceOnly",
+      "variable": "dockPreviewCurrentSpaceOnly",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.dockPreviewBackgroundOpacity",
+      "variable": "dockPreviewBackgroundOpacity",
+      "defaultExpression": "1.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.liquidGlassEnabled",
+      "variable": "liquidGlassEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.dockPreviewOpenDelay",
+      "variable": "dockPreviewOpenDelay",
+      "defaultExpression": "DockPreviewSupport.defaultOpenDelayMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.dockPreviewQuitAppOnClose",
+      "variable": "dockPreviewQuitAppOnClose",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.dockPreviewOrderByCreation",
+      "variable": "dockPreviewOrderByCreation",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.dockPreviewKeepDockVisible",
+      "variable": "dockPreviewKeepDockVisible",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.dockClickMinimize",
+      "variable": "dockClickMinimize",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.dockClickHide",
+      "variable": "dockClickHide",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.dockClickCycleWindows",
+      "variable": "dockClickCycleWindows",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/DockSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.spacesOrderEnabled",
+      "variable": "spacesOrderEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/DockSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.brightnessControlEnabled",
+      "variable": "brightnessEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.brightnessKeysEnabled",
+      "variable": "brightnessKeysEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.brightnessOSDEnabled",
+      "variable": "brightnessOSDEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.brightnessKeyStep",
+      "variable": "brightnessKeyStep",
+      "defaultExpression": "BrightnessSupport.KeyStep.standard.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.extraBrightnessEnabled",
+      "variable": "extraBrightnessEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.extraBrightnessLevel",
+      "variable": "extraBrightnessLevel",
+      "defaultExpression": "100",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.bluetoothSleepEnabled",
+      "variable": "bluetoothSleepEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.bluetoothSleepRestoreOnWake",
+      "variable": "bluetoothSleepRestoreOnWake",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.defaultDuration",
+      "variable": "defaultDuration",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.batteryLimit",
+      "variable": "batteryLimit",
+      "defaultExpression": "10",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.keepAwakeAutoStart",
+      "variable": "keepAwakeAutoStart",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.keepAwakeRightClickToggle",
+      "variable": "keepAwakeRightClickToggle",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 31,
+      "key": "DefaultsKey.keepAwakeAllowDisplaySleep",
+      "variable": "keepAwakeAllowDisplaySleep",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L31"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 32,
+      "key": "DefaultsKey.keepAwakePauseWhenLocked",
+      "variable": "keepAwakePauseWhenLocked",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L32"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 33,
+      "key": "DefaultsKey.keepAwakeAutomationRequireAll",
+      "variable": "keepAwakeAutomationRequireAll",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L33"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 34,
+      "key": "DefaultsKey.showCountdown",
+      "variable": "showCountdown",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L34"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 35,
+      "key": "DefaultsKey.keepAwakeIconTint",
+      "variable": "keepAwakeIconTint",
+      "defaultExpression": "KeepAwakeIconTint.orange.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L35"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 36,
+      "key": "DefaultsKey.keepAwakeActiveIcon",
+      "variable": "keepAwakeActiveIcon",
+      "defaultExpression": "KeepAwakeActiveIcon.vorssaint.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L36"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 37,
+      "key": "DefaultsKey.keepAwakeMouseJiggleEnabled",
+      "variable": "keepAwakeMouseJiggle",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L37"
+    },
+    {
+      "file": "UI/Settings/EnergySettings.swift",
+      "line": 38,
+      "key": "DefaultsKey.keepAwakeMouseJiggleInterval",
+      "variable": "keepAwakeMouseJiggleInterval",
+      "defaultExpression": "5",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/EnergySettings.swift#L38"
+    },
+    {
+      "file": "UI/Settings/GeneralSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.hotkeyEnabled",
+      "variable": "hotkeyEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/GeneralSettings.swift",
+      "line": 313,
+      "key": "DefaultsKey.menuBarIconSymbol",
+      "variable": "symbolName",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralSettings.swift#L313"
+    },
+    {
+      "file": "UI/Settings/GeneralToolSettings.swift",
+      "line": 69,
+      "key": "DefaultsKey.menuBarIconSymbol",
+      "variable": "savedName",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralToolSettings.swift#L69"
+    },
+    {
+      "file": "UI/Settings/GeneralToolSettings.swift",
+      "line": 166,
+      "key": "DefaultsKey.menuBarIconSymbol",
+      "variable": "savedName",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralToolSettings.swift#L166"
+    },
+    {
+      "file": "UI/Settings/GeneralToolSettings.swift",
+      "line": 233,
+      "key": "DefaultsKey.musicBlockEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralToolSettings.swift#L233"
+    },
+    {
+      "file": "UI/Settings/GeneralToolSettings.swift",
+      "line": 234,
+      "key": "DefaultsKey.musicBlockReplacementPath",
+      "variable": "replacementPath",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralToolSettings.swift#L234"
+    },
+    {
+      "file": "UI/Settings/GeneralToolSettings.swift",
+      "line": 235,
+      "key": "DefaultsKey.musicBlockPlayReplacement",
+      "variable": "playReplacement",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/GeneralToolSettings.swift#L235"
+    },
+    {
+      "file": "UI/Settings/HomebrewSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.homebrewGroupDependencies",
+      "variable": "homebrewGroupDependencies",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/HomebrewSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/KeyboardDebounceSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.keyboardDebounceEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/KeyboardDebounceSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/KeyboardDebounceSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.keyboardDebounceWindowMs",
+      "variable": "globalWindow",
+      "defaultExpression": "Defaults.defaultKeyboardDebounceWindowMs",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/KeyboardDebounceSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/KeyboardDebounceSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.keyboardDebounceKeyWindows",
+      "variable": "keyWindowsRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/KeyboardDebounceSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 11,
+      "key": "DefaultsKey.monitorAlertCPU",
+      "variable": "alertCPU",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L11"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 12,
+      "key": "DefaultsKey.monitorAlertCPUTemperature",
+      "variable": "alertCPUTemperature",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L12"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 13,
+      "key": "DefaultsKey.monitorAlertBatteryTemperature",
+      "variable": "alertBatteryTemperature",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L13"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 14,
+      "key": "DefaultsKey.monitorAlertMemory",
+      "variable": "alertMemory",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L14"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 15,
+      "key": "DefaultsKey.monitorAlertDisk",
+      "variable": "alertDisk",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L15"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 16,
+      "key": "DefaultsKey.monitorAlertBattery",
+      "variable": "alertBattery",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L16"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 17,
+      "key": "DefaultsKey.monitorAlertCPUThreshold",
+      "variable": "alertCPUThreshold",
+      "defaultExpression": "90",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L17"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 18,
+      "key": "DefaultsKey.monitorAlertCPUTemperatureThreshold",
+      "variable": "alertCPUTemperatureThreshold",
+      "defaultExpression": "90",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L18"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 19,
+      "key": "DefaultsKey.monitorAlertBatteryTemperatureThreshold",
+      "variable": "alertBatteryTemperatureThreshold",
+      "defaultExpression": "40",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L19"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 20,
+      "key": "DefaultsKey.monitorAlertDiskFreePercent",
+      "variable": "alertDiskFreePercent",
+      "defaultExpression": "10",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L20"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 21,
+      "key": "DefaultsKey.monitorAlertBatteryPercent",
+      "variable": "alertBatteryPercent",
+      "defaultExpression": "15",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L21"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 22,
+      "key": "DefaultsKey.monitorAlertCooldownMinutes",
+      "variable": "alertCooldown",
+      "defaultExpression": "15",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L22"
+    },
+    {
+      "file": "UI/Settings/MonitorAlertsControls.swift",
+      "line": 23,
+      "key": "DefaultsKey.temperatureUnit",
+      "variable": "temperatureUnit",
+      "defaultExpression": "TemperatureUnit.celsius.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorAlertsControls.swift#L23"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 18,
+      "key": "DefaultsKey.monitorShowSystem",
+      "variable": "showSystem",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L18"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 19,
+      "key": "DefaultsKey.monitorSysTemps",
+      "variable": "sysTemps",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L19"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 20,
+      "key": "DefaultsKey.monitorSysCPU",
+      "variable": "sysCPU",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L20"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 21,
+      "key": "DefaultsKey.monitorSysCPUCores",
+      "variable": "sysCPUCores",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L21"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 22,
+      "key": "DefaultsKey.monitorSysGPU",
+      "variable": "sysGPU",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L22"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 23,
+      "key": "DefaultsKey.monitorPwrTemperature",
+      "variable": "pwrTemperature",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L23"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 24,
+      "key": "DefaultsKey.monitorSysBattery",
+      "variable": "sysBattery",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L24"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 25,
+      "key": "DefaultsKey.monitorSysMemory",
+      "variable": "sysMemory",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L25"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 26,
+      "key": "DefaultsKey.monitorSysUptime",
+      "variable": "sysUptime",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L26"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 27,
+      "key": "DefaultsKey.monitorSysConnectedDevices",
+      "variable": "sysConnectedDevices",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L27"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 29,
+      "key": "DefaultsKey.monitorShowNetwork",
+      "variable": "showNetwork",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L29"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 30,
+      "key": "DefaultsKey.monitorNetSpeed",
+      "variable": "netSpeed",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L30"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 31,
+      "key": "DefaultsKey.monitorNetApps",
+      "variable": "netApps",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L31"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 32,
+      "key": "DefaultsKey.monitorNetTotals",
+      "variable": "netTotals",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L32"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 33,
+      "key": "DefaultsKey.monitorNetTest",
+      "variable": "netTest",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L33"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 34,
+      "key": "DefaultsKey.monitorNetAddresses",
+      "variable": "netAddresses",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L34"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 36,
+      "key": "DefaultsKey.monitorShowDisk",
+      "variable": "showDisk",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L36"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 37,
+      "key": "DefaultsKey.monitorDiskUsage",
+      "variable": "diskUsage",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L37"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 38,
+      "key": "DefaultsKey.monitorDiskActivity",
+      "variable": "diskActivity",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L38"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 39,
+      "key": "DefaultsKey.monitorDiskSMART",
+      "variable": "diskSMART",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L39"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 40,
+      "key": "DefaultsKey.monitorDiskProtection",
+      "variable": "diskProtection",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L40"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 41,
+      "key": "DefaultsKey.monitorDiskTools",
+      "variable": "diskTools",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L41"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 43,
+      "key": "DefaultsKey.monitorShowPower",
+      "variable": "showPower",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L43"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 44,
+      "key": "DefaultsKey.monitorPwrSystem",
+      "variable": "pwrSystem",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L44"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 45,
+      "key": "DefaultsKey.monitorPwrAdapter",
+      "variable": "pwrAdapter",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L45"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 46,
+      "key": "DefaultsKey.monitorPwrBattery",
+      "variable": "pwrBattery",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L46"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 47,
+      "key": "DefaultsKey.monitorPwrTimeRemaining",
+      "variable": "pwrTimeRemaining",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L47"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 48,
+      "key": "DefaultsKey.monitorPwrHealth",
+      "variable": "pwrHealth",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L48"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 49,
+      "key": "DefaultsKey.monitorPwrPeripherals",
+      "variable": "pwrPeripherals",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L49"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 51,
+      "key": "DefaultsKey.monitorShowMixer",
+      "variable": "showMixer",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L51"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 53,
+      "key": "DefaultsKey.monitorGraphCPU",
+      "variable": "graphCPU",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L53"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 54,
+      "key": "DefaultsKey.monitorGraphGPU",
+      "variable": "graphGPU",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L54"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 55,
+      "key": "DefaultsKey.monitorGraphMemory",
+      "variable": "graphMemory",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L55"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 56,
+      "key": "DefaultsKey.monitorGraphNetwork",
+      "variable": "graphNetwork",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L56"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 57,
+      "key": "DefaultsKey.monitorGraphDisk",
+      "variable": "graphDisk",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L57"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 58,
+      "key": "DefaultsKey.monitorGraphPower",
+      "variable": "graphPower",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L58"
+    },
+    {
+      "file": "UI/Settings/MonitorPanelConfig.swift",
+      "line": 59,
+      "key": "DefaultsKey.monitorGraphBattery",
+      "variable": "graphBattery",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorPanelConfig.swift#L59"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.menuBarCombineTemperatures",
+      "variable": "combineTemperatures",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.menuBarSeparateMetrics",
+      "variable": "separateMetrics",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.menuBarMetricSpacing",
+      "variable": "metricSpacing",
+      "defaultExpression": "\"standard\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.menuBarMetricAppearance",
+      "variable": "metricAppearance",
+      "defaultExpression": "\"values\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.menuBarHideIconWithMetrics",
+      "variable": "hideIconWithMetrics",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.monitorInterval",
+      "variable": "interval",
+      "defaultExpression": "2",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.monitorGraphScale",
+      "variable": "graphScale",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.temperatureUnit",
+      "variable": "temperatureUnit",
+      "defaultExpression": "TemperatureUnit.celsius.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.networkSpeedUnit",
+      "variable": "networkSpeedUnit",
+      "defaultExpression": "NetworkSpeedUnit.bytes",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.monitorMemoryMetric",
+      "variable": "memoryMetric",
+      "defaultExpression": "\"used\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.panelShowFanControl",
+      "variable": "showFanControl",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 353,
+      "key": "DefaultsKey.menuBarMetricOrder",
+      "variable": "metricOrder",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L353"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 394,
+      "key": "DefaultsKey.menuBarMemoryStyle",
+      "variable": "memoryStyle",
+      "defaultExpression": "\"percent\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L394"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 395,
+      "key": "DefaultsKey.menuBarNetworkUploadFirst",
+      "variable": "uploadFirst",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L395"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 396,
+      "key": "DiskMenuBarStyle.defaultsKey",
+      "variable": "diskStyle",
+      "defaultExpression": "DiskMenuBarStyle.percent",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L396"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 454,
+      "key": "DefaultsKey.menuBarUsageBarNormalColor",
+      "variable": "normalColor",
+      "defaultExpression": "MenuBarUsageBarSupport.defaultNormalColor",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L454"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 455,
+      "key": "DefaultsKey.menuBarUsageBarElevatedColor",
+      "variable": "elevatedColor",
+      "defaultExpression": "MenuBarUsageBarSupport.defaultElevatedColor",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L455"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 456,
+      "key": "DefaultsKey.menuBarUsageBarCriticalColor",
+      "variable": "criticalColor",
+      "defaultExpression": "MenuBarUsageBarSupport.defaultCriticalColor",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L456"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 457,
+      "key": "DefaultsKey.menuBarUsageBarMediumThreshold",
+      "variable": "mediumThreshold",
+      "defaultExpression": "MenuBarUsageBarSupport.defaultMediumThreshold",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L457"
+    },
+    {
+      "file": "UI/Settings/MonitorSettings.swift",
+      "line": 458,
+      "key": "DefaultsKey.menuBarUsageBarHighThreshold",
+      "variable": "highThreshold",
+      "defaultExpression": "MenuBarUsageBarSupport.defaultHighThreshold",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MonitorSettings.swift#L458"
+    },
+    {
+      "file": "UI/Settings/MouseButtonSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.mouseButtonShortcutsEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseButtonSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/MouseButtonSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.mouseSpacesGestureEnabled",
+      "variable": "spacesEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseButtonSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/MouseButtonSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.mouseSpacesGestureButton",
+      "variable": "spacesButton",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseButtonSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/MouseButtonSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.mouseSpacesGestureFollowsDrag",
+      "variable": "spacesFollowsDrag",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseButtonSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.scrollInverterEnabled",
+      "variable": "invertVertical",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.scrollInverterHorizontalEnabled",
+      "variable": "invertHorizontal",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.scrollHorizontalEnabled",
+      "variable": "horizontalScrollEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.scrollHorizontalModifier",
+      "variable": "horizontalScrollModifier",
+      "defaultExpression": "ScrollHorizontalModifier.shift",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.focusFollowsMouseEnabled",
+      "variable": "focusFollowsMouseEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.focusFollowsMouseRaise",
+      "variable": "focusFollowsMouseRaise",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.focusFollowsMouseWaitForStop",
+      "variable": "focusFollowsMouseWaitForStop",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.focusFollowsMouseDelay",
+      "variable": "focusFollowsMouseDelay",
+      "defaultExpression": "FocusFollowsMouseSupport.defaultDelayMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.smoothScrollEnabled",
+      "variable": "smoothScrollEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.smoothScrollStep",
+      "variable": "smoothScrollStep",
+      "defaultExpression": "SmoothScrollSupport.defaultStep",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.mouseAccelerationDisabled",
+      "variable": "mouseAccelerationDisabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.linearScrollEnabled",
+      "variable": "linearScrollEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 31,
+      "key": "DefaultsKey.linearScrollLines",
+      "variable": "linearScrollLines",
+      "defaultExpression": "ScrollWheelSupport.defaultLinesPerNotch",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L31"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 33,
+      "key": "DefaultsKey.smoothScrollResponse",
+      "variable": "smoothScrollResponse",
+      "defaultExpression": "SmoothScrollSupport.defaultResponse",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L33"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 35,
+      "key": "DefaultsKey.smoothScrollCoast",
+      "variable": "smoothScrollCoast",
+      "defaultExpression": "SmoothScrollSupport.defaultCoast",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L35"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 37,
+      "key": "DefaultsKey.mouseNavigationEnabled",
+      "variable": "mouseNavigationEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L37"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 38,
+      "key": "DefaultsKey.mouseButtonShortcutsEnabled",
+      "variable": "mouseButtonShortcutsEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L38"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 39,
+      "key": "DefaultsKey.mouseSpacesGestureEnabled",
+      "variable": "spacesEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L39"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 40,
+      "key": "DefaultsKey.middleClickEnabled",
+      "variable": "middleClickEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L40"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 41,
+      "key": "DefaultsKey.middleClickTapFingers",
+      "variable": "middleClickTapFingers",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L41"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 42,
+      "key": "DefaultsKey.mouseClickDebounceEnabled",
+      "variable": "mouseClickDebounceEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L42"
+    },
+    {
+      "file": "UI/Settings/MouseSettings.swift",
+      "line": 43,
+      "key": "DefaultsKey.mouseClickDebounceWindowMs",
+      "variable": "mouseClickDebounceWindow",
+      "defaultExpression": "Defaults.defaultMouseClickDebounceWindowMs",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/MouseSettings.swift#L43"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.notchAgentsClaude",
+      "variable": "claude",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.notchAgentsCodex",
+      "variable": "codex",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.notchAgentsOpenCode",
+      "variable": "opencode",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.notchAgentsCopilot",
+      "variable": "copilot",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.notchAgentsCardOrder",
+      "variable": "cardOrder",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.notchAgentsHiddenCards",
+      "variable": "hiddenCards",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.notchAgentsLimitDisplay",
+      "variable": "limitDisplay",
+      "defaultExpression": "NotchAgentLimitDisplay.remaining.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.notchAgentsLimitFocus",
+      "variable": "limitFocus",
+      "defaultExpression": "NotchAgentLimitFocus.mostUsed.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.notchAgentsLiveActivity",
+      "variable": "liveActivity",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.notchAgentsReadout",
+      "variable": "readout",
+      "defaultExpression": "NotchAgentReadout.elapsed.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.notchAgentsFinishAlert",
+      "variable": "finishAlert",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.notchAgentsFinishMinimum",
+      "variable": "finishMinimum",
+      "defaultExpression": "NotchAgentSupport.defaultFinishMinimum",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.notchAgentsLimitAlert",
+      "variable": "limitAlert",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.notchAgentsLimitThreshold",
+      "variable": "limitThreshold",
+      "defaultExpression": "NotchAgentSupport.defaultLimitThreshold",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.notchAgentsDailyBudget",
+      "variable": "dailyBudget",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/NotchAgentsSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.notchAgentsPriceUpdates",
+      "variable": "priceUpdates",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchAgentsSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/NotchContentEditor.swift",
+      "line": 15,
+      "key": "DefaultsKey.notchLiquidGlassEnabled",
+      "variable": "glass",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchContentEditor.swift#L15"
+    },
+    {
+      "file": "UI/Settings/NotchContentEditor.swift",
+      "line": 206,
+      "key": "DefaultsKey.scratchpadTextSize",
+      "variable": "storedTextSize",
+      "defaultExpression": "ScratchpadSupport.defaultTextSize",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchContentEditor.swift#L206"
+    },
+    {
+      "file": "UI/Settings/NotchLayoutEditor.swift",
+      "line": 17,
+      "key": "DefaultsKey.notchOutlineEnabled",
+      "variable": "outlineEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchLayoutEditor.swift#L17"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.notchEnabled",
+      "variable": "islandEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.notchSilhouette",
+      "variable": "silhouette",
+      "defaultExpression": "NotchSilhouette.capsule.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.notchMascotEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.notchMascotVisits",
+      "variable": "visits",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.notchMascotReactions",
+      "variable": "reactions",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.notchMascotHidesWhenIdle",
+      "variable": "hidesWhenIdle",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.notchMascotStyle",
+      "variable": "style",
+      "defaultExpression": "NotchMascotStyle.minimal.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.notchMascotShape",
+      "variable": "shape",
+      "defaultExpression": "NotchMascotShape.ball.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.notchMascotPalette",
+      "variable": "palette",
+      "defaultExpression": "NotchMascotPalette.pearl.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.notchMascotSide",
+      "variable": "side",
+      "defaultExpression": "NotchMascotSide.left.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.notchMascotVisitFrequency",
+      "variable": "frequency",
+      "defaultExpression": "NotchMascotVisitFrequency.normal.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.notchCommandBar",
+      "variable": "commandBar",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/NotchMascotSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.notchCommandBarStyle",
+      "variable": "commandBarStyle",
+      "defaultExpression": "NotchCommandBarStyle.droplet.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchMascotSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.notchGesturesEnabled",
+      "variable": "gesturesEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.notchKeyboardLight",
+      "variable": "keyboardLight",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.notchNotificationsEnabled",
+      "variable": "notificationsEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.notchDismissNativeNotifications",
+      "variable": "dismissNativeNotifications",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.notchTimerEnabled",
+      "variable": "timerEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.notchTimerSoundEnabled",
+      "variable": "timerSoundEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.notchHideTimerCountdown",
+      "variable": "hideTimerCountdown",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.notchCameraEnabled",
+      "variable": "cameraEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.notchAccessoriesEnabled",
+      "variable": "accessoriesEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.notchCalendarEnabled",
+      "variable": "calendarEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.notchCalendarCountdown",
+      "variable": "calendarCountdown",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.notchCalendarTimeLeft",
+      "variable": "calendarTimeLeft",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.notchCalendarWeekNumbers",
+      "variable": "calendarWeekNumbers",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.notchAgentsEnabled",
+      "variable": "agentsEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.notchWatchEnabled",
+      "variable": "watchEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.notchLyricsEnabled",
+      "variable": "lyricsEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.notchLyricsOnline",
+      "variable": "lyricsOnline",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.notchBrowserCovers",
+      "variable": "browserCovers",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 31,
+      "key": "DefaultsKey.notchQueueEnabled",
+      "variable": "queueEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L31"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 32,
+      "key": "DefaultsKey.notchLiveEqualizer",
+      "variable": "liveEqualizer",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L32"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 33,
+      "key": "DefaultsKey.notchEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L33"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 34,
+      "key": "DefaultsKey.notchMascotEnabled",
+      "variable": "mascotEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L34"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 35,
+      "key": "DefaultsKey.notchMascotHidesWhenIdle",
+      "variable": "mascotHidesWhenIdle",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L35"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 36,
+      "key": "DefaultsKey.notchMascotStyle",
+      "variable": "mascotStyle",
+      "defaultExpression": "NotchMascotStyle.minimal.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L36"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 37,
+      "key": "DefaultsKey.notchMascotShape",
+      "variable": "mascotShape",
+      "defaultExpression": "NotchMascotShape.ball.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L37"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 38,
+      "key": "DefaultsKey.notchMascotPalette",
+      "variable": "mascotPalette",
+      "defaultExpression": "NotchMascotPalette.pearl.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L38"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 39,
+      "key": "DefaultsKey.notchMascotSide",
+      "variable": "mascotSide",
+      "defaultExpression": "NotchMascotSide.left.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L39"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 40,
+      "key": "DefaultsKey.notchDisplay",
+      "variable": "display",
+      "defaultExpression": "NotchDisplay.automatic.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L40"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 41,
+      "key": "DefaultsKey.notchSilhouette",
+      "variable": "silhouette",
+      "defaultExpression": "NotchSilhouette.capsule.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L41"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 42,
+      "key": "DefaultsKey.notchOpenOnHover",
+      "variable": "hover",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L42"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 43,
+      "key": "DefaultsKey.notchShortcutEnabled",
+      "variable": "shortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L43"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 44,
+      "key": "DefaultsKey.notchHideInFullscreen",
+      "variable": "hideInFullscreen",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L44"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 45,
+      "key": "DefaultsKey.notchHideUntilHover",
+      "variable": "hideUntilHover",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L45"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 46,
+      "key": "DefaultsKey.notchHiddenShowsActivity",
+      "variable": "hiddenShowsActivity",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L46"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 47,
+      "key": "DefaultsKey.notchCoversMenus",
+      "variable": "coversMenus",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L47"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 48,
+      "key": "DefaultsKey.notchHoverDelay",
+      "variable": "hoverDelay",
+      "defaultExpression": "NotchSupport.defaultHoverDelay",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L48"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 49,
+      "key": "DefaultsKey.notchCloseDelay",
+      "variable": "closeDelay",
+      "defaultExpression": "NotchSupport.defaultCloseDelay",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L49"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 50,
+      "key": "DefaultsKey.notchReturnHome",
+      "variable": "returnHome",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L50"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 51,
+      "key": "DefaultsKey.notchHomeModule",
+      "variable": "homeModule",
+      "defaultExpression": "NotchModule.controls.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L51"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 52,
+      "key": "DefaultsKey.notchOpensActivity",
+      "variable": "opensActivity",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L52"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 53,
+      "key": "DefaultsKey.notchHiddenModules",
+      "variable": "hidden",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L53"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 54,
+      "key": "DefaultsKey.notchModuleOrder",
+      "variable": "order",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L54"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 55,
+      "key": "DefaultsKey.notchVolume",
+      "variable": "volume",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L55"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 56,
+      "key": "DefaultsKey.notchInputSource",
+      "variable": "inputSource",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L56"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 57,
+      "key": "DefaultsKey.notchMicrophone",
+      "variable": "microphone",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L57"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 58,
+      "key": "DefaultsKey.notchBrightness",
+      "variable": "brightness",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L58"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 59,
+      "key": "DefaultsKey.notchBattery",
+      "variable": "battery",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L59"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 60,
+      "key": "DefaultsKey.notchClipboard",
+      "variable": "clipboard",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L60"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 61,
+      "key": "DefaultsKey.notchClipboardWindow",
+      "variable": "clipboardWindow",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L61"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 62,
+      "key": "DefaultsKey.notchClipboardCardSize",
+      "variable": "clipboardCardSize",
+      "defaultExpression": "NotchClipboardCardSize.comfortable.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L62"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 63,
+      "key": "DefaultsKey.screenshotDefaultAction",
+      "variable": "captureAction",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L63"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 64,
+      "key": "DefaultsKey.notchCapture",
+      "variable": "capture",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L64"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 65,
+      "key": "DefaultsKey.notchTrackChange",
+      "variable": "trackChange",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L65"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 66,
+      "key": "DefaultsKey.notchShowPlayingMusic",
+      "variable": "showPlayingMusic",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L66"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 67,
+      "key": "DefaultsKey.notchIncludeOtherPlayers",
+      "variable": "includeOtherPlayers",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L67"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 68,
+      "key": "DefaultsKey.notchPreferredPlayer",
+      "variable": "preferredPlayer",
+      "defaultExpression": "NotchPreferredPlayer.automatic",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L68"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 69,
+      "key": "DefaultsKey.notchIdleContent",
+      "variable": "idle",
+      "defaultExpression": "NotchIdleContent.music.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L69"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 70,
+      "key": "DefaultsKey.notchLowBatteryTint",
+      "variable": "lowBatteryTint",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L70"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 71,
+      "key": "DefaultsKey.notchLowBatteryThreshold",
+      "variable": "lowBatteryThreshold",
+      "defaultExpression": "NotchSupport.defaultLowBatteryThreshold",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L71"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 72,
+      "key": "DefaultsKey.notchLowBatteryEarly",
+      "variable": "earlyBatteryWarning",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L72"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 73,
+      "key": "DefaultsKey.notchLowBatteryEarlyThreshold",
+      "variable": "earlyBatteryThreshold",
+      "defaultExpression": "NotchSupport.defaultEarlyBatteryThreshold",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L73"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 74,
+      "key": "DefaultsKey.notchLowBatteryMenuBar",
+      "variable": "lowBatteryMenuBar",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L74"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 75,
+      "key": "DefaultsKey.notchHiddenControls",
+      "variable": "hiddenControls",
+      "defaultExpression": "NotchControlItem.defaultHidden",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L75"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 76,
+      "key": "DefaultsKey.notchControlOrder",
+      "variable": "controlOrder",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L76"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 77,
+      "key": "DefaultsKey.notchShowInCaptures",
+      "variable": "showInCaptures",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L77"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 78,
+      "key": "DefaultsKey.notchLockScreen",
+      "variable": "lockScreen",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L78"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 79,
+      "key": "DefaultsKey.notchLockSounds",
+      "variable": "lockSounds",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L79"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 80,
+      "key": "DefaultsKey.notchSize",
+      "variable": "size",
+      "defaultExpression": "NotchSize.spacious.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L80"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 81,
+      "key": "DefaultsKey.notchOutlineEnabled",
+      "variable": "outlineEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L81"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 82,
+      "key": "DefaultsKey.notchHideMenuBarGap",
+      "variable": "hideMenuBarGap",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L82"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 83,
+      "key": "DefaultsKey.notchCustomWidth",
+      "variable": "customWidth",
+      "defaultExpression": "NotchSize.defaultWidth",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L83"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 84,
+      "key": "DefaultsKey.notchCustomHeight",
+      "variable": "customHeight",
+      "defaultExpression": "NotchSize.defaultHeight",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L84"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 85,
+      "key": "DefaultsKey.notchCameraFitWidth",
+      "variable": "cameraFitWidth",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L85"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 86,
+      "key": "DefaultsKey.notchCameraFitHeight",
+      "variable": "cameraFitHeight",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L86"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 87,
+      "key": "DefaultsKey.notchCapsuleFitWidth",
+      "variable": "capsuleFitWidth",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L87"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 88,
+      "key": "DefaultsKey.notchCapsuleFitHeight",
+      "variable": "capsuleFitHeight",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L88"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 89,
+      "key": "DefaultsKey.notchCapsuleFitDrop",
+      "variable": "capsuleFitDrop",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L89"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 90,
+      "key": "DefaultsKey.notchHapticFeedback",
+      "variable": "hapticFeedback",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L90"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 91,
+      "key": "DefaultsKey.notchTranslucentBackground",
+      "variable": "translucentBackground",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L91"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 92,
+      "key": "DefaultsKey.notchLiquidGlassEnabled",
+      "variable": "liquidGlass",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L92"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 93,
+      "key": "DefaultsKey.notchShelf",
+      "variable": "shelfWindow",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L93"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 94,
+      "key": "DefaultsKey.notchDragReveal",
+      "variable": "dragReveal",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L94"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 95,
+      "key": "DefaultsKey.notchCaptureControls",
+      "variable": "captureControls",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L95"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 96,
+      "key": "DefaultsKey.notchQuickPanel",
+      "variable": "quickPanel",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L96"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 97,
+      "key": "DefaultsKey.notchAppPanel",
+      "variable": "appPanel",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L97"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 98,
+      "key": "DefaultsKey.notchHidesMenuBarIcon",
+      "variable": "hidesMenuBarIcon",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L98"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 99,
+      "key": "DefaultsKey.notchKeepAwakeActivity",
+      "variable": "keepAwakeActivity",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L99"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 100,
+      "key": "DefaultsKey.notchScratchpad",
+      "variable": "scratchpad",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L100"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 101,
+      "key": "DefaultsKey.brightnessControlEnabled",
+      "variable": "brightnessControlEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L101"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 102,
+      "key": "DefaultsKey.clipboardHistoryEnabled",
+      "variable": "clipboardHistoryEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L102"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 103,
+      "key": "DefaultsKey.notchHoverExpands",
+      "variable": "hoverExpand",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L103"
+    },
+    {
+      "file": "UI/Settings/NotchSettings.swift",
+      "line": 104,
+      "key": "DefaultsKey.notchQuickAccessLayout",
+      "variable": "accessData",
+      "defaultExpression": "Data()",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/NotchSettings.swift#L104"
+    },
+    {
+      "file": "UI/Settings/PanelLayoutEditor.swift",
+      "line": 16,
+      "key": "DefaultsKey.panelShowFanControl",
+      "variable": "showFanControl",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/PanelLayoutEditor.swift#L16"
+    },
+    {
+      "file": "UI/Settings/PanelLayoutEditor.swift",
+      "line": 17,
+      "key": "DefaultsKey.brightnessControlEnabled",
+      "variable": "brightnessEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/PanelLayoutEditor.swift#L17"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.quickLauncherShortcutEnabled",
+      "variable": "launcherShortcutEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.micMuteShortcutEnabled",
+      "variable": "micShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.cameraPreviewShortcutEnabled",
+      "variable": "cameraShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.scratchpadShortcutEnabled",
+      "variable": "scratchpadShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.scratchpadRetention",
+      "variable": "scratchpadRetention",
+      "defaultExpression": "ScratchpadRetention.never.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.scratchpadCloseOnClickOutside",
+      "variable": "scratchpadCloseOnClickOutside",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.scratchpadBackgroundOpacity",
+      "variable": "scratchpadBackgroundOpacity",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.scratchpadTextSize",
+      "variable": "scratchpadTextSize",
+      "defaultExpression": "ScratchpadSupport.defaultTextSize",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.micMuteMenuBarIndicator",
+      "variable": "micMenuBarIndicator",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/QuickToolsSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.cleaningModeKeepScreenVisible",
+      "variable": "cleaningModeKeepScreenVisible",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuickToolsSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.quitProtectionQuitEnabled",
+      "variable": "quitEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.quitProtectionQuitMode",
+      "variable": "quitMode",
+      "defaultExpression": "QuitProtectionMode.hold.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.quitProtectionQuitHoldDurationMs",
+      "variable": "quitHoldDuration",
+      "defaultExpression": "QuitProtectionSupport.defaultHoldDurationMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.quitProtectionQuitDoubleIntervalMs",
+      "variable": "quitDoubleInterval",
+      "defaultExpression": "QuitProtectionSupport.defaultDoublePressIntervalMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.quitProtectionQuitExtraModifier",
+      "variable": "quitExtraModifier",
+      "defaultExpression": "QuitProtectionExtraModifier.shift.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.quitProtectionQuitScope",
+      "variable": "quitScope",
+      "defaultExpression": "QuitProtectionScope.all.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.quitProtectionQuitShowFeedback",
+      "variable": "quitShowFeedback",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.quitProtectionCloseEnabled",
+      "variable": "closeEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.quitProtectionCloseMode",
+      "variable": "closeMode",
+      "defaultExpression": "QuitProtectionMode.hold.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.quitProtectionCloseHoldDurationMs",
+      "variable": "closeHoldDuration",
+      "defaultExpression": "QuitProtectionSupport.defaultHoldDurationMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.quitProtectionCloseDoubleIntervalMs",
+      "variable": "closeDoubleInterval",
+      "defaultExpression": "QuitProtectionSupport.defaultDoublePressIntervalMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.quitProtectionCloseExtraModifier",
+      "variable": "closeExtraModifier",
+      "defaultExpression": "QuitProtectionExtraModifier.shift.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.quitProtectionCloseScope",
+      "variable": "closeScope",
+      "defaultExpression": "QuitProtectionScope.all.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/QuitProtectionSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.quitProtectionCloseShowFeedback",
+      "variable": "closeShowFeedback",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/QuitProtectionSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/RadialMenuSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.radialMenuEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/RadialMenuSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/RadialMenuSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.radialMenuAtPointer",
+      "variable": "atPointer",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/RadialMenuSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/RadialMenuSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.radialMenuActivationMode",
+      "variable": "activationModeRaw",
+      "defaultExpression": "RadialMenuActivationMode.pressOrHold.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/RadialMenuSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/RadialMenuSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.middleClickEnabled",
+      "variable": "middleClickEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/RadialMenuSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/RadialMenuSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.middleClickTapFingers",
+      "variable": "middleClickTapFingers",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/RadialMenuSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/ScreenCaptureSettings.swift",
+      "line": 109,
+      "key": "DefaultsKey.recentCapturesShortcutEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift#L109"
+    },
+    {
+      "file": "UI/Settings/ScreenCaptureSettings.swift",
+      "line": 180,
+      "key": "DefaultsKey.screenOCRRemoveLineBreaks",
+      "variable": "removesLineBreaks",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift#L180"
+    },
+    {
+      "file": "UI/Settings/ScreenCaptureSettings.swift",
+      "line": 181,
+      "key": "DefaultsKey.screenOCRDetectQRCodes",
+      "variable": "detectsQRCodes",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift#L181"
+    },
+    {
+      "file": "UI/Settings/ScreenCaptureSettings.swift",
+      "line": 213,
+      "key": "DefaultsKey.colorPickerFormat",
+      "variable": "format",
+      "defaultExpression": "\"hex\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift#L213"
+    },
+    {
+      "file": "UI/Settings/ScreenCaptureSettings.swift",
+      "line": 214,
+      "key": "DefaultsKey.colorPickerBareHex",
+      "variable": "usesBareHex",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenCaptureSettings.swift#L214"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.recorderCountdown",
+      "variable": "countdown",
+      "defaultExpression": "3",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.recorderQuality",
+      "variable": "qualityRaw",
+      "defaultExpression": "RecorderSupport.Quality.balanced.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.recorderFrameRate",
+      "variable": "frameRate",
+      "defaultExpression": "60",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.recorderSystemAudio",
+      "variable": "systemAudio",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.recorderMicrophone",
+      "variable": "microphone",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.recorderSaveFolder",
+      "variable": "saveFolder",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.recorderOpenEditor",
+      "variable": "opensEditor",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.recorderAutomaticZoom",
+      "variable": "automaticZoom",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.recorderGIFSize",
+      "variable": "gifSizeRaw",
+      "defaultExpression": "RecorderSupport.GIFSize.medium.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.recorderGIFFrameRate",
+      "variable": "gifFrameRate",
+      "defaultExpression": "12",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/ScreenRecorderSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.recorderSharingEnabled",
+      "variable": "sharingEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenRecorderSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.screenshotFullScreenShortcutEnabled",
+      "variable": "fullScreenShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.screenshotLastCaptureShortcutEnabled",
+      "variable": "lastCaptureShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.screenshotClipboardShortcutEnabled",
+      "variable": "clipboardShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.screenshotFreeze",
+      "variable": "freeze",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.screenshotHideVorssaintWindows",
+      "variable": "hideVorssaintWindows",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.screenshotSaveFolder",
+      "variable": "saveFolder",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.screenshotSaveSubfolder",
+      "variable": "saveSubfolder",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.screenshotFileNamePattern",
+      "variable": "fileNamePattern",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.screenshotFileNumberStart",
+      "variable": "numberStart",
+      "defaultExpression": "1",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.screenshotFileNumberNext",
+      "variable": "nextNumber",
+      "defaultExpression": "1",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.screenshotIncludePointer",
+      "variable": "includePointer",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.screenshotShowLastRegion",
+      "variable": "showLastRegion",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.screenshotHighlightWindows",
+      "variable": "highlightWindows",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.screenshotLoupeStartsOn",
+      "variable": "loupeStartsOn",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.screenshotLoupeRememberZoom",
+      "variable": "rememberLoupeZoom",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.screenshotLoupeDefaultZoom",
+      "variable": "loupeDefaultZoom",
+      "defaultExpression": "1.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 31,
+      "key": "DefaultsKey.screenshotLoupeSteppedZoomByDefault",
+      "variable": "steppedLoupeZoomByDefault",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L31"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 33,
+      "key": "DefaultsKey.screenshotDownscale",
+      "variable": "downscale",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L33"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 34,
+      "key": "DefaultsKey.screenshotDelay",
+      "variable": "delay",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L34"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 35,
+      "key": "DefaultsKey.screenshotDefaultAction",
+      "variable": "defaultActionRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L35"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 36,
+      "key": "DefaultsKey.screenshotToolOrder",
+      "variable": "toolOrderRaw",
+      "defaultExpression": "ScreenshotSupport.Tool.defaultOrderStorage",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L36"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 38,
+      "key": "DefaultsKey.screenshotToolShortcutsEnabled",
+      "variable": "toolShortcutsEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L38"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 39,
+      "key": "DefaultsKey.screenshotCopyToClipboard",
+      "variable": "copyToClipboard",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L39"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 40,
+      "key": "DefaultsKey.screenshotAddToShelf",
+      "variable": "addToShelf",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L40"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 41,
+      "key": "DefaultsKey.shelfEnabled",
+      "variable": "shelfEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L41"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 42,
+      "key": "AppFeature.shelf.availabilityKey",
+      "variable": "shelfAvailable",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L42"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 43,
+      "key": "DefaultsKey.screenshotPreviewPosition",
+      "variable": "previewPositionRaw",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L43"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 44,
+      "key": "DefaultsKey.screenshotPreviewTakesFocus",
+      "variable": "previewTakesFocus",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L44"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 45,
+      "key": "DefaultsKey.screenshotPreviewEnabled",
+      "variable": "previewEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L45"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 46,
+      "key": "DefaultsKey.screenshotPreviewDuration",
+      "variable": "previewDuration",
+      "defaultExpression": "ScreenshotSupport.defaultConfirmationPreviewDuration",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L46"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 48,
+      "key": "DefaultsKey.screenshotSharingEnabled",
+      "variable": "sharingEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L48"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 49,
+      "key": "DefaultsKey.screenshotUploadShortcutEnabled",
+      "variable": "uploadShortcutEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L49"
+    },
+    {
+      "file": "UI/Settings/ScreenshotSettings.swift",
+      "line": 50,
+      "key": "DefaultsKey.screenshotUploadDuration",
+      "variable": "uploadDuration",
+      "defaultExpression": "ScreenshotShareDuration.oneHour.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ScreenshotSettings.swift#L50"
+    },
+    {
+      "file": "UI/Settings/SettingsView.swift",
+      "line": 56,
+      "key": "DefaultsKey.superKeySource",
+      "variable": "superKeySourceRaw",
+      "defaultExpression": "SuperKeySource.capsLock.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsView.swift#L56"
+    },
+    {
+      "file": "UI/Settings/SettingsView.swift",
+      "line": 619,
+      "key": "DefaultsKey.autoCheckUpdates",
+      "variable": "autoCheck",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsView.swift#L619"
+    },
+    {
+      "file": "UI/Settings/SettingsView.swift",
+      "line": 620,
+      "key": "DefaultsKey.includeBetaUpdates",
+      "variable": "includeBetas",
+      "defaultExpression": "AppInfo.isBeta",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsView.swift#L620"
+    },
+    {
+      "file": "UI/Settings/SettingsView.swift",
+      "line": 621,
+      "key": "DefaultsKey.showReleaseNotesBeforeUpdate",
+      "variable": "showReleaseNotesFirst",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsView.swift#L621"
+    },
+    {
+      "file": "UI/Settings/SettingsView.swift",
+      "line": 622,
+      "key": "DefaultsKey.releaseNotesOnUpdate",
+      "variable": "showWhatsNewAfter",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SettingsView.swift#L622"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 9,
+      "key": "DefaultsKey.shelfEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L9"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 10,
+      "key": "DefaultsKey.shelfShortcutEnabled",
+      "variable": "shortcutEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L10"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.shelfShortcutAddsFinderSelection",
+      "variable": "shortcutAddsFinderSelection",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.shelfShakeToOpen",
+      "variable": "shake",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.shelfDropZoneEnabled",
+      "variable": "dropZone",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.shelfDockPlacement",
+      "variable": "dockPlacement",
+      "defaultExpression": "ShelfDockPlacement.menuBar.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.notchEnabled",
+      "variable": "islandEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.shelfEdgeDragEnabled",
+      "variable": "edgeDrag",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.shelfCloseAfterDrop",
+      "variable": "closeAfterDrop",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.shelfRemoveAfterDrop",
+      "variable": "removeAfterDrop",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.shelfClearOnClose",
+      "variable": "clearOnClose",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/ShelfSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.notchShelf",
+      "variable": "opensInIsland",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShelfSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/ShortcutsSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.keyboardBrightnessShortcutsEnabled",
+      "variable": "keyboardBrightnessShortcutsEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/ShortcutsSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/SuperKeySettings.swift",
+      "line": 10,
+      "key": "DefaultsKey.superKeyEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SuperKeySettings.swift#L10"
+    },
+    {
+      "file": "UI/Settings/SuperKeySettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.superKeySource",
+      "variable": "sourceRaw",
+      "defaultExpression": "SuperKeySource.capsLock.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SuperKeySettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/SuperKeySettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.superKeyModifiers",
+      "variable": "modifierStorage",
+      "defaultExpression": "SuperKeySupport.defaultModifierStorageValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SuperKeySettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/SuperKeySettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.superKeySoloAction",
+      "variable": "soloActionRaw",
+      "defaultExpression": "SuperKeySoloAction.none.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SuperKeySettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.switcherEnabled",
+      "variable": "switcherEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.switcherShortcut",
+      "variable": "switcherShortcutStorage",
+      "defaultExpression": "GlobalShortcut.switcherDefault.storageValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.switcherTakeOverSystemShortcuts",
+      "variable": "switcherTakeOverSystemShortcuts",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.switcherIconRowMode",
+      "variable": "switcherIconRowMode",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.switcherSimpleMode",
+      "variable": "switcherSimpleMode",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.switcherMergeTabs",
+      "variable": "switcherMergeTabs",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.switcherWindowlessApps",
+      "variable": "switcherWindowlessApps",
+      "defaultExpression": "SwitcherWindowlessApps.fallback.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.switcherMinimizedPlacement",
+      "variable": "switcherMinimizedPlacement",
+      "defaultExpression": "WindowSwitchMinimizedPlacement.normal.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.switcherTreatHiddenAppsLikeMinimized",
+      "variable": "switcherTreatHiddenAppsLikeMinimized",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.switcherShowFullscreenWindows",
+      "variable": "switcherShowFullscreenWindows",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.switcherScreenPlacement",
+      "variable": "switcherScreenPlacement",
+      "defaultExpression": "SwitcherScreenPlacement.fallback.rawValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.switcherCurrentDisplayOnly",
+      "variable": "switcherCurrentDisplayOnly",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.switcherCurrentSpaceOnly",
+      "variable": "switcherCurrentSpaceOnly",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.switcherSearchPinEnabled",
+      "variable": "switcherSearchPinEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.switcherShowShortcutHints",
+      "variable": "switcherShowShortcutHints",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.switcherAppearanceDelay",
+      "variable": "switcherAppearanceDelay",
+      "defaultExpression": "SwitcherSupport.defaultAppearanceDelayMilliseconds",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.switcherInstantSelection",
+      "variable": "switcherInstantSelection",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.switcherMaxColumns",
+      "variable": "switcherMaxColumns",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/SwitcherSettings.swift",
+      "line": 378,
+      "key": "DefaultsKey.minimalWindowPreviews",
+      "variable": "minimalPreviews",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/SwitcherSettings.swift#L378"
+    },
+    {
+      "file": "UI/Settings/TextSnippetsSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.textSnippetsEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/TextSnippetsSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/TextSnippetsSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.snippetLibraryEnabled",
+      "variable": "libraryEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/TextSnippetsSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/TextSnippetsSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.snippetSoundEnabled",
+      "variable": "soundEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/TextSnippetsSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/TextSnippetsSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.snippetSoundName",
+      "variable": "soundName",
+      "defaultExpression": "Defaults.defaultSnippetSoundName",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/TextSnippetsSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/URLCleanerSettings.swift",
+      "line": 10,
+      "key": "DefaultsKey.urlCleanerEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/URLCleanerSettings.swift#L10"
+    },
+    {
+      "file": "UI/Settings/URLCleanerSettings.swift",
+      "line": 11,
+      "key": "DefaultsKey.urlCleanerCustomParameters",
+      "variable": "globalNames",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/URLCleanerSettings.swift#L11"
+    },
+    {
+      "file": "UI/Settings/URLCleanerSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.urlCleanerSiteParameters",
+      "variable": "siteNames",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/URLCleanerSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/URLCleanerSettings.swift",
+      "line": 13,
+      "key": "DefaultsKey.urlCleanerDisabledParameters",
+      "variable": "disabledNames",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/URLCleanerSettings.swift#L13"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.whatsAppDownloadsEnabled",
+      "variable": "enabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.whatsAppDownloadsAutomaticEnabled",
+      "variable": "automatic",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.whatsAppDownloadsCategories",
+      "variable": "categoriesRaw",
+      "defaultExpression": "\"image,video,audio\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.whatsAppDownloadsRetentionDays",
+      "variable": "retentionDays",
+      "defaultExpression": "7",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.whatsAppDownloadsNotify",
+      "variable": "notify",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.whatsAppDownloadsLastCleanup",
+      "variable": "lastCleanup",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.whatsAppDownloadsLastCleanupCount",
+      "variable": "lastCount",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.whatsAppDownloadsLastCleanupBytes",
+      "variable": "lastBytes",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.whatsAppDownloadsLastCleanupFailed",
+      "variable": "lastFailed",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.whatsAppOrganizerEnabled",
+      "variable": "organizerEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.whatsAppOrganizerDestinationPath",
+      "variable": "organizerDestination",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.whatsAppOrganizerDelayMinutes",
+      "variable": "organizerDelay",
+      "defaultExpression": "5",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.whatsAppOrganizerCategories",
+      "variable": "organizerCategoriesRaw",
+      "defaultExpression": "\"image,video,audio,document,archive,other\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.whatsAppOrganizerLayout",
+      "variable": "organizerLayout",
+      "defaultExpression": "\"flat\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.whatsAppOrganizerDuplicateAction",
+      "variable": "duplicateAction",
+      "defaultExpression": "\"trashNew\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 29,
+      "key": "DefaultsKey.whatsAppOrganizerLastRun",
+      "variable": "organizerLastRun",
+      "defaultExpression": "0.0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L29"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 30,
+      "key": "DefaultsKey.whatsAppOrganizerLastMoved",
+      "variable": "organizerLastMoved",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L30"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 31,
+      "key": "DefaultsKey.whatsAppOrganizerLastDuplicates",
+      "variable": "organizerLastDuplicates",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L31"
+    },
+    {
+      "file": "UI/Settings/WhatsAppDownloadsSettings.swift",
+      "line": 32,
+      "key": "DefaultsKey.whatsAppOrganizerLastFailed",
+      "variable": "organizerLastFailed",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WhatsAppDownloadsSettings.swift#L32"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 12,
+      "key": "DefaultsKey.windowMaximizeEnabled",
+      "variable": "maximizeEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L12"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 14,
+      "key": "DefaultsKey.pointerDisplayEnabled",
+      "variable": "pointerDisplayEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L14"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 15,
+      "key": "DefaultsKey.panelUtilityWindowLayout",
+      "variable": "showInPanel",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L15"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 16,
+      "key": "DefaultsKey.windowLayoutShortcutsEnabled",
+      "variable": "shortcutsEnabled",
+      "defaultExpression": "true",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L16"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 17,
+      "key": "DefaultsKey.windowDirectionalEnabled",
+      "variable": "directionalEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L17"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 18,
+      "key": "DefaultsKey.windowDirectionalShortcut",
+      "variable": "directionalShortcutRaw",
+      "defaultExpression": "GlobalShortcut.windowDirectionalDefault.storageValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L18"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 19,
+      "key": "DefaultsKey.windowEdgeSnapEnabled",
+      "variable": "edgeSnapEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L19"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 20,
+      "key": "DefaultsKey.windowEdgeSnapDisabledZones",
+      "variable": "edgeSnapDisabledZones",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L20"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 21,
+      "key": "DefaultsKey.windowEdgeSnapZoneActions",
+      "variable": "edgeSnapZoneActions",
+      "defaultExpression": "\"\"",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L21"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 22,
+      "key": "DefaultsKey.windowGestureEnabled",
+      "variable": "gestureEnabled",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L22"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 23,
+      "key": "DefaultsKey.windowGestureModifiers",
+      "variable": "gestureModifiers",
+      "defaultExpression": "WindowGestureSupport.defaultModifierStorageValue",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L23"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 24,
+      "key": "DefaultsKey.windowGestureRaiseWindow",
+      "variable": "gestureRaiseWindow",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L24"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 25,
+      "key": "DefaultsKey.windowLayoutWindowGap",
+      "variable": "windowGap",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L25"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 26,
+      "key": "DefaultsKey.windowLayoutScreenGap",
+      "variable": "screenGap",
+      "defaultExpression": "0",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L26"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 27,
+      "key": "DefaultsKey.windowLayoutMarginPercent",
+      "variable": "marginPercent",
+      "defaultExpression": "WindowLayoutMargin.defaultPercent",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L27"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 28,
+      "key": "DefaultsKey.windowLayoutSideRepeatCyclesThirds",
+      "variable": "sideRepeatCyclesThirds",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L28"
+    },
+    {
+      "file": "UI/Settings/WindowLayoutSettings.swift",
+      "line": 34,
+      "key": "DefaultsKey.dockClickCycleWindows",
+      "variable": "dockClickCycleWindows",
+      "defaultExpression": "false",
+      "url": "https://github.com/vorssaint/vorssaint-utils/blob/e916961092686d32d455d12494ab10f65a43b73a/Sources/Vorssaint/UI/Settings/WindowLayoutSettings.swift#L34"
+    }
+  ]
+}
