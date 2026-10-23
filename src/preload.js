@@ -9,7 +9,6 @@ contextBridge.exposeInMainWorld('notch', {
   refreshAi: () => ipcRenderer.invoke('notch:ai-refresh'),
   connectClaude: () => ipcRenderer.invoke('notch:claude-signin'),
   onSystemAction: (cb) => ipcRenderer.on('notch:system-action', (_e, value) => cb(value)),
-  openSystemSettings: (page) => ipcRenderer.invoke('notch:system-settings', page),
   onAiDashboard: (cb) => ipcRenderer.on('notch:ai-dashboard', (_e, value) => cb(value)),
   onAiComplete: (cb) => ipcRenderer.on('notch:ai-complete', (_e, value) => cb(value)),
 
@@ -37,7 +36,7 @@ contextBridge.exposeInMainWorld('notch', {
   onPreferences: (cb) => ipcRenderer.on('notch:preferences', (_e, value) => cb(value)),
   addFiles: (paths) => ipcRenderer.invoke('notch:add-files', paths),
   addText: () => ipcRenderer.invoke('notch:add-text'),
-  chooseFiles: () => ipcRenderer.invoke('notch:choose-files'),
+  chooseFiles: (options) => ipcRenderer.invoke('notch:choose-files', options),
   sendTo: (fingerprint, pin) => ipcRenderer.invoke('notch:send', { fingerprint, pin }),
   removeItem: (id) => ipcRenderer.send('notch:shelf-remove', id),
   clearShelf: () => ipcRenderer.send('notch:shelf-clear'),
@@ -67,4 +66,5 @@ contextBridge.exposeInMainWorld('notch', {
   onClipboardPaused: (cb) => ipcRenderer.on('notch:clipboard-paused', (_e, paused) => cb(paused)),
   onSystem: (cb) => ipcRenderer.on('notch:system', (_e, sample) => cb(sample)),
   onLog: (cb) => ipcRenderer.on('notch:log', (_e, line) => cb(line)),
+  onNetwork: (cb) => ipcRenderer.on('notch:network', (_e, trouble) => cb(trouble)),
 });

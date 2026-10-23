@@ -357,7 +357,7 @@ app.whenReady().then(async () => {
     await js(`setTab('send'); document.querySelector('.notch-header').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 8, button: 0, clientX: 250, clientY: 20, bubbles: true })); document.querySelector('.notch-header').dispatchEvent(new PointerEvent('pointerup', { pointerId: 8, clientX: 150, clientY: 20, bubbles: true }));`); await settled();
     check((await layout()).activeTab === 'media', 'a deliberate header swipe changes pages without touching music controls');
     await js(`setTab('send'); document.getElementById('choose-files').click()`); await delay(100);
-    check(filePickerOpened === 1 && await js(`activeNotice?.title === '1 file parked' && state === 'open'`), 'native file picker provides a click alternative to drag and drop');
+    check(filePickerOpened === 1 && await js(`activeNotice?.title === '1 item parked' && state === 'open'`), 'native file picker provides a click alternative to drag and drop');
     await js(`activityQueue.clear(); pointerInside = false; hoverSuppressed = false; collapseNotch()`); await settled();
     emit('ai-complete', { provider: 'codex', name: 'Demo task' }); await settled();
     check(await js(`state === 'peek' && activeNotice.kind === 'ai' && !openedByClick && document.getElementById('notice-title').textContent === 'Agent finished'`), 'agent completion appears as a brief notch activity without opening a page');
@@ -371,6 +371,20 @@ app.whenReady().then(async () => {
     check((await layout()).activeTab === 'ai' && await js(`!document.getElementById('activity-inline').hidden`), 'notifications keep the current page while the notch is open');
     await js(`postActivity({ id: 'pending-test', kind: 'music', title: 'Queued preview', tab: 'media', priority: 5 }); card.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`); await settled();
     check(await js(`state === 'closed' && !activityQueue.current && activityQueue.pending.length === 0`), 'Escape clears queued previews so they cannot reopen a dismissed notch');
+
+    // Collapsing with the pointer still over the notch leaves hover
+    // suppressed, which used to swallow whatever arrived next: the notice
+    // became current, was drawn nowhere, announced nowhere, and held the slot
+    // for its full duration. An outcome the user is waiting for must outrank
+    // that; chatter must not.
+    await js(`activityQueue.clear(); collapseNotch(); hoverSuppressed = true;`); await settled();
+    await js(`postActivity({ id: 'chatter', kind: 'music', title: 'Now playing', tab: 'media', priority: 10 })`); await settled();
+    check(await js(`state === 'closed'`), 'a low-priority preview still respects a lingering pointer');
+    await js(`activityQueue.clear(); collapseNotch(); hoverSuppressed = true;`); await settled();
+    await js(`postActivity({ id: 'outcome', kind: 'success', title: 'Transfer complete', tab: 'send', priority: 80 })`); await settled();
+    check(await js(`state === 'peek' && document.getElementById('notice-title').textContent === 'Transfer complete'`),
+      'an outcome the user is waiting for is shown even when the pointer never left the notch');
+    await js(`activityQueue.clear(); hoverSuppressed = false; collapseNotch()`); await settled();
     await js(`openNotch('send')`); await settled();
     await js(`activityQueue.clear(); pointerInside = true`);
     emit('clipboard', [{ id: 'clip-demo', kind: 'text', preview: 'A note to take with you', chars: 23, at: Date.now() }]);
@@ -707,8 +721,9 @@ app.whenReady().then(async () => {
     // key. It must not turn into a button that opens Windows Settings.
     await js(`document.querySelector('#notice-open').click()`); await delay(100);
     check(openedSystemSettings === null && await js(`document.querySelector('#notice-open').disabled
+      && document.querySelector('#activity-inline').disabled
       && document.body.classList.contains('notice-passive')`),
-      'hardware feedback stays a readout and opens nothing when pressed');
+      'hardware feedback stays a readout and opens nothing when pressed, in both the peek and inline forms');
     emit('system-action', { action: 'capslock', enabled: true }); await delay(180);
     check(await js(`activeNotice.title === 'Caps Lock' && activeNotice.detail.startsWith('On') && document.querySelector('#notice-meter').hidden`), 'Caps Lock feedback is explicit text and does not show a fake percentage');
     await snapshot('feedback-capslock');

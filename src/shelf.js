@@ -84,16 +84,26 @@ class Shelf extends EventEmitter {
     }
   }
 
-  /** @param {string[]} paths @returns {{added:number, rejected:Array<{path:string, reason:string}>}} */
+  /**
+   * @param {string[]} paths
+   * @returns {{added:number, duplicates:number, evicted:number, truncated:string[],
+   *   rejected:Array<{path:string, reason:string}>}}
+   *
+   * `added` counts what is actually on the shelf afterwards, not what was
+   * offered: the shelf holds MAX_ITEMS, so a large drop can push earlier items
+   * off the end. The caller needs the difference to tell the truth about it.
+   */
   add(paths) {
     const rejected = [];
-    let added = 0;
+    const addedIds = [];
+    const truncated = [];
+    let duplicates = 0;
 
     for (const filePath of paths) {
       if (!filePath) continue;
       const resolved = path.resolve(filePath);
 
-      if (this.items.some((it) => it.path === resolved)) continue; // already parked
+      if (this.items.some((it) => it.path === resolved)) { duplicates += 1; continue; }
 
       let stat;
       try {
@@ -104,31 +114,38 @@ class Shelf extends EventEmitter {
       }
 
       if (stat.isDirectory()) {
-        const { files, truncated } = walkFolder(resolved);
-        if (!files.length) {
+        const walk = walkFolder(resolved);
+        if (!walk.files.length) {
           rejected.push({ path: resolved, reason: 'That folder has no files in it.' });
           continue;
         }
-        if (truncated) {
+        const id = crypto.randomUUID();
+        if (walk.truncated) {
+          // The user has to hear this: what gets sent will be an incomplete
+          // copy of what they dropped.
+          // The limit travels with the name so the message can state it
+          // without the renderer keeping its own copy of the number.
+          truncated.push({ name: path.basename(resolved), limit: MAX_FOLDER_FILES });
           this.emit('log', path.basename(resolved) + ': only the first ' + MAX_FOLDER_FILES + ' files were parked');
         }
         this.items.unshift({
-          id: crypto.randomUUID(),
+          id,
           kind: 'folder',
           path: resolved,
           name: path.basename(resolved),
           ext: '',
-          size: files.reduce((total, file) => total + file.size, 0),
-          count: files.length,
-          truncated,
+          size: walk.files.reduce((total, file) => total + file.size, 0),
+          count: walk.files.length,
+          truncated: walk.truncated,
           addedAt: Date.now(),
         });
-        added += 1;
+        addedIds.push(id);
         continue;
       }
 
+      const id = crypto.randomUUID();
       this.items.unshift({
-        id: crypto.randomUUID(),
+        id,
         kind: 'file',
         path: resolved,
         name: path.basename(resolved),
@@ -136,15 +153,24 @@ class Shelf extends EventEmitter {
         size: stat.size,
         addedAt: Date.now(),
       });
-      added += 1;
+      addedIds.push(id);
     }
 
+    const before = this.items.length;
     if (this.items.length > MAX_ITEMS) this.items.length = MAX_ITEMS;
-    if (added) {
+    const overflow = before - this.items.length;
+
+    // Oldest items fall off the end, so some of what we just added may have
+    // survived while earlier shelf items did not. Count what is really there.
+    const kept = new Set(this.items.map((it) => it.id));
+    const added = addedIds.filter((id) => kept.has(id)).length;
+    const evicted = overflow - (addedIds.length - added);
+
+    if (addedIds.length) {
       this.save();
       this._emit();
     }
-    return { added, rejected };
+    return { added, duplicates, evicted, truncated, rejected };
   }
 
   remove(id) {

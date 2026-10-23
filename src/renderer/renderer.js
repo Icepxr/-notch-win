@@ -90,6 +90,12 @@ let seeking = false;
 let seekPending = null;
 let outsideDuringTransfer = false;
 let hoverSuppressed = false;
+// Above this priority an activity is news the user asked for the outcome of -
+// a finished transfer, a finished agent, a finished timer - so it is shown
+// even when a lingering pointer would otherwise hold the notch closed.
+const NOTICE_INSISTS = 50;
+// Set when discovery reports something that limits what we can find.
+let networkTrouble = null;
 const wheelGesture = new NotchMotion.Gesture();
 let currentMorph = null;
 let preferences = { autoDismiss: true, musicPreview: true, gestures: true, silhouette: 'notch' };
@@ -416,7 +422,13 @@ const activityQueue = new NotchActivity.Queue({ change: (item) => {
     }
     const open = document.getElementById('notice-open');
     open.disabled = Boolean(item.passive);
-    open.title = item.passive ? '' : item.settings ? 'Open ' + item.settings + ' settings' : 'Open activity';
+    open.title = item.passive ? '' : 'Open activity';
+    // A passive readout - volume, brightness, Caps Lock - is a statement, not
+    // a control. Both halves have to say so: the styling already removed the
+    // arrow, but the inline chip stayed focusable and answered Enter with
+    // nothing, which is worse than an obvious dead end.
+    inline.disabled = Boolean(item.passive);
+    inline.setAttribute('aria-live', item.passive ? 'polite' : 'off');
     document.body.classList.toggle('notice-passive', Boolean(item.passive));
     const paths = item.kind === 'music' ? '<path d="M9 18V5l10-2v13M9 8l10-2"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>'
       : item.kind === 'timer' ? '<circle cx="12" cy="13" r="8"/><path d="M9 2h6m-3 3V2m0 7v5l3 2"/>'
@@ -432,7 +444,14 @@ const activityQueue = new NotchActivity.Queue({ change: (item) => {
       const image = document.createElement('img'); image.alt = ''; image.src = media.thumb;
       image.onerror = () => symbol.replaceChildren(icon(paths)); symbol.replaceChildren(image);
     }
-    if (state === 'closed' && !dragDepth && !transferActive && (!hoverSuppressed || item.coalesceKey === 'hardware')) setState('peek');
+    // hoverSuppressed exists so that collapsing while the pointer is still
+    // over the notch does not immediately re-open it. An arriving notice is
+    // not that: it is news the user has not seen, and a notice drawn in the
+    // closed state is drawn nowhere at all and announced nowhere - it just
+    // holds the slot and blocks whatever is behind it. So anything that
+    // matters outranks the suppression.
+    const mustBeSeen = item.coalesceKey === 'hardware' || (item.priority || 0) >= NOTICE_INSISTS;
+    if (state === 'closed' && !dragDepth && !transferActive && (!hoverSuppressed || mustBeSeen)) setState('peek');
     else updateGeometry();
   } else {
     document.body.classList.remove('has-notice', 'has-notice-meter', 'notice-passive');
@@ -443,8 +462,11 @@ const activityQueue = new NotchActivity.Queue({ change: (item) => {
 function postActivity(item) { activityQueue.push(item); }
 function openActivity() {
   if (activeNotice?.passive) return;
-  const tab = activeNotice?.tab, settingsPage = activeNotice?.settings; activityQueue.clear();
-  if (settingsPage) { notch.openSystemSettings(settingsPage); return; }
+  // Note: an activity carries no `settings` field any more. Hardware keys are
+  // a readout and open nothing - that was the bug where pressing volume threw
+  // you into Settings - so the route that used to do it is gone rather than
+  // left lying around waiting to be reconnected.
+  const tab = activeNotice?.tab; activityQueue.clear();
   if (tab) openNotch(tab);
 }
 notch.onSystemAction((event) => {
@@ -479,17 +501,54 @@ function cyclePage(direction) {
   setTab(next);
 }
 
-async function chooseFiles() {
+/**
+ * What to tell the user about an attempt to park things on the shelf.
+ * The shelf can quietly take less than it was offered - it holds a fixed
+ * number of items, a folder has a file limit, and a file already there is not
+ * added twice - so every one of those cases has to come back as words. A drop
+ * that appears to do nothing is the thing we are preventing here.
+ */
+function describeAdd(result) {
+  const added = result?.added || 0;
+  const parts = [];
+  if (added) parts.push(added + (added === 1 ? ' item parked' : ' items parked'));
+
+  if (result?.evicted) parts.push(result.evicted + ' older ' + (result.evicted === 1 ? 'item' : 'items') + ' pushed off the shelf');
+  if (result?.truncated?.length) {
+    const first = result.truncated[0];
+    parts.push(result.truncated.length === 1
+      ? first.name + ' is too large; only its first ' + first.limit + ' files will go'
+      : result.truncated.length + ' folders are too large; only their first ' + first.limit + ' files will go');
+  }
+  if (!added && result?.duplicates) {
+    return { text: result.duplicates === 1 ? 'That one is already on the shelf.' : 'Those are already on the shelf.', kind: 'info' };
+  }
+  if (!added && result?.rejected?.length) return { text: result.rejected[0].reason, kind: 'error' };
+  if (!parts.length) return null;
+
+  // An item lost to a limit is not a success, even though something was added.
+  const kind = result.evicted || result.truncated?.length ? 'warn' : 'success';
+  return { text: parts.join(' · '), kind };
+}
+
+async function chooseFiles(folder = false) {
   if (choosingFiles || transferActive) return;
   choosingFiles = true; document.getElementById('choose-files').disabled = true;
   try {
-    const result = await notch.chooseFiles();
-    if (result.added) { openNotch('send'); postActivity({ id: 'chosen:' + Date.now(), kind: 'success', title: result.added + (result.added === 1 ? ' file parked' : ' files parked'), tab: 'send', priority: 30, duration: 1800 }); }
-    if (result.rejected?.length) showStatus(result.rejected[0].reason, null, 'error');
+    const result = await notch.chooseFiles({ folder });
+    const told = describeAdd(result);
+    if (result.added) openNotch('send');
+    if (told) {
+      if (result.added) {
+        postActivity({ id: 'chosen:' + Date.now(), kind: told.kind === 'warn' ? 'warn' : 'success', title: told.text, tab: 'send', priority: 30, duration: told.kind === 'warn' ? 3600 : 1800 });
+      } else {
+        showStatus(told.text, null, told.kind);
+      }
+    }
   } catch { showStatus('Cannot open these files. Try again.', null, 'error'); }
   finally { choosingFiles = false; document.getElementById('choose-files').disabled = false; }
 }
-document.getElementById('choose-files').addEventListener('click', chooseFiles);
+document.getElementById('choose-files').addEventListener('click', (event) => chooseFiles(event.shiftKey));
 
 document.getElementById('paste-text').addEventListener('click', async () => {
   const result = await notch.addText();
@@ -689,6 +748,10 @@ function updateDeviceHint() {
 function renderDevices(list) {
   updateModulePager();
   deviceList = list || [];
+  // Devices arrive on their own schedule, so a rebuild can land while someone
+  // is tabbing through the list. Remember where they were and put them back.
+  const focused = document.activeElement;
+  const refocus = els.devices.contains(focused) ? focused.dataset.fingerprint : null;
   els.devices.replaceChildren();
 
   if (!deviceList.length) {
@@ -698,11 +761,16 @@ function renderDevices(list) {
     badge.className = 'device-badge is-searching';
     badge.append(icon('<path d="M8.5 15.5a5 5 0 0 1 7 0M5 12a10 10 0 0 1 14 0M1.5 8.5a15 15 0 0 1 21 0"/><circle cx="12" cy="19" r="1"/>'));
     hint.append(badge);
+    badge.classList.toggle('is-searching', !networkTrouble);
     const copy = document.createElement('span');
     const title = document.createElement('strong');
-    title.textContent = 'Looking for nearby devices';
+    // Saying "looking" forever is the wrong answer when we already know why
+    // nothing is arriving.
+    title.textContent = networkTrouble ? 'Discovery is limited' : 'Looking for nearby devices';
     const caption = document.createElement('small');
-    caption.textContent = 'Open LocalSend on your iPad on the same Wi-Fi.';
+    caption.textContent = networkTrouble
+      ? networkTrouble.reason
+      : 'Open LocalSend on your iPad on the same Wi-Fi.';
     copy.append(title, caption);
     hint.append(copy);
     els.devices.append(hint);
@@ -715,6 +783,7 @@ function renderDevices(list) {
     chip.type = 'button';
     chip.title = 'Send files to ' + device.alias;
     chip.disabled = transferActive;
+    chip.dataset.fingerprint = device.fingerprint;
 
     const glyph = document.createElement('span');
     glyph.className = 'glyph';
@@ -771,6 +840,11 @@ function renderDevices(list) {
 
     els.devices.append(chip);
   }
+
+  if (refocus) {
+    const again = els.devices.querySelector(`[data-fingerprint="${CSS.escape(refocus)}"]`);
+    if (again && !again.disabled) again.focus();
+  }
 }
 
 // --- status -----------------------------------------------------------------
@@ -779,12 +853,17 @@ function showStatus(text, ratio, kind) {
   clearTimeout(statusTimer);
   els.status.hidden = false;
   els.status.classList.toggle('is-error', kind === 'error');
+  els.status.classList.toggle('is-warn', kind === 'warn');
   els.status.classList.toggle('is-done', kind === 'done');
   document.body.classList.toggle('transfer-done', kind === 'done');
   els.statusText.textContent = text;
   if (ratio != null) els.barFill.style.width = Math.round(Math.max(0, Math.min(1, ratio)) * 100) + '%';
-  if (kind === 'error' || kind === 'done') {
-    statusTimer = setTimeout(() => { els.status.hidden = true; document.body.classList.remove('transfer-done'); }, 3200);
+  // Anything that is not live progress has been read by the time it fades.
+  // A kind with no timeout would sit there for the rest of the session.
+  if (kind === 'error' || kind === 'done' || kind === 'warn' || kind === 'info') {
+    // A warning explains something the user did not ask for and has to read.
+    statusTimer = setTimeout(() => { els.status.hidden = true; document.body.classList.remove('transfer-done'); },
+      kind === 'warn' ? 5200 : 3200);
   }
 }
 
@@ -820,9 +899,15 @@ async function intake(dataTransfer) {
   }
   try {
     const result = await notch.addFiles(paths);
-    if (result.rejected?.length) {
+    if (result.added && result.rejected?.length) {
+      // Some went on, some did not: name the one that did not.
       const first = result.rejected[0];
       showStatus(first.reason + ' (' + first.path.split(/[\\/]/).pop() + ')', null, 'error');
+    } else {
+      // Nothing was added, or something was added but a limit ate part of it.
+      // Either way the drop must not look like it did nothing.
+      const told = describeAdd(result);
+      if (told && (!result.added || told.kind === 'warn')) showStatus(told.text, null, told.kind);
     }
     return result.added;
   } catch (error) {
@@ -843,6 +928,24 @@ async function doSend(fingerprint, pin) {
   showStatus('Waiting for the receiver…', 0);
 
   let completed = false;
+  let failed = false;
+
+  /**
+   * A failure gets the same treatment success gets. It used to be written
+   * only into the open panel, which then auto-hid after a few seconds - so a
+   * send that failed while the user had looked away left no trace anywhere.
+   */
+  const failedTransfer = (message, to) => {
+    failed = true;
+    showStatus(message, 0, 'error');
+    const target = deviceList.find((d) => d.fingerprint === to);
+    postActivity({
+      id: 'failed:' + Date.now(), kind: 'error', title: 'Transfer failed',
+      detail: (target ? target.alias + ' · ' : '') + message,
+      tab: 'send', priority: 90, duration: 4200,
+    });
+  };
+
   try {
     const result = await notch.sendTo(fingerprint, pin);
     if (result.ok) {
@@ -857,15 +960,17 @@ async function doSend(fingerprint, pin) {
     } else if (result.kind === 'pin') {
       showPin(fingerprint);
     } else {
-      showStatus(result.message, 0, 'error');
+      failedTransfer(result.message, fingerprint);
     }
   } catch (error) {
-    showStatus(error.message || 'Transfer failed. Try again.', 0, 'error');
+    failedTransfer(error.message || 'Transfer failed. Try again.', fingerprint);
   } finally {
     transferActive = false;
     document.body.classList.remove('transfer-active', 'transfer-waiting');
     renderDevices(deviceList);
-    if (!pendingPinFor && !pinned && (completed || outsideDuringTransfer) && (outsideDuringTransfer || !pointerInside)) {
+    // A failure keeps the panel up: it is the one place the reason is written
+    // in full, and collapsing over it would hide the only explanation.
+    if (!pendingPinFor && !pinned && !failed && (completed || outsideDuringTransfer) && (outsideDuringTransfer || !pointerInside)) {
       clearTimeout(collapseTimer);
       collapseTimer = setTimeout(() => {
         if (!pinned && !transferActive && !pendingPinFor && !pointerInside) collapseNotch();
@@ -1040,10 +1145,10 @@ document.addEventListener('drop', async (event) => {
   notch.focus();
   const added = await intake(event.dataTransfer);
   if (added) {
-    showStatus(added + (added === 1 ? ' file parked. Choose a device.' : ' files parked. Choose a device.'), null, 'done');
+    showStatus(added + (added === 1 ? ' item parked. Choose a device.' : ' items parked. Choose a device.'), null, 'done');
     document.body.classList.add('drop-complete');
     setTimeout(() => document.body.classList.remove('drop-complete'), 650);
-    postActivity({ id: 'park:' + Date.now(), title: added + (added === 1 ? ' file parked' : ' files parked'), detail: 'Ready whenever you are.', tab: 'send', kind: 'success', priority: 30, duration: 1800 });
+    postActivity({ id: 'park:' + Date.now(), title: added + (added === 1 ? ' item parked' : ' items parked'), detail: 'Ready whenever you are.', tab: 'send', kind: 'success', priority: 30, duration: 1800 });
   }
 });
 
@@ -1338,6 +1443,12 @@ notch.onClipboardPaused((paused) => {
   ClipboardPanel.update(lastClipboard);
 });
 notch.onSystem((sample) => SystemPanel.update(sample));
+// Why the device list may stay empty. Kept rather than shown as a notice:
+// it is context for an empty panel, not news that should interrupt anything.
+notch.onNetwork?.((trouble) => {
+  networkTrouble = trouble;
+  if (!deviceList.length) renderDevices(deviceList);
+});
 
 notch.onAiSessions((list) => {
   if (aiDashboardReady) return;

@@ -11,6 +11,11 @@ const http = require('node:http');
 const https = require('node:https');
 const crypto = require('node:crypto');
 
+// The largest answer we will read from a receiver. Protocol replies are a few
+// hundred bytes; anything past this is a peer misbehaving, so we stop reading
+// rather than letting it decide how much memory we spend.
+const MAX_RESPONSE = 1024 * 1024;
+
 const MIME = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
   '.gif': 'image/gif', '.webp': 'image/webp', '.heic': 'image/heic',
@@ -103,9 +108,23 @@ function request(device, { pathname, query, method = 'POST', json, bodyStream, b
     }
 
     const req = transport.request(options, (res) => {
+      // A receiver's answer is a small JSON object. Reading whatever arrives
+      // would let a hostile or broken peer grow this string until V8 refuses
+      // and throws inside the data handler, which no caller can catch.
       let body = '';
-      res.on('data', (c) => { body += c; });
+      let overflowed = false;
+      res.on('data', (c) => {
+        if (overflowed) return;
+        if (body.length + c.length > MAX_RESPONSE) {
+          overflowed = true;
+          body = body.slice(0, MAX_RESPONSE);
+          res.destroy();
+          return;
+        }
+        body += c;
+      });
       res.on('end', () => resolve({ status: res.statusCode, body }));
+      res.on('close', () => { if (overflowed) resolve({ status: res.statusCode, body }); });
     });
 
     req.on('error', (err) => reject(new TransferError('Connection failed: ' + err.message, { kind: 'network' })));

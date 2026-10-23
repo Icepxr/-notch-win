@@ -77,7 +77,9 @@ async function loadOrCreate(dir) {
   try {
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(certPath, cert, 'utf8');
-    // The private key is ours alone; keep it off other accounts where we can.
+    // The private key is ours alone. The mode is honest on POSIX; on Windows
+    // it is ignored, and the key is protected by the ACL of the per-user
+    // profile directory it lives in rather than by this bit.
     fs.writeFileSync(keyPath, key, { encoding: 'utf8', mode: 0o600 });
   } catch {
     // An unwritable profile still gets a working in-memory identity, it just

@@ -2,6 +2,7 @@
 const { spawn } = require('node:child_process');
 const { EventEmitter } = require('node:events');
 const path = require('node:path');
+const { POWERSHELL } = require('./powershell');
 function normalize(sample) {
   if (!sample || sample.type !== 'system-actions') return null;
   const level = value => Number.isFinite(value) && value >= 0 && value <= 100 ? Math.round(value) : null;
@@ -29,7 +30,7 @@ class SystemActions extends EventEmitter {
     if (this.stopped) return;
     this.previous = null; let buffer = '', receivedSample = false;
     const started = Date.now(); let lastSample = started;
-    const child = this.spawnProcess('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', this.scriptPath],
+    const child = this.spawnProcess(POWERSHELL, ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', this.scriptPath],
       { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
     this.child = child;
     child.stdin.on('error', () => {});

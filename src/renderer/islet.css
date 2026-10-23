@@ -692,3 +692,9 @@ body.is-exploring .tab.is-active {
 }
 
 body.is-exploring .tab.is-active::before { color: var(--module, #d8d8df); }
+
+/* A warning is not an error: something was added, but a limit took part of it.
+   It borrows the error layout and the warning hue so the two read apart. */
+.status.is-warn { background: #26200f; }
+.status.is-warn .bar { display: none; }
+.status.is-warn #status-text { color: var(--warn); }

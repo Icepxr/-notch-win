@@ -11,6 +11,7 @@ const readline = require('node:readline');
 const { EventEmitter } = require('node:events');
 
 const { parseBridgeLine, nextState, EMPTY } = require('./renderer/media-state');
+const { POWERSHELL } = require('./powershell');
 
 const ACTIONS = new Set(['toggle', 'play', 'pause', 'next', 'prev', 'seek', 'source']);
 
@@ -22,7 +23,7 @@ const INSTANT_DEATH_MS = 3000;
 const MAX_INSTANT_DEATHS = 3;
 
 class MediaBridge extends EventEmitter {
-  constructor({ scriptPath, pollMs = 900, shell = 'powershell.exe' } = {}) {
+  constructor({ scriptPath, pollMs = 900, shell = POWERSHELL } = {}) {
     super();
     this.scriptPath = scriptPath;
     this.pollMs = pollMs;

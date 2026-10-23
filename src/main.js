@@ -29,6 +29,7 @@ const { DisplayController, pointerInside, MODES: DISPLAY_MODES } = require('./di
 const { chooseProfile } = require('./profile');
 const { SystemActions } = require('./system-actions');
 const { findClaude, signInCommand } = require('./ai-claude');
+const { POWERSHELL } = require('./powershell');
 
 const initialUserData = app.getPath('userData');
 const persistentUserData = chooseProfile(initialUserData, path.join(app.getPath('appData'), 'localsend-island'));
@@ -66,6 +67,10 @@ let displayController = null;
 let notchExpanded = false;
 let panelWin = null;
 let lastClaudeSignIn = 0;
+// The sign-in terminal is detached and outlives us, so we hold the handle: one
+// window at a time, however often the button is pressed.
+let claudeSignInWindow = null;
+let shelfPruneTimer = null;
 
 function userFile(name) {
   return path.join(app.getPath('userData'), name);
@@ -102,10 +107,26 @@ function saveSettings() {
 // What the resting notch shows when several things are happening at once.
 const NOTCH_FOCUS = ['auto', 'transfer', 'timer', 'music', 'agent'];
 
+// Every on/off preference, named once. Both the patch validator and the shape
+// handed to the windows read this list, so adding a switch here is all it
+// takes for it to be stored, validated and published. All of them default to
+// on, which is what `!== false` means at every read site.
+const BOOLEAN_PREFERENCES = [
+  'autoDismiss',
+  'musicPreview',
+  'gestures',
+  'systemFeedback',
+  'musicColors',
+  // Asking the installed CLIs for plan limits is the only part of AI
+  // monitoring that reaches the network, so it has its own switch.
+  'aiQuota',
+];
+
 function clientPreferences() {
-  return { ...NotchModules.normalize(settings), ...NotchAppearance.normalize(settings), autoDismiss: settings.autoDismiss !== false, musicPreview: settings.musicPreview !== false,
-    systemFeedback: settings.systemFeedback !== false, musicColors: settings.musicColors !== false,
-    gestures: settings.gestures !== false, silhouette: settings.silhouette === 'capsule' ? 'capsule' : 'notch',
+  const booleans = {};
+  for (const key of BOOLEAN_PREFERENCES) booleans[key] = settings[key] !== false;
+  return { ...NotchModules.normalize(settings), ...NotchAppearance.normalize(settings), ...booleans,
+    silhouette: settings.silhouette === 'capsule' ? 'capsule' : 'notch',
     glass: 'off',
     notchFocus: NOTCH_FOCUS.includes(settings.notchFocus) ? settings.notchFocus : 'auto',
     notesTextSize: NotesTools.textSize(settings.notesTextSize),
@@ -123,7 +144,7 @@ function applyPreferencePatch(patch) {
   Object.assign(settings, NotchModules.normalize({ ...settings, ...patch }));
   const appearance = NotchAppearance.normalize({ ...settings, ...patch });
   for (const key of Object.keys(NotchAppearance.defaults)) settings[key] = appearance[key];
-  for (const key of ['autoDismiss', 'musicPreview', 'gestures', 'systemFeedback', 'musicColors']) {
+  for (const key of BOOLEAN_PREFERENCES) {
     if (typeof patch?.[key] === 'boolean') settings[key] = patch[key];
   }
   if (['notch', 'capsule'].includes(patch?.silhouette)) settings.silhouette = patch.silhouette;
@@ -396,6 +417,13 @@ function startDiscovery() {
     console.log('[discovery]', line);
     send('notch:log', line);
   });
+  // Something that stops devices being found has to reach the panel. The
+  // empty state used to say "looking for devices" forever while the reason
+  // sat in a console no frameless app shows anyone.
+  discovery.on('trouble', (trouble) => {
+    console.log('[discovery]', trouble.code);
+    send('notch:network', trouble);
+  });
   discovery.start();
 }
 
@@ -408,16 +436,17 @@ function startShelf() {
   shelf.on('log', (line) => console.log('[shelf]', line));
   shelf.load();
   // Files get moved and deleted outside the app; re-check periodically.
-  setInterval(() => shelf.prune(), 30000);
+  shelfPruneTimer = setInterval(() => shelf.prune(), 30000);
+  shelfPruneTimer.unref?.();
 }
 
 function startMedia() {
-  systemActions = new SystemActions();
+  systemActions = new SystemActions({ scriptPath: bridgeScript('system-actions.ps1') });
   systemActions.on('ready', () => console.log('[system-actions] ready'));
   systemActions.on('action', (action) => { if (settings.systemFeedback !== false) send('notch:system-action', action); });
   systemActions.on('unavailable', () => console.log('[system-actions] System feedback unavailable'));
   systemActions.start();
-  media = new MediaBridge({ scriptPath: mediaScriptPath() });
+  media = new MediaBridge({ scriptPath: bridgeScript('nowplaying.ps1') });
   media.on('message', (message) => send('notch:now-playing', message));
   media.on('command', (result) => send('notch:media-result', result));
   media.on('log', (line) => console.log('[media]', line));
@@ -425,10 +454,14 @@ function startMedia() {
   media.start();
 }
 
-// Session metadata/counters stay local. Quotas use the local Codex app-server's
-// read-only account API; authentication remains with Codex.
+// Session metadata and counters are read from local log files and never leave
+// the machine. Plan limits are different: reading them runs the installed CLI,
+// which asks the provider over the network using its own stored credentials.
+// Nothing of ours is sent, but it is a network call made on the user's behalf,
+// so `aiQuota` turns it off and the panel then shows locally counted figures
+// only.
 function startAiMonitor() {
-  aiDashboard = new AiDashboard();
+  aiDashboard = new AiDashboard({ account: settings.aiQuota !== false });
   aiDashboard.on('change', (state) => send('notch:ai-dashboard', state));
   aiDashboard.on('complete', (session) => {
     send('notch:ai-complete', { provider: session.provider, name: session.name });
@@ -482,20 +515,34 @@ function startSystemMonitor() {
 }
 
 /**
- * Where PowerShell can read the bridge script. A packaged app keeps its source
- * inside app.asar, which only Electron's own fs can see, so hand the script to
- * the user's profile instead of asking PowerShell to read an archive.
+ * Where PowerShell can read one of our .ps1 bridges. A packaged app keeps its
+ * source inside app.asar, which only Electron's own fs can see - PowerShell
+ * cannot read an archive, so every script has to come from a real file.
+ *
+ * The build is expected to leave src/media out of the archive (asarUnpack), in
+ * which case the unpacked copy is used directly. If it did not, the script is
+ * written into the user's profile so the bridge still starts.
+ *
+ * Every consumer goes through here. A second place that joins __dirname itself
+ * is the bug this function exists to prevent: it works in development and
+ * fails silently once packaged.
  */
-function mediaScriptPath() {
-  const source = path.join(__dirname, 'media', 'nowplaying.ps1');
+function bridgeScript(name) {
+  const source = path.join(__dirname, 'media', name);
   if (!app.isPackaged) return source;
-  const target = userFile('nowplaying.ps1');
+
+  const unpacked = source.replace(`app.asar${path.sep}`, `app.asar.unpacked${path.sep}`);
+  try {
+    if (unpacked !== source && fs.existsSync(unpacked)) return unpacked;
+  } catch {}
+
+  const target = userFile(name);
   try {
     fs.mkdirSync(path.dirname(target), { recursive: true });
     fs.writeFileSync(target, fs.readFileSync(source));
     return target;
   } catch (err) {
-    console.log('[media] could not unpack bridge script:', err.message);
+    console.log('[bridge] could not unpack', name + ':', err.message);
     return source;
   }
 }
@@ -591,8 +638,15 @@ function registerIpc() {
     if (!Array.isArray(paths)) return { added: 0, rejected: [] };
     return shelf.add(paths.filter((p) => typeof p === 'string'));
   });
-  ipcMain.handle('notch:choose-files', async () => {
-    const result = await dialog.showOpenDialog(win, { title: 'Add files to Islet', properties: ['openFile', 'multiSelections'] });
+  ipcMain.handle('notch:choose-files', async (_event, options) => {
+    // Windows cannot show one dialog that picks either, so the caller says
+    // which it wants. The shelf itself has taken folders since folder support
+    // landed; only the picker could not ask for one.
+    const folder = options?.folder === true;
+    const result = await dialog.showOpenDialog(win, {
+      title: folder ? 'Add a folder to Islet' : 'Add files to Islet',
+      properties: folder ? ['openDirectory'] : ['openFile', 'multiSelections'],
+    });
     return result.canceled ? { added: 0, rejected: [] } : shelf.add(result.filePaths);
   });
 
@@ -687,22 +741,26 @@ function registerIpc() {
     const executable = findClaude();
     if (!executable) return { ok: false };
     if (Date.now() - lastClaudeSignIn < 3000) return { ok: true };
+    // One terminal is enough. Without this, repeated presses leave a pile of
+    // consoles behind that outlive the app.
+    if (claudeSignInWindow) return { ok: true };
     lastClaudeSignIn = Date.now();
     // A visible terminal is intentional here: the person clicks Connect and
     // completes the CLI's own browser sign-in. No credentials enter Islet.
     return new Promise(resolve => {
       const env = { ...process.env, DISABLE_AUTOUPDATER: '1' }; delete env.CLAUDECODE;
-      const child = spawn('powershell.exe', ['-NoProfile', '-NoExit', '-Command', signInCommand(executable)],
+      const child = spawn(POWERSHELL, ['-NoProfile', '-NoExit', '-Command', signInCommand(executable)],
         { detached: true, windowsHide: false, stdio: 'ignore', cwd: os.homedir(), env });
-      child.once('error', () => resolve({ ok: false }));
+      claudeSignInWindow = child;
+      child.once('exit', () => { if (claudeSignInWindow === child) claudeSignInWindow = null; });
+      child.once('error', () => { claudeSignInWindow = null; resolve({ ok: false }); });
       child.once('spawn', () => { child.unref(); resolve({ ok: true }); });
     });
   });
-  ipcMain.handle('notch:system-settings', async (_event, page) => {
-    const pages = { sound: 'ms-settings:sound', display: 'ms-settings:display', keyboard: 'ms-settings:easeofaccess-keyboard' };
-    if (!Object.hasOwn(pages, page)) return false;
-    try { await shell.openExternal(pages[page]); return true; } catch { return false; }
-  });
+  // There was a 'notch:system-settings' channel here that opened ms-settings:
+  // pages. Its only caller was the hardware readout, which by design now
+  // opens nothing, so the channel is gone rather than left as a loaded route
+  // into the shell with no user behind it.
 }
 
 // --- lifecycle --------------------------------------------------------------
@@ -711,6 +769,29 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', toggleNotch);
+
+  // Nothing in Islet navigates anywhere: both windows load one local file and
+  // stay there. The content security policy protects the document we loaded,
+  // not a replacement for it, and the preload is re-injected after a
+  // navigation - so a navigation would hand window.notch to whatever loaded.
+  // Links the user is meant to follow already go through shell.openExternal.
+  app.on('web-contents-created', (_event, contents) => {
+    contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    contents.on('will-navigate', (event, url) => {
+      if (url === contents.getURL()) return; // a reload is not a navigation
+      event.preventDefault();
+      console.log('[security] refused navigation to', url);
+    });
+    contents.on('will-attach-webview', (event) => event.preventDefault());
+  });
+
+  // A crash in a network handler must not take the tray app with it silently.
+  process.on('uncaughtException', (err) => {
+    console.log('[uncaught]', err?.stack || err?.message || err);
+  });
+  process.on('unhandledRejection', (reason) => {
+    console.log('[unhandled]', reason?.stack || reason?.message || reason);
+  });
 
   app.whenReady().then(async () => {
     settings = loadSettings();
@@ -745,7 +826,11 @@ if (!app.requestSingleInstanceLock()) {
     startClipboard();
     startSystemMonitor();
 
-    globalShortcut.register('Control+Alt+D', toggleNotch);
+    // Another app may already own this chord. Say so rather than leaving the
+    // user pressing a shortcut that silently belongs to someone else.
+    if (!globalShortcut.register('Control+Alt+D', toggleNotch)) {
+      console.log('[shortcut] Control+Alt+D is taken by another app; use the tray icon');
+    }
   });
 
   app.on('window-all-closed', () => {
@@ -754,6 +839,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.on('will-quit', () => {
     clearInterval(pointerTimer);
+    clearInterval(shelfPruneTimer);
     globalShortcut.unregisterAll();
     discovery?.stop();
     media?.stop();

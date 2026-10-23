@@ -23,6 +23,16 @@ const DEFAULT_LIMIT = 60;
 const PIN_LIMIT = 20;
 const DEFAULT_INTERVAL = 700;
 const MAX_PERSISTED_CHARS = 20000; // longer text stays in memory only
+// Clipboard formats an app sets to say "do not keep this". Password managers
+// set them when they copy a secret, which is precisely the case we must not
+// write to disk.
+// Both mean "exclude" by their presence alone. CanIncludeInClipboardHistory is
+// deliberately not here: it carries a value, so its presence does not by
+// itself mean no.
+const EXCLUDED_FORMATS = [
+  'ExcludeClipboardContentFromMonitorProcessing',
+  'Clipboard Viewer Ignore',
+];
 const PREVIEW_CHARS = 140;
 
 /** Collapse whitespace into a single line for the list preview. */
@@ -48,6 +58,35 @@ function classify(text) {
 
 function digest(value) {
   return crypto.createHash('sha1').update(String(value)).digest('hex').slice(0, 16);
+}
+
+/**
+ * A cheap identity for a clipboard image, taken from the thumbnail's own
+ * pixels. Sampling a fixed number of bytes keeps the cost flat no matter how
+ * large the original was, and the dimensions are mixed in so two different
+ * images would have to collide on both to be mistaken for one another.
+ *
+ * This decides only whether to re-encode; a miss costs one redundant encode,
+ * never a wrong history entry, because the real hash is still taken from the
+ * encoded result.
+ */
+function thumbSignature(thumb, size) {
+  let bytes;
+  try {
+    bytes = thumb.toBitmap();
+  } catch {
+    return null;
+  }
+  if (!bytes || !bytes.length) return null;
+
+  const samples = 512;
+  const step = Math.max(1, Math.floor(bytes.length / samples));
+  let hash = 0x811c9dc5; // FNV-1a
+  for (let i = 0; i < bytes.length; i += step) {
+    hash ^= bytes[i];
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${size.width}x${size.height}:${bytes.length}:${hash >>> 0}`;
 }
 
 /**
@@ -122,6 +161,10 @@ class ClipboardWatcher extends EventEmitter {
     this.paused = false;
     // Remembers what we last saw so our own writes do not re-enter history.
     this.lastHash = null;
+    // Set when an image is on the clipboard, so an unchanged one is not
+    // re-encoded on every poll.
+    this.lastImageSignature = null;
+    this.lastImageSnapshot = null;
   }
 
   load() {
@@ -194,6 +237,12 @@ class ClipboardWatcher extends EventEmitter {
   }
 
   _read() {
+    // Password managers and other apps mark a copy as not-for-history using
+    // these clipboard formats. Honouring them is the difference between a
+    // history that is merely local and one that is safe to keep: a copied
+    // password otherwise lands in clipboard.json in plain text.
+    if (this._excluded()) return { text: '' };
+
     const text = this.clipboard.readText();
     if (text && text.trim()) return { text };
 
@@ -204,10 +253,39 @@ class ClipboardWatcher extends EventEmitter {
       const size = image.getSize();
       // A thumbnail is all the list needs, and keeps memory sane.
       const thumb = image.resize({ height: Math.min(64, size.height) });
-      return { imageDataUrl: thumb.toDataURL(), imageSize: size };
+
+      // Encoding a PNG and base64ing it is by far the most expensive thing
+      // this poll does, and while a screenshot sits on the clipboard it would
+      // otherwise happen every 700ms to produce a byte-identical result. The
+      // thumbnail's own pixels answer "is this still the same image?" far
+      // more cheaply, so the encode only runs when the answer is no.
+      const signature = thumbSignature(thumb, size);
+      if (signature && signature === this.lastImageSignature) return this.lastImageSnapshot;
+
+      const snapshot = { imageDataUrl: thumb.toDataURL(), imageSize: size };
+      this.lastImageSignature = signature;
+      this.lastImageSnapshot = snapshot;
+      return snapshot;
     }
+    this.lastImageSignature = null;
+    this.lastImageSnapshot = null;
 
     return { text: '' };
+  }
+
+  /**
+   * Whether the app that made this copy asked clipboard managers to leave it
+   * alone. These are the format names Windows apps actually use; an Electron
+   * build without `clipboard.has` records as it did before.
+   */
+  _excluded() {
+    if (typeof this.clipboard.has !== 'function') return false;
+    for (const format of EXCLUDED_FORMATS) {
+      try {
+        if (this.clipboard.has(format)) return true;
+      } catch {}
+    }
+    return false;
   }
 
   /** Copy an entry back to the clipboard. */

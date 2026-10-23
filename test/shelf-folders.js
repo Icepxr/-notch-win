@@ -92,6 +92,65 @@ test('names cannot climb out of the receiver\'s download folder', () => {
   assert.strictEqual(safeName(''), 'file');
 });
 
+test('the shelf reports what it actually kept, not what it was offered', () => {
+  const { Shelf: _s, MAX_ITEMS } = require('../src/shelf');
+  const base = fs.mkdtempSync(path.join(root, 'many-files-'));
+  const paths = [];
+  for (let i = 0; i < MAX_ITEMS + 6; i += 1) {
+    const file = path.join(base, 'f' + i + '.txt');
+    fs.writeFileSync(file, 'x');
+    paths.push(file);
+  }
+
+  const shelf = shelfFor();
+  const result = shelf.add(paths);
+  assert.strictEqual(shelf.items.length, MAX_ITEMS);
+  assert.strictEqual(result.added, MAX_ITEMS,
+    'it counts what is on the shelf, not the ' + paths.length + ' it was handed');
+  assert.strictEqual(result.evicted, 0, 'nothing of someone else\'s was pushed off; the drop ate itself');
+});
+
+test('a drop that pushes older items off the shelf says so', () => {
+  const { MAX_ITEMS } = require('../src/shelf');
+  const base = fs.mkdtempSync(path.join(root, 'evict-'));
+  const make = (name) => { const f = path.join(base, name); fs.writeFileSync(f, 'x'); return f; };
+
+  const shelf = shelfFor();
+  const first = [];
+  for (let i = 0; i < MAX_ITEMS; i += 1) first.push(make('old' + i + '.txt'));
+  shelf.add(first);
+
+  const result = shelf.add([make('new.txt')]);
+  assert.strictEqual(result.added, 1);
+  assert.strictEqual(result.evicted, 1, 'the oldest item left to make room, and the caller is told');
+});
+
+test('adding the same file twice is reported, not silently ignored', () => {
+  const folder = makeTree();
+  const file = path.join(folder, 'cover.jpg');
+  const shelf = shelfFor();
+
+  assert.strictEqual(shelf.add([file]).added, 1);
+  const again = shelf.add([file]);
+  assert.strictEqual(again.added, 0);
+  assert.strictEqual(again.duplicates, 1, 'the caller can tell "already there" from "nothing happened"');
+  assert.strictEqual(shelf.items.length, 1);
+});
+
+test('a folder over the limit comes back named, with the limit that cut it', () => {
+  const base = fs.mkdtempSync(path.join(root, 'huge-'));
+  const folder = path.join(base, 'Everything');
+  fs.mkdirSync(folder);
+  const { MAX_FOLDER_FILES } = require('../src/shelf');
+  for (let i = 0; i < MAX_FOLDER_FILES + 5; i += 1) fs.writeFileSync(path.join(folder, 'f' + i + '.txt'), 'x');
+
+  const shelf = shelfFor();
+  const result = shelf.add([folder]);
+  assert.strictEqual(result.added, 1);
+  assert.deepStrictEqual(result.truncated, [{ name: 'Everything', limit: MAX_FOLDER_FILES }],
+    'the message can name the folder and state the limit without keeping its own copy of the number');
+});
+
 test('pasted text becomes a real file, because the protocol has no messages', () => {
   const shelf = shelfFor();
   const outbox = path.join(root, 'outbox');
