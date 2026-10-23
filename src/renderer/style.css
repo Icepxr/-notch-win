@@ -707,31 +707,6 @@ body.is-playing #np-toggle .icon-pause { display: block; }
 
 /* --- ai sessions ---------------------------------------------------------- */
 
-/* Peek precedence: Now Playing owns the middle of the peek whenever something
-   is playing, and it keeps it. Music is the thing the user glances down at
-   constantly; an AI session waiting for an answer is a one-bit fact, and one bit
-   fits in a dot. So the indicator rides the right edge, which both layouts
-   leave alone - neither has to give way, and the peek does not have to grow a
-   third width to fit both. */
-
-.peek-ai {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--good);
-}
-
-.peek-ai[hidden] { display: none; }
-
-/* Collapsed, there is no room for even a dot, so the lip of the sliver carries
-   it: a green hairline along the bottom edge instead of the usual white one. */
-body.ai-waiting.state-closed #card::after {
-  border-bottom-color: var(--good);
-  box-shadow: 0 1px 6px rgba(48, 209, 88, 0.55);
-}
-
 /* Open, the tab itself says there is something to come back to. */
 body.ai-waiting .tab[data-tab="ai"]:not(.is-active)::after {
   content: '';
@@ -808,7 +783,7 @@ body.ai-waiting .tab[data-tab="ai"]:not(.is-active)::after {
   animation: ai-pulse 1.5s ease-in-out infinite;
 }
 
-/* Waiting on the user: the one state worth a colour that carries to the peek. */
+/* Waiting status belongs to the session row on the AI page. */
 .ai-dot.is-waiting {
   background: var(--good);
   box-shadow: 0 0 6px rgba(48, 209, 88, 0.5);

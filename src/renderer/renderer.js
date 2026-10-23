@@ -47,11 +47,9 @@ const els = {
   npProgress: document.querySelector('.np-progress'),
   tabs: document.getElementById('tabs'),
   quit: document.getElementById('quit'),
-  peekAi: document.getElementById('peek-ai'),
   closedAgent: document.getElementById('closed-agent'),
   focusPicker: document.getElementById('focus-picker'),
   closedAgentTime: document.getElementById('closed-agent-time'),
-  peekAiCount: document.getElementById('peek-ai-count'),
   closedTrigger: document.getElementById('closed-trigger'),
   closedCount: document.getElementById('closed-count'),
   panelTitle: document.getElementById('panel-title'),
@@ -1292,9 +1290,6 @@ function renderAiSessions() {
   document.body.classList.toggle('ai-waiting', waiting > 0);
   document.body.classList.toggle('ai-working', working > 0);
   refreshIdle();
-  els.peekAi.hidden = waiting + working === 0;
-  els.peekAi.title = working + ' working · ' + waiting + ' waiting';
-  els.peekAiCount.textContent = waiting + working > 1 ? String(waiting + working) : '';
   AiPanel.updateSessions(aiSessions);
   paintClosedAgent(now);
 }

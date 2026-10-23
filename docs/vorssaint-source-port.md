@@ -85,8 +85,12 @@ changes as well as dimension changes.
 The empty shelf no longer creates a green ready dot, so it cannot appear during
 the compact/hover crossfade. File counts and meaningful transfer feedback remain.
 `test/capsule-hover-ui.js` reproduced the old failures before the fix and now
-passes 17 checks: idle/music hover, actual corner pixels, collapse, switching
-silhouettes, hit geometry, rapid reversals, reduced motion and file-count recovery.
+passes 21 checks: idle/music hover, actual corner pixels, collapse, switching
+silhouettes, hit geometry, rapid reversals, reduced motion and file-count recovery,
+plus music with three waiting/mixed AI sessions. The legacy green AI dot/count
+badge is removed from the preview markup, renderer and CSS. AI session summaries
+and meaningful status dots remain on the AI page, with the existing activity
+picker available for simultaneous live activities.
 
 ## Additional source details — 2026-10-23
 

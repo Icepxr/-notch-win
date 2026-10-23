@@ -51,6 +51,18 @@ app.whenReady().then(async () => {
     const alpha = (x,y) => bitmap[(y * pixels.width + x) * 4 + 3];
     check(alpha(1,1) < 100 && alpha(pixels.width-2,1) < 100 && alpha(1,pixels.height-2) < 100 && alpha(pixels.width-2,pixels.height-2) < 100
       && alpha(Math.floor(pixels.width/2),1) === 255, 'actual music hover pixels have four cut-away round corners and an opaque middle');
+    const now=Date.now(),dashboard={updatedAt:now,providers:['claude'],buckets:[],limits:{},claudeAccountStatus:'ready',
+      sessions:Array.from({length:3},(_,i)=>({provider:'claude',sessionId:'hover-'+i,name:'Local task '+(i+1),status:'idle',statusAt:now,startedAt:now-60000,inferred:false}))};
+    emit('ai-dashboard',dashboard); await delay(150);
+    check(await js(`document.body.classList.contains('ai-waiting')&&!document.querySelector('#peek-ai,.layer-peek .ai-dot')`), 'three waiting AI sessions cannot add the green dot/count badge beside the song');
+    await shot('capsule-music-no-green-badge');
+    dashboard.sessions[0].status='busy'; emit('ai-dashboard',dashboard); await delay(150);
+    check(await js(`document.body.classList.contains('ai-working')&&!document.querySelector('#peek-ai,.layer-peek .ai-dot')&&document.querySelector('.focus-option[data-activity="agent"] .provider-logo')`), 'working and waiting agents use the existing activity picker without the redundant badge');
+    await js(`openNotch('ai')`); await delay(650);
+    check(await js(`aiSessions.length===3&&document.getElementById('ai-live-summary').textContent.includes('1 working')&&document.getElementById('ai-live-summary').textContent.includes('2 waiting')&&document.querySelector('.ai-live-row .ai-dot.is-waiting')`), 'the AI page retains the three-session summary and meaningful waiting states');
+    await js(`openedByClick=false;setState('peek');applyPreferences({...preferences,silhouette:'notch'})`); await delay(650);
+    check(await js(`!document.querySelector('#peek-ai,.layer-peek .ai-dot')&&getComputedStyle(card).borderTopLeftRadius==='0px'`), 'attached-notch music hover also has no green activity badge');
+    emit('ai-dashboard',{...dashboard,sessions:[]}); await js(`applyPreferences({...preferences,silhouette:'capsule'})`); await delay(650);
     await js(`openNotch('media')`); await delay(650); await contour('expanded capsule keeps the source 28px corners on all sides');
     await shot('capsule-open-music');
     await js(`collapseNotch()`); await delay(600); emit('pointer', false); await delay(40); emit('pointer', true); await delay(700);

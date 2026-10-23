@@ -29,6 +29,9 @@ not reveal square-top media CSS. Capsule has no concave shoulders. Refresh the
 native hit region after a shape-only change, as dimensions can remain equal.
 An empty shelf mounts no decorative green ready dot, including during hover
 crossfades; parked files retain the actual count.
+The hover preview also has no legacy green AI dot/session-count badge. Agent
+details belong on the AI page; simultaneous live activities keep the existing
+activity picker. Waiting sessions must not add an indicator beside the song.
 
 Music refinement requested by the user: `music-source.css` overrides the earlier
 344px/56px source metrics to reduce empty space. The player fills the available

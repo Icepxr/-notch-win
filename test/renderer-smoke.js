@@ -414,7 +414,7 @@ app.whenReady().then(async () => {
     await js(`document.querySelector('[data-ai-card="activity"]').click(); document.querySelector('.ai-customize summary').click()`);
     await js(`document.querySelector('.ai-scroll').scrollTop = 400`); await delay(80); await snapshot('ai-detail');
     check(await js(`document.querySelector('.ai-scroll').scrollTop > 0 && document.querySelector('.ai-scroll').scrollWidth <= document.querySelector('.ai-scroll').clientWidth`), 'AI details scroll inside the notch without horizontal overflow');
-    check(await js(`document.body.classList.contains('ai-waiting')`), 'waiting AI sessions keep their compact indicator');
+    check(await js(`document.body.classList.contains('ai-waiting')&&!document.querySelector('#peek-ai,.layer-peek .ai-dot')`), 'waiting AI sessions remain tracked without adding a green hover badge');
     await js(`setTab('clipboard'); const search = document.querySelector('[data-panel="clipboard"] .clip-search'); search.value = 'missing'; search.dispatchEvent(new Event('input'));`);
     check(await js(`document.querySelectorAll('.clip-row').length === 0 && document.querySelector('.clip-list').textContent.includes('No matching')`), 'clipboard search filters the local preview list');
     await js(`document.querySelector('[data-panel="clipboard"] .clip-search').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));`);
