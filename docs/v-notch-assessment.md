@@ -142,6 +142,8 @@ repo ระบุ [LICENSE](https://github.com/rainaku/V-Notch/blob/b843d2340bac
 
 asset และ dependencies ไม่ได้ใช้ license เดียวทั้งหมด: [THIRD_PARTY_NOTICES.md](https://github.com/rainaku/V-Notch/blob/b843d2340bacd94bab1b4ea6439fb29b91555f17/docs/THIRD_PARTY_NOTICES.md) แยก library, font/icon, model และ external content ไว้ จึงควรเลือก service ที่ต้องการและ dependencies ของมัน ไม่ยกโฟลเดอร์ Fonts/Assets/installer หรือ dependency graph ทั้ง repo มาใส่
 
-## สถานะรอบนี้
+## สถานะตอนจัดทำ audit
 
 เพิ่มเฉพาะเอกสารเปรียบเทียบและลิงก์ source ตรวจแล้วว่าไฟล์และ line anchors ที่อ้างมีอยู่ใน revision ที่ระบุ ไม่มีการเปลี่ยน UI, native window, media commands, Startup หรือบัญชี provider ของ Islet
+
+ภายหลังเริ่มประยุกต์ระบบเพลงและปรับหน้า hover แล้ว ดู [ผลรอบแรกและส่วนที่ยังเหลือ](v-notch-phase-one.md)

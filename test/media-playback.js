@@ -36,7 +36,9 @@ const result = (request, via = 'winrt') => control.result({ type: 'command', act
   assert.equal(control.pending, null); assert.equal(control.view().playing, true); assert.match(feedback, /did not confirm/); result(stale, 'none');
   control.toggle(); await flush(); const oldSource = sends.at(-1); control.receive(line({ app: 'msedge.exe', title: 'Another track', status: 'Paused' }));
   result(oldSource, 'none'); assert.equal(control.view().app, 'msedge.exe'); assert.equal(control.view().playing, false);
-  control.toggle(); control.receive({ type: 'state', session: false }); await flush(); assert.equal(control.view().active, false); assert.equal(timers.size, 0);
+  control.toggle(); control.receive({ type: 'state', session: false }); await flush();
+  assert.equal(control.view().awaiting, true); assert.equal(control.view().canToggle, false); assert.equal(timers.size, 0);
+  now += 2100; control.receive({ type: 'state', session: false }); assert.equal(control.view().active, false);
   control.reset(); assert.equal(control.view().active, false);
   console.log('Playback intent: immediate paint, stale polls, correlated acks, coalescing, retries, deadlines and source changes passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

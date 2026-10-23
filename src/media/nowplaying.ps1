@@ -13,6 +13,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+. (Join-Path $PSScriptRoot 'session-policy.ps1')
 
 # Song titles are routinely non-ASCII; keep stdout UTF-8.
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -92,6 +93,9 @@ function Get-EpochMs($dateTimeOffset) {
 
 $manager = $null
 $selectedSource = ''
+$selection = New-SelectionState
+$recoveryStarted = 0L
+$nextPollMs = $PollMs
 
 function Get-Manager {
   if ($null -ne $script:manager) { return $script:manager }
@@ -102,17 +106,37 @@ function Get-Manager {
 function Get-Session {
   $mgr = Get-Manager
   if ($null -eq $mgr) { return $null }
-  if ($script:selectedSource) {
-    foreach ($candidate in $mgr.GetSessions()) {
-      if ([string] $candidate.SourceAppUserModelId -eq $script:selectedSource) { return $candidate }
+  $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+  $current = $mgr.GetCurrentSession()
+  # AUMIDs identify applications, not browser tabs. Prefer the OS-current
+  # instance within each application; do not promise per-tab pinning.
+  $byApp = @{}
+  $candidates = @()
+  $sessions = @()
+  if ($null -ne $current) { $sessions += $current }
+  $sessions += @($mgr.GetSessions())
+  foreach ($session in $sessions) {
+    try {
+      $id = [string] $session.SourceAppUserModelId
+      if (-not $id -or $byApp.ContainsKey($id)) { continue }
+      $playback = $session.GetPlaybackInfo()
+      $timeline = $session.GetTimelineProperties()
+      $updated = Get-EpochMs $timeline.LastUpdatedTime
+      $candidates += [pscustomobject] @{
+        Id = $id; Session = $session
+        Playing = [string] $playback.PlaybackStatus -eq 'Playing'
+        IsCurrent = $null -ne $current -and [string] $current.SourceAppUserModelId -eq $id
+        IsMusic = $id -match 'spotify|zunemusic|musicbee|foobar|aimp|wmplayer|vlc'
+        FreshTimeline = $updated -gt 0 -and $now -ge $updated -and $now - $updated -lt 3000
+      }
+      $byApp[$id] = $true
+    } catch {
+      # One disappearing player must not discard every other session.
     }
   }
-  $current = $mgr.GetCurrentSession()
-  if ($null -ne $current -and [string] ($current.GetPlaybackInfo().PlaybackStatus) -eq 'Playing') { return $current }
-  foreach ($candidate in $mgr.GetSessions()) {
-    if ([string] ($candidate.GetPlaybackInfo().PlaybackStatus) -eq 'Playing') { return $candidate }
-  }
-  return $current
+  $choice = Select-MediaCandidate $candidates $script:selection $script:selectedSource $now
+  if ($null -ne $choice) { return $choice.Session }
+  return $null
 }
 
 # --- media keys -------------------------------------------------------------
@@ -143,6 +167,7 @@ function Write-CommandResult($action, $via, $requestId = '', $targetApp = '') {
 function Invoke-Action($action, $value = 0, $requestId = '', $targetApp = '') {
   if ($action -eq 'source') {
     $script:selectedSource = [string] $value
+    $script:selection = New-SelectionState
     $script:lastTrackKey = ''
     Write-CommandResult $action 'source' $requestId $targetApp
     return
@@ -151,8 +176,12 @@ function Invoke-Action($action, $value = 0, $requestId = '', $targetApp = '') {
   $session = $null
   try {
     if ($targetApp) {
-      foreach ($candidate in (Get-Manager).GetSessions()) {
-        if ([string] $candidate.SourceAppUserModelId -eq $targetApp) { $session = $candidate; break }
+      $osCurrent = (Get-Manager).GetCurrentSession()
+      if ($null -ne $osCurrent -and [string] $osCurrent.SourceAppUserModelId -eq $targetApp) { $session = $osCurrent }
+      else {
+        foreach ($candidate in (Get-Manager).GetSessions()) {
+          if ([string] $candidate.SourceAppUserModelId -eq $targetApp) { $session = $candidate; break }
+        }
       }
     } else { $session = Get-Session }
     if ($null -ne $session) {
@@ -210,7 +239,8 @@ function Poll {
 
   if ($null -eq $session) {
     $script:lastTrackKey = ''
-    Write-Line @{ type = 'state'; session = $false }
+    Set-RecoveryPoll $true
+    Write-Line @{ type = 'state'; session = $false; sources = $sources; selectedSource = $script:selectedSource }
     return
   }
 
@@ -226,6 +256,7 @@ function Poll {
     $artist = [string] $properties.Artist
     $album = [string] $properties.AlbumTitle
   }
+  Set-RecoveryPoll (-not $title -and -not $artist)
 
   $appId = [string] $session.SourceAppUserModelId
   $status = 'unknown'
@@ -288,6 +319,13 @@ function Poll {
   Write-Line $payload
 }
 
+function Set-RecoveryPoll([bool] $recovering) {
+  $now = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+  if (-not $recovering) { $script:recoveryStarted = 0L }
+  elseif ($script:recoveryStarted -eq 0) { $script:recoveryStarted = $now }
+  $script:nextPollMs = Get-RecoveryPollMs ($now - $script:recoveryStarted) $PollMs $recovering
+}
+
 Write-Line @{ type = 'hello'; pollMs = $PollMs }
 
 # Console.In would block the poll loop, so read the raw pipe asynchronously.
@@ -303,7 +341,7 @@ while ($true) {
     $script:manager = $null
   }
 
-  $deadline = [DateTime]::UtcNow.AddMilliseconds($PollMs)
+  $deadline = [DateTime]::UtcNow.AddMilliseconds($script:nextPollMs)
   while ([DateTime]::UtcNow -lt $deadline) {
     if ($null -eq $pending) { $pending = $stdin.ReadLineAsync() }
 

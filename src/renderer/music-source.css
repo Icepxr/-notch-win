@@ -23,4 +23,37 @@ body.state-open [data-panel="media"] .np { background: none; border: 0; box-shad
 .np .player-bars { color: var(--music-accent,#ffffff); }
 .np .np-seek::-webkit-slider-thumb { background: var(--music-accent,#ffffff); }
 .np .art-lg { box-shadow: inset 0 0 0 .5px #ffffff1f; }
+#np-empty { align-content: center; gap: 12px; }
+#np-unpin { padding: 8px 14px; color: #fff; border: 1px solid #ffffff30; border-radius: 10px; background: #ffffff0d; }
+/* Hover is a small player, with the cover and controls sharing one surface. */
+.peek-music-head,.peek-progress,.peek-controls,#peek-artist { display: none; }
+body.has-media:not(.has-timer) .layer-peek {
+  display: grid; grid-template-columns: 104px minmax(0,1fr); grid-template-rows: 28px 44px 24px 44px;
+  column-gap: 20px; row-gap: 6px; padding: 12px 24px 16px; align-content: center;
+}
+body.has-media:not(.has-timer) .peek-music-head { display: flex; grid-column: 1 / -1; grid-row: 1; align-items: center; gap: 2px; }
+.peek-music-head .icon-btn { width: 28px; height: 28px; color: #b9b9c1; border-radius: 8px; }
+.peek-music-head .icon-btn svg { width: 15px; height: 15px; }
+#peek-source { margin-left: auto; padding-right: 4px; font-size: 11px; color: #a8a8b0; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+body.multi-activity #peek-source { padding-right: 72px; }
+body.has-media:not(.has-timer) .peek-np { display: contents; }
+body.has-media:not(.has-timer) #peek-art { width: 104px; height: 104px; grid-column: 1; grid-row: 2 / 5; align-self: center; border-radius: 17px; box-shadow: inset 0 0 0 1px #ffffff15; background: #151515; font-size: 24px; }
+body.has-media:not(.has-timer) .peek-track { grid-column: 2; grid-row: 2; min-width: 0; align-self: center; display: flex; flex-direction: column; gap: 3px; }
+.peek-track .marquee-box { font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -.15px; }
+body.has-media:not(.has-timer) #peek-artist { display: block; font-size: 12px; line-height: 17px; color: #b8b8c1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.has-media:not(.has-timer) .peek-progress { display: grid; grid-column: 2; grid-row: 3; grid-template-columns: 1fr 1fr; grid-template-rows: 4px 14px; row-gap: 6px; position: relative; align-self: center; font-size: 10px; font-variant-numeric: tabular-nums; color: #aaaab5; }
+.peek-bar { grid-column: 1 / -1; height: 3px; border-radius: 3px; overflow: hidden; background: #ffffff28; }
+#peek-fill { display: block; height: 100%; border-radius: inherit; background: var(--music-accent,#fff); }
+#peek-remaining { text-align: right; }
+#peek-seek { inset: -10px 0 auto; width: 100%; height: 24px; }
+#peek-seek::-webkit-slider-thumb { background: var(--music-accent,#fff); }
+.peek-progress.is-live { visibility: hidden; }
+body.has-media:not(.has-timer) .peek-controls { display: flex; grid-column: 2; grid-row: 4; justify-content: space-between; align-items: center; }
+.peek-controls .icon-btn,body.has-media .peek-controls .peek-toggle { display: grid; width: 44px; height: 44px; border-radius: 50%; color: #f3f3f5; }
+.peek-controls svg { width: 18px; height: 18px; }
+.peek-controls .peek-toggle svg { width: 24px; height: 24px; }
+.peek-controls button:active:not(:disabled) { transform: scale(.94); }
+body.has-media:not(.has-timer) .layer-peek > .peek-spacer { display: none; }
+body.has-media:not(.has-timer) .layer-peek > .focus-picker { position: absolute; right: 22px; top: 12px; }
+@media (prefers-reduced-motion: reduce) { .peek-controls button:active:not(:disabled) { transform: none; } }
 @media (prefers-reduced-motion: reduce) { [data-panel="media"] .np-buttons button:active:not(:disabled) { transform: none; } }

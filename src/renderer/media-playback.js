@@ -20,7 +20,7 @@
     reset(state = State.EMPTY) { this.cancel(false); this.reported = state; this.observedAt = this.now(); this.change(); }
     receive(message) {
       this.reported = State.nextState(this.reported, message, this.now()); this.observedAt = this.now();
-      if (this.pending && (!this.reported.active || key(this.reported) !== this.pending.key)) this.cancel(false);
+      if (this.pending && (!this.reported.active || this.reported.awaiting || key(this.reported) !== this.pending.key)) this.cancel(false);
       if (this.pending?.acknowledged && this.reported.playing === this.pending.playing) this.cancel(false);
       this.change();
     }

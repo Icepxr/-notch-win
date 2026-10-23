@@ -193,6 +193,34 @@ test('playback sources are validated and deduplicated', () => {
   assert.strictEqual(state.selectedSource, 'Spotify.exe');
 });
 
+test('a browser session gap is bounded and cannot control a missing player', () => {
+  const first = nextState(EMPTY, line({ app: 'chrome.exe', thumb: 'cover' }), T0);
+  const gap = nextState(first, { type: 'state', session: false }, T0 + 900);
+  assert.equal(gap.active, true); assert.equal(gap.thumb, 'cover'); assert.equal(gap.awaiting, true);
+  assert.equal(gap.canToggle, false); assert.equal(gap.canNext, false); assert.equal(gap.canSeek, false);
+  assert.equal(isActive(gap, T0 + 2900), false, 'a silent bridge cannot leave held media visible forever');
+  const again = nextState(gap, { type: 'state', session: false }, T0 + 2800);
+  assert.equal(again.missingSince, T0 + 900);
+  assert.equal(nextState(again, { type: 'state', session: false }, T0 + 2900), EMPTY);
+  const restored = nextState(gap, line({ app: 'chrome.exe', title: 'New song', thumb: null }), T0 + 1300);
+  assert.equal(restored.missingSince, 0); assert.equal(restored.thumb, null); assert.equal(restored.awaiting, false);
+});
+
+test('missing pin preserves its choice without carrying another source art', () => {
+  const first = nextState(EMPTY, line({ app: 'chrome.exe', thumb: 'cover' }), T0);
+  const missing = nextState(first, { type: 'state', session: false, selectedSource: 'Spotify.exe', sources: ['chrome.exe'] }, T0 + 900);
+  assert.equal(missing.active, false); assert.equal(missing.thumb, null);
+  assert.equal(missing.selectedSource, 'Spotify.exe'); assert.deepEqual(missing.sources, ['chrome.exe']);
+});
+
+test('metadata grace does not ignore a real pause or hold indefinitely', () => {
+  const first = nextState(EMPTY, line(), T0);
+  const missing = nextState(first, line({ title: '', artist: '', status: 'Paused' }), T0 + 900);
+  assert.equal(missing.playing, false); assert.equal(missing.canToggle, false);
+  assert.equal(positionAt(missing, T0 + 1300), 30.9);
+  assert.equal(nextState(missing, line({ title: '', artist: '' }), T0 + 1600), EMPTY);
+});
+
 (async function run() {
   let failed = 0;
   for (const { name, fn } of tests) {

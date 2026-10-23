@@ -11,7 +11,7 @@
   const sizes = {
     closed: { width: 184, height: 28 },
     peek: { width: 300, height: 46 },
-    peekMedia: { width: 360, height: 50 },
+    peekMedia: { width: 520, height: 192 },
     open: { width: 520, height: 390 },
     openAi: { width: 520, height: 510 },
     openMusic: { width: 520, height: 260 },
@@ -32,7 +32,7 @@
   function sizesFor(value) {
     const prefs = Appearance.normalize(value);
     return Object.fromEntries(Object.entries(sizes).map(([name, size]) => [name, { ...size,
-      width: name === 'closed' ? prefs.closedWidth : name.startsWith('open') ? prefs.expandedWidth : size.width }]));
+      width: name === 'closed' ? prefs.closedWidth : name.startsWith('open') || name === 'peekMedia' ? prefs.expandedWidth : size.width }]));
   }
   function hostFor(value) {
     return windowSize({ width: Appearance.normalize(value).expandedWidth + 12, height: 522 });

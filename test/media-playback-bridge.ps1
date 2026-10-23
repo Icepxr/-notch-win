@@ -50,4 +50,10 @@ if ($script:results[-1].via -ne 'mediakey' -or $script:keyCount -ne 1) { throw '
 $script:sessions = @($script:other); $script:current = $script:other
 Invoke-Action 'pause' 0 'request-5' 'Spotify.exe'
 if ($script:results[-1].via -ne 'none' -or $script:keyCount -ne 1) { throw 'A vanished target must not toggle another player' }
+$script:duplicate = New-FakeSession 'Spotify.exe'
+$script:target.Accept = $true
+$script:sessions = @($script:duplicate, $script:target); $script:current = $script:target
+$isletCallsBefore = $script:target.Calls
+Invoke-Action 'pause' 0 'request-duplicate' 'Spotify.exe'
+if ($script:target.Calls -ne $isletCallsBefore + 1 -or $script:duplicate.Calls -ne 0) { throw 'Commands must prefer the same OS-current app instance as the sampler' }
 Write-Output 'PowerShell playback: original command functions, target routing, ack IDs, idempotency and safe fallback passed'

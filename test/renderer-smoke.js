@@ -481,7 +481,7 @@ app.whenReady().then(async () => {
 
     await js(`pinned = false; setState('peek')`); await settled();
     box = await layout();
-    check(box.width === 360 && box.height === 50, 'media peek resizes without clipping');
+    check(box.width === geometry.sizes.peekMedia.width && box.height === geometry.sizes.peekMedia.height, 'music hover opens its full player without clipping');
     await snapshot('peek-media');
     await js(`els.peekToggle.click()`); await delay(80);
     check((await layout()).state.includes('state-peek') && mediaCommands.some((command) => ['play','pause'].includes(command.action)), 'compact play/pause controls do not expand the notch');

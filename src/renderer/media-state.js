@@ -41,6 +41,8 @@
     selectedSource: '',
     metadataAt: 0,
     awaiting: false,
+    missingSince: 0,
+    awaitingUntil: 0,
   });
 
   // Source app ids the SMTC reports are either an executable or a packaged
@@ -113,7 +115,20 @@
     const now = Number.isFinite(receivedAt) ? receivedAt : Date.now();
 
     if (!message || message.type !== 'state') return base;
-    if (!message.session) return EMPTY;
+    const sources = Array.isArray(message.sources) ? [...new Set(message.sources.filter((id) => typeof id === 'string' && id.length <= 512))] : [];
+    const selectedSource = text(message.selectedSource);
+    const empty = () => sources.length || selectedSource ? { ...EMPTY, sources, selectedSource } : EMPTY;
+    const missingSince = base.missingSince || now;
+    if (!message.session) {
+      // Browser sessions can briefly unregister between tracks. Hold only the
+      // same source, for a bounded window, with transport controls disabled.
+      const browser = /chrome|msedge|firefox|brave|vivaldi|opera|youtube|soundcloud/i.test(base.app);
+      if (browser && base.active && (!selectedSource || selectedSource === base.app) && now - missingSince < 2000) {
+        return { ...base, sources, selectedSource, awaiting: true, missingSince, awaitingUntil: missingSince + 2000,
+          canToggle: false, canNext: false, canPrev: false, canSeek: false };
+      }
+      return empty();
+    }
 
     const title = text(message.title);
     const artist = text(message.artist);
@@ -122,8 +137,14 @@
     if (!title && !artist) {
       // Adapted from Vorssaint's 1.5s playback gap grace. Brief metadata gaps
       // between songs keep the old artwork rather than flashing the idle UI.
-      if (base.active && app === base.app && now - base.metadataAt <= 1500) return { ...base, awaiting: true };
-      return EMPTY;
+      if (base.active && app === base.app && now - base.metadataAt <= 1500) {
+        const playing = message.status === 'Playing';
+        return { ...base, sources, selectedSource, awaiting: true, missingSince, awaitingUntil: base.metadataAt + 1500, playing,
+          position: positionAt(base, now), anchorAt: now,
+          pausedSince: playing ? 0 : base.pausedSince || now,
+          canToggle: false, canNext: false, canPrev: false, canSeek: false };
+      }
+      return empty();
     }
     const playing = message.status === 'Playing';
     const sameTrack = title === base.title && artist === base.artist && app === base.app;
@@ -156,16 +177,19 @@
       canPrev,
       canToggle: message.canPlay === true || message.canPause === true,
       canSeek: message.canSeek === true && seconds(message.duration) > 0,
-      sources: Array.isArray(message.sources) ? [...new Set(message.sources.filter((id) => typeof id === 'string' && id.length <= 512))] : [],
-      selectedSource: text(message.selectedSource),
+      sources,
+      selectedSource,
       metadataAt: now,
       awaiting: false,
+      missingSince: 0,
+      awaitingUntil: 0,
     };
   }
 
   /** Whether the notch should still be showing this state. */
   function isActive(state, now) {
     if (!state || !state.active) return false;
+    if (state.awaitingUntil && (Number.isFinite(now) ? now : Date.now()) >= state.awaitingUntil) return false;
     if (state.playing) return true;
     if (!state.pausedSince) return true;
     return (Number.isFinite(now) ? now : Date.now()) - state.pausedSince < PAUSED_GRACE_MS;

@@ -64,6 +64,14 @@ const els = {
   exploreSearch: document.getElementById('explore-search'),
   closedTimer: document.getElementById('closed-timer'),
   npSource: document.getElementById('np-source'),
+  peekArtist: document.getElementById('peek-artist'),
+  peekSource: document.getElementById('peek-source'),
+  peekPrev: document.getElementById('peek-prev'),
+  peekNext: document.getElementById('peek-next'),
+  peekSeek: document.getElementById('peek-seek'),
+  peekFill: document.getElementById('peek-fill'),
+  peekTime: document.getElementById('peek-time'),
+  peekRemaining: document.getElementById('peek-remaining'),
 };
 
 let state = 'closed';
@@ -87,6 +95,7 @@ let pinnedBeforeDrag = false;
 let mediaPreviewTimer = null;
 let feedbackTimer = null;
 let seeking = false;
+let seekingPosition = 0;
 let seekPending = null;
 let outsideDuringTransfer = false;
 let hoverSuppressed = false;
@@ -317,7 +326,7 @@ function applyColors() {
 
 function applyMusicTint() {
   const tint = preferences.musicColors !== false ? musicTint?.accentColor : null;
-  for (const element of [document.querySelector('.np'), document.querySelector('.equalizer')]) {
+  for (const element of [document.querySelector('.np'), document.querySelector('.equalizer'), document.querySelector('.layer-peek')]) {
     element.style.setProperty('--music-accent', tint || '#ffffff');
     element.classList.toggle('music-tinted', Boolean(tint));
   }
@@ -1181,37 +1190,25 @@ notch.onToggle(() => {
 
 // --- now playing ------------------------------------------------------------
 
-function setArt(host, dataUri) {
-  const img = host.querySelector('img');
-  if (dataUri) {
-    if (host === els.npArt) img.onload = () => {
+const artwork = new MediaArtwork.Presenter({ ready: (host, image) => {
+  if (host !== els.npArt) return;
+  if (image) {
       // Source NotchMusicService averages the cover into one sRGB pixel.
       const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
       try {
         const context = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
         context.imageSmoothingEnabled = true;
         context.imageSmoothingQuality = 'medium';
-        context.drawImage(img, 0, 0, 1, 1);
+        context.drawImage(image, 0, 0, 1, 1);
         setMusicTint(ArtworkPalette.paletteFrom(context.getImageData(0, 0, 1, 1).data));
       } catch {
         setMusicTint(null);
       }
-    };
-    img.onerror = () => {
-      host.classList.remove('has-art');
-      if (host !== els.npArt) return;
-      setMusicTint(null);
-    };
-    if (img.getAttribute('src') !== dataUri) { if (host === els.npArt) setMusicTint(null); img.src = dataUri; }
-    host.classList.add('has-art');
   } else {
-    img.removeAttribute('src');
-    host.classList.remove('has-art');
-    if (host === els.npArt) {
-      setMusicTint(null);
-    }
+    setMusicTint(null);
   }
-}
+} });
+function setArt(host, dataUri) { artwork.set(host, dataUri); }
 
 /** Scroll a title only if it does not fit, and scale the drift to its length. */
 function fitMarquee(track) {
@@ -1232,6 +1229,9 @@ function renderNowPlaying() {
   const active = MediaState.isActive(media, Date.now());
   setMediaVisible(active);
   document.body.classList.toggle('is-playing', active && media.playing);
+  document.getElementById('np-empty-label').textContent = media.selectedSource
+    ? 'Waiting for pinned player · ' + MediaState.appLabel(media.selectedSource) : 'Nothing playing yet';
+  document.getElementById('np-unpin').hidden = !media.selectedSource;
 
   if (!active) {
     seekPending = null;
@@ -1240,9 +1240,12 @@ function renderNowPlaying() {
     setArt(els.peekArt, null);
     setArt(els.npArt, null);
     els.peekTitle.textContent = '';
+    els.peekArtist.textContent = '';
+    els.peekSource.textContent = '';
     els.npTitle.textContent = '';
     els.npSub.textContent = '';
     els.npSeek.disabled = true;
+    for (const button of [els.npToggle, els.peekToggle, els.npNext, els.npPrev, els.peekPrev, els.peekNext, els.peekSeek]) button.disabled = true;
     els.npSeek.value = '0';
     els.npTime.textContent = '';
     els.npRemaining.textContent = '';
@@ -1254,9 +1257,7 @@ function renderNowPlaying() {
   }
 
   const heading = media.title || media.artist;
-  const peekHeading = media.title && media.artist
-    ? media.title + ' — ' + media.artist
-    : heading;
+  const peekHeading = heading;
   const subtitle = [media.artist, media.album, media.appLabel]
     .filter(Boolean)
     .join(' · ');
@@ -1264,6 +1265,8 @@ function renderNowPlaying() {
   if (els.peekTitle.textContent !== peekHeading) els.peekTitle.textContent = peekHeading;
   if (els.npTitle.textContent !== heading) els.npTitle.textContent = heading;
   if (els.npSub.textContent !== subtitle) els.npSub.textContent = subtitle;
+  els.peekArtist.textContent = media.artist || media.album || media.appLabel;
+  els.peekSource.textContent = media.awaiting ? 'Reconnecting…' : media.selectedSource ? 'Pinned · ' + media.appLabel : media.appLabel;
   const sourceKey = JSON.stringify([media.sources || [], media.selectedSource]);
   if (els.npSource.dataset.sources !== sourceKey) {
     els.npSource.dataset.sources = sourceKey;
@@ -1291,11 +1294,15 @@ function renderNowPlaying() {
   }
 
   els.npPrev.disabled = !media.canPrev;
+  els.peekPrev.disabled = !media.canPrev;
   els.npNext.disabled = !media.canNext;
+  els.peekNext.disabled = !media.canNext;
   els.npToggle.disabled = !media.canToggle;
   els.peekToggle.disabled = !media.canToggle;
   els.npSeek.disabled = !media.canSeek;
+  els.peekSeek.disabled = !media.canSeek;
   els.npSeek.max = String(Math.floor(media.duration));
+  els.peekSeek.max = els.npSeek.max;
   els.npSeek.title = media.canSeek ? 'Seek' : 'This player does not support seeking.';
 
   tickNowPlaying();
@@ -1313,24 +1320,30 @@ function tickNowPlaying() {
   }
 
   if (media.duration > 0) {
-    const position = seeking ? Number(els.npSeek.value)
+    const position = seeking ? seekingPosition
       : seekPending && now < seekPending.until ? Math.min(media.duration, seekPending.position + (media.playing ? (now - seekPending.at) / 1000 : 0))
         : MediaState.positionAt(media, now);
     els.npProgress.classList.remove('is-live');
     els.npFill.style.width = (Math.min(1, position / media.duration) * 100).toFixed(2) + '%';
-    if (!seeking) els.npSeek.value = String(Math.floor(position));
+    if (!seeking) for (const input of [els.npSeek, els.peekSeek]) input.value = String(Math.floor(position));
     els.npTime.textContent = MediaState.formatClock(position);
     els.npRemaining.textContent = '−' + MediaState.formatClock(Math.max(0, media.duration - position));
     els.npSeek.setAttribute('aria-valuetext', MediaState.formatClock(position) + ' of ' + MediaState.formatClock(media.duration));
+    els.peekSeek.setAttribute('aria-valuetext', els.npSeek.getAttribute('aria-valuetext'));
+    document.querySelector('.peek-progress').classList.remove('is-live');
+    els.peekFill.style.width = els.npFill.style.width;
+    els.peekTime.textContent = els.npTime.textContent;
+    els.peekRemaining.textContent = els.npRemaining.textContent;
   } else {
     // Live streams report no length, so there is no bar to draw.
     els.npProgress.classList.add('is-live');
+    document.querySelector('.peek-progress').classList.add('is-live');
   }
 
 }
 
 async function mediaCommand(action, value) {
-  if (!media.active) return;
+  if (action !== 'source' && (!MediaState.isActive(media, Date.now()) || media.awaiting)) return;
   if (action === 'toggle') { playback.toggle(); return; }
   if (['source', 'next', 'prev'].includes(action)) playback.cancel();
   let queued = false;
@@ -1350,18 +1363,26 @@ els.npPrev.addEventListener('click', () => mediaCommand('prev'));
 els.npToggle.addEventListener('click', () => mediaCommand('toggle'));
 els.npNext.addEventListener('click', () => mediaCommand('next'));
 els.peekToggle.addEventListener('click', (event) => { event.stopPropagation(); mediaCommand('toggle'); });
-els.npSeek.addEventListener('input', () => { seeking = true; tickNowPlaying(); });
-els.npSeek.addEventListener('change', () => {
-  const position = Math.max(0, Math.min(media.duration, Number(els.npSeek.value)));
+els.peekPrev.addEventListener('click', () => mediaCommand('prev'));
+els.peekNext.addEventListener('click', () => mediaCommand('next'));
+document.getElementById('peek-files').addEventListener('click', () => openNotch('send'));
+document.getElementById('peek-expand').addEventListener('click', () => openNotch('media'));
+function commitSeek(value) {
+  const position = Math.max(0, Math.min(media.duration, Number(value)));
   seeking = false;
   if (!media.canSeek) return;
   const now = Date.now();
   seekPending = { position, at: now, until: now + 1500 };
   tickNowPlaying();
   mediaCommand('seek', position);
-});
-els.npSeek.addEventListener('pointercancel', () => { seeking = false; tickNowPlaying(); });
+}
+for (const input of [els.npSeek, els.peekSeek]) {
+  input.addEventListener('input', () => { seeking = true; seekingPosition = Number(input.value); tickNowPlaying(); });
+  input.addEventListener('change', () => commitSeek(input.value));
+  input.addEventListener('pointercancel', () => { seeking = false; tickNowPlaying(); });
+}
 els.npSource.addEventListener('change', () => mediaCommand('source', els.npSource.value));
+document.getElementById('np-unpin').addEventListener('click', () => mediaCommand('source', ''));
 notch.onMediaResult((result) => {
   if (playback.result(result)) return;
   if (result.via !== 'none') return;

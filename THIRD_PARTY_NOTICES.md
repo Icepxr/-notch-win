@@ -1,3 +1,25 @@
+# V-Notch policy adaptations
+
+`src/media/session-policy.ps1` and the bounded browser-session gap in
+`src/renderer/media-state.js` adapt the selection, switch arbitration, and
+metadata recovery ideas from [rainaku/V-Notch](https://github.com/rainaku/V-Notch),
+revision `b843d2340bacd94bab1b4ea6439fb29b91555f17`:
+
+- `Services/SessionScorer.cs`
+- `Services/SessionSwitchArbiter.cs`
+- `Services/MediaSessionSelectionPolicy.cs`
+- `Services/MediaMetadataRecoveryPolicy.cs`
+
+The upstream source is licensed under Apache-2.0; the complete license is
+retained in [licenses/V-Notch-Apache-2.0.txt](licenses/V-Notch-Apache-2.0.txt).
+Islet rewrites the policies for sampled SMTC observations in PowerShell:
+metadata/source weights are simplified, the latest observed playing source
+stays preferred, and pinning identifies an application rather than a browser
+tab. The renderer preserves existing Vorssaint metadata grace and adds a
+bounded browser-session gap with disabled controls. These are modified
+adaptations, not unmodified upstream files. Islet remains GPL-3.0-or-later.
+No V-Notch WPF UI, fonts, icons, models, or binary dependencies are bundled.
+
 # Vorssaint source adaptations
 
 This project includes JavaScript adaptations of portions of

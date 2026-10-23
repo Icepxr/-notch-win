@@ -28,21 +28,31 @@
       <span id="closed-progress" aria-hidden="true"></span>
     </button>
 
-    <div class="layer layer-peek" role="button" tabindex="0" aria-label="Open notch">
+    <div class="layer layer-peek" role="group" tabindex="0" aria-label="Notch preview">
       <span id="peek-clock">--:--</span>
       <span class="peek-dot"></span>
       <span id="peek-shelf">Empty</span>
 
       <!-- swaps in for the clock while something is playing -->
+      <div class="peek-music-head">
+        <button id="peek-files" class="icon-btn" type="button" title="File shelf" aria-label="Open file shelf"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m3 9 7-6 7 6v8h-5v-5H8v5H3Z"/></svg></button>
+        <button id="peek-expand" class="icon-btn" type="button" title="Open Music" aria-label="Open Music"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 15V5l9-2v10M7 8l9-2"/><circle cx="4.5" cy="15" r="2.5"/><circle cx="13.5" cy="13" r="2.5"/></svg></button>
+        <span id="peek-source"></span>
+      </div>
       <div class="peek-np">
         <div id="peek-art" class="art art-sm"><img alt="" /><span class="art-fallback">♪</span></div>
-        <span class="marquee-box"><span id="peek-title" class="marquee-track"></span></span>
+        <div class="peek-track"><span class="marquee-box"><span id="peek-title" class="marquee-track"></span></span><span id="peek-artist"></span></div>
+        <div class="peek-progress"><div class="peek-bar"><i id="peek-fill"></i></div><input id="peek-seek" class="np-seek" type="range" min="0" max="100" value="0" step="1" aria-label="Preview playback position" disabled /><span id="peek-time"></span><span id="peek-remaining"></span></div>
       </div>
 
+      <div class="peek-controls">
+      <button id="peek-prev" class="icon-btn" type="button" title="Previous track" aria-label="Previous track"><svg class="filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3h2v10H3zM13 3v10L5 8z"/></svg></button>
       <button id="peek-toggle" class="peek-toggle icon-btn" type="button" title="Play / Pause" aria-label="Play / Pause">
         <svg class="icon-play filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3v10l9-5z" /></svg>
         <svg class="icon-pause filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3h3v10H4zm5 0h3v10H9z" /></svg>
       </button>
+      <button id="peek-next" class="icon-btn" type="button" title="Next track" aria-label="Next track"><svg class="filled" viewBox="0 0 16 16" aria-hidden="true"><path d="M11 3h2v10h-2zM3 3v10l8-5z"/></svg></button>
+      </div>
 
       <span class="peek-spacer"></span>
 
@@ -181,7 +191,7 @@
             </div>
           </div>
           <span id="media-feedback" class="media-feedback" role="status" aria-live="polite"></span>
-          <p id="np-empty" class="hint">Nothing playing yet</p>
+          <div id="np-empty" class="hint"><span id="np-empty-label">Nothing playing yet</span><button id="np-unpin" type="button" hidden>Use automatic source</button></div>
         </section>
 
         <!-- Clipboard and system panels are mounted by panel-*.js. -->
@@ -220,6 +230,7 @@
   <script src="provider-marks.js"></script>
   <script src="notch-activity.js"></script>
   <script src="media-state.js"></script>
+  <script src="media-artwork.js"></script>
   <script src="media-playback.js"></script>
   <script src="ai-state.js"></script>
   <script src="panel-clipboard.js"></script>

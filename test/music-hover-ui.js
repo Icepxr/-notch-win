@@ -1,0 +1,75 @@
+'use strict';
+// Synthetic sessions and art only; never controls a real Windows player.
+const { app, BrowserWindow, ipcMain } = require('electron');
+const assert = require('node:assert/strict'), fs = require('node:fs'), path = require('node:path');
+const Geometry = require('../src/renderer/notch-geometry'), Appearance = require('../src/renderer/notch-appearance');
+app.setPath('userData', path.join(__dirname, '..', '.tmp', 'music-hover-profile'));
+app.disableHardwareAcceleration();
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+app.whenReady().then(async () => {
+  const commands = [], errors = []; let checks = 0;
+  ipcMain.handle('fixture:init', () => ({ shelf: [], devices: [], clipboard: [], note: '', timer: { hasSession: false }, preferences: { ...Appearance.defaults, musicPreview: false } }));
+  ipcMain.handle('fixture:size', () => {});
+  ipcMain.handle('fixture:media', (_event, command) => { commands.push(command); return true; });
+  const win = new BrowserWindow({ ...Geometry.hostSize, show: false, frame: false, transparent: true,
+    webPreferences: { offscreen: true, contextIsolation: true, backgroundThrottling: false, preload: path.join(__dirname, 'fixtures', 'notch-preload.js') } });
+  win.webContents.on('console-message', event => { if (event.level === 'error') errors.push(event.message); });
+  const js = code => win.webContents.executeJavaScript(code);
+  const emit = (name, value) => win.webContents.send('fixture:' + name, value);
+  const check = (value, text) => { assert.ok(value, text); checks++; console.log('  ok  ' + text); };
+  const art = color => 'data:image/svg+xml;base64,' + Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="${color}"/><stop offset="1" stop-color="#191e36"/></linearGradient></defs><rect width="180" height="180" fill="url(#g)"/><circle cx="135" cy="46" r="65" fill="none" stroke="#f2c0aa" stroke-width="18" opacity=".6"/><path d="M0 140Q60 70 180 140v40H0" fill="#191e36"/><text x="14" y="155" font-family="sans-serif" font-size="15" fill="white">AFTER HOURS</text></svg>`).toString('base64');
+  const cover = art('#a85068');
+  const state = (values = {}) => ({ type: 'state', session: true, title: 'Midnight in Motion', artist: 'Local Artist', album: 'After Hours', app: 'Spotify.exe', status: 'Playing',
+    duration: 240, position: 31, canPlay: true, canPause: true, canNext: true, canPrev: true, canSeek: true, thumb: cover, ...values });
+  async function snapshot(name) {
+    await js(`document.documentElement.style.background='#303036'`); await delay(40);
+    const rect = await js(`(()=>{const r=card.getBoundingClientRect();return{x:Math.floor(r.x-18),y:0,width:Math.ceil(r.width+36),height:Math.ceil(r.height+24)}})()`);
+    fs.writeFileSync(path.join(__dirname, '..', 'docs', 'previews', name + '.png'), (await win.webContents.capturePage(rect)).toPNG());
+    await js(`document.documentElement.style.removeProperty('background')`);
+  }
+  try {
+    await win.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'index.html')); await delay(650);
+    const nativeBounds = win.getBounds();
+    emit('now-playing', state()); await delay(80); emit('pointer', true); await delay(650);
+    check(await js(`state==='peek'&&Math.round(card.getBoundingClientRect().width)===520&&Math.round(card.getBoundingClientRect().height)===192&&els.peekArt.offsetWidth===104`), 'hover reveals a full player with large artwork');
+    check(await js(`(()=>{const layer=document.querySelector('.layer-peek'),r=layer.getBoundingClientRect();return layer.scrollWidth<=layer.clientWidth&&[els.peekArt,els.peekToggle,els.peekPrev,els.peekNext,els.peekSeek].every(el=>{const b=el.getBoundingClientRect();return b.x>=r.x&&b.right<=r.right&&b.bottom<=r.bottom})})()`), 'artwork, timeline and all controls fit inside the preview');
+    check(await js(`els.peekArtist.textContent==='Local Artist'&&els.peekSource.textContent==='Spotify'&&els.peekTime.textContent==='0:31'`), 'hover reads real artist, source and timeline data');
+    check(await js(`getComputedStyle(card).backgroundColor==='rgb(0, 0, 0)'&&!document.querySelector('#peek-ai,.layer-peek .ai-dot')`), 'the shell stays black without the removed green badge');
+    await snapshot('music-hover');
+    check(await js(`els.peekToggle.click();state==='peek'&&els.peekToggle.getAttribute('aria-label')==='Play'`), 'hover Pause responds synchronously without opening the notch');
+    await delay(40); check(commands.at(-1).action === 'pause' && commands.at(-1).playback.app === 'Spotify.exe', 'hover playback targets the displayed source');
+    emit('media-result', { ...commands.at(-1).playback, type: 'command', via: 'winrt' }); emit('now-playing', state({ status: 'Paused' })); await delay(40);
+    await js(`els.peekNext.click()`); await delay(40);
+    check(commands.at(-1).action === 'next' && await js(`state==='peek'`), 'Next remains an action inside hover');
+    await js(`els.peekSeek.value='73';els.peekSeek.dispatchEvent(new Event('input'));els.peekSeek.dispatchEvent(new Event('change'))`); await delay(40);
+    check(commands.at(-1).action === 'seek' && commands.at(-1).value === 73, 'hover seeking uses the actual media bridge');
+    await js(`document.getElementById('peek-files').click()`); await delay(650);
+    check(await js(`state==='open'&&activeTab==='send'`), 'the home shortcut opens the file shelf');
+    await js(`openNotch('media')`); await delay(650);
+    await js(`openedByClick=false;setState('closed')`); await delay(110);
+    check(await js(`getComputedStyle(document.querySelector('.layer-open')).visibility==='hidden'&&Number(getComputedStyle(document.querySelector('.layer-open')).opacity)<.01`), 'the large outgoing music cover retires before the shell becomes compact');
+    emit('now-playing', state({ title: 'A new track', thumb: art('#366eaa') }));
+    await js(`(async()=>{for(const next of ['open','peek','closed','peek','open','closed','peek']){setState(next);await new Promise(r=>setTimeout(r,35));}})()`); await delay(650);
+    check(await js(`state==='peek'&&!currentMorph&&!document.body.classList.contains('is-morphing')&&els.peekTitle.textContent==='A new track'&&els.peekArt.querySelector('img').getAttribute('src')===media.thumb`), 'rapid reversals and a track change settle on the newest artwork');
+    assert.deepEqual(win.getBounds(), nativeBounds); checks++; console.log('  ok  native backing bounds remain stable throughout hover and reversals');
+    await js(`applyPreferences({...preferences,expandedWidth:480,silhouette:'capsule'})`);
+    emit('now-playing', state({ title: 'เสียงเพลงยามค่ำคืน — A very long title for a narrow hover', artist: 'A very long artist name that stays on one line' })); await delay(650);
+    check(await js(`(()=>{const r=card.getBoundingClientRect(),layer=document.querySelector('.layer-peek');return Math.round(r.width)===480&&layer.scrollWidth<=layer.clientWidth&&getComputedStyle(card).borderTopLeftRadius==='28px'})()`), 'narrow custom width and capsule corners fit long multilingual titles');
+    await snapshot('music-hover-capsule');
+    emit('now-playing', { type: 'state', session: false, selectedSource: 'missing.exe', sources: ['Spotify.exe'] }); await js(`openNotch('media')`); await delay(650);
+    check(await js(`!media.active&&!document.getElementById('np-unpin').hidden&&document.getElementById('np-empty-label').textContent.includes('Waiting for pinned player')`), 'a missing pinned player offers an explicit way back');
+    await js(`document.getElementById('np-unpin').click()`); await delay(30);
+    check(commands.at(-1).action === 'source' && commands.at(-1).value === '', 'a missing source can be unpinned without active playback');
+    emit('now-playing', state()); await js(`openedByClick=false;setState('peek')`); await delay(650);
+    emit('timer', { hasSession: true, mode: 'timer', phase: 'timer', reading: 120, duration: 120, running: true }); await delay(650);
+    check(await js(`Math.round(card.getBoundingClientRect().height)===46&&getComputedStyle(document.querySelector('.peek-controls')).display==='none'`), 'a running timer retains its compact preview instead of music controls');
+    emit('timer', { hasSession: false }); await delay(650);
+    win.webContents.debugger.attach('1.3');
+    await win.webContents.debugger.sendCommand('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+    await js(`setState('closed')`); await delay(50); await js(`setState('peek')`); await delay(100);
+    check(await js(`!currentMorph&&state==='peek'&&getComputedStyle(card).borderTopLeftRadius==='28px'`), 'reduced motion reaches the same hover shape');
+    emit('pointer', false); await delay(800);
+    check(await js(`state==='closed'`), 'leaving hover dismisses the player automatically');
+    assert.deepEqual(errors, []); console.log('Music hover: ' + checks + ' visual/interaction/reversal checks passed'); app.exit(0);
+  } catch (error) { console.error(error); console.error(errors); app.exit(1); }
+});

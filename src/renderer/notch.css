@@ -110,8 +110,8 @@ body.state-peek #card {
   box-shadow: 0 10px 22px -9px #000b;
 }
 body.state-peek.has-media #card {
-  width: var(--peekMedia-width, 360px);
-  height: var(--peekMedia-height, 50px);
+  width: var(--peekMedia-width, 520px);
+  height: var(--peekMedia-height, 192px);
 }
 body.state-open #card {
   width: var(--open-width, 520px);

@@ -12,9 +12,11 @@
   },
   "scripts": {
     "start": "electron .",
-    "test": "node test/send-roundtrip.js && node test/discovery.js && node test/shelf-folders.js && node test/media-state.js && node test/media-playback.js && node test/artwork-palette.js && node test/media-bridge.js && node test/notch-logic.js && node test/timer-source.js && node test/notch-activity.js && node test/notch-appearance.js && node test/notch-modules.js && node test/displays.js && node test/profile.js && node test/notes.js && node test/notes-tools.js && node test/aimon.js && node test/ai-view.js && node test/ai-usage.js && node test/ai-claude.js && node test/ai-worker.js && node test/clipboard.js && node test/sysmon.js && node test/system-actions.js",
-    "test:ui": "electron test/renderer-smoke.js && electron test/settings-source.js && electron test/appearance-layout.js && electron test/modules-source.js && electron test/source-details.js && electron test/ai-source.js && electron test/timer-ui.js && electron test/music-playback-ui.js && electron test/notch-theme-ui.js && electron test/capsule-hover-ui.js",
-    "test:media:bridge": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File test/media-playback-bridge.ps1"
+    "test": "node test/send-roundtrip.js && node test/discovery.js && node test/shelf-folders.js && node test/media-state.js && node test/media-playback.js && node test/media-artwork.js && node test/artwork-palette.js && node test/media-bridge.js && node test/notch-logic.js && node test/timer-source.js && node test/notch-activity.js && node test/notch-appearance.js && node test/notch-modules.js && node test/displays.js && node test/profile.js && node test/notes.js && node test/notes-tools.js && node test/aimon.js && node test/ai-view.js && node test/ai-usage.js && node test/ai-claude.js && node test/ai-worker.js && node test/clipboard.js && node test/sysmon.js && node test/system-actions.js",
+    "test:ui": "electron test/renderer-smoke.js && electron test/settings-source.js && electron test/appearance-layout.js && electron test/modules-source.js && electron test/source-details.js && electron test/ai-source.js && electron test/timer-ui.js && electron test/music-playback-ui.js && electron test/notch-theme-ui.js && electron test/capsule-hover-ui.js && electron test/music-hover-ui.js",
+    "test:media:bridge": "powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File test/media-selection.ps1 && powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File test/media-playback-bridge.ps1",
+    "test:media:artwork": "node test/media-artwork.js",
+    "test:music:hover": "electron test/music-hover-ui.js"
   },
   "devDependencies": {
     "electron": "^38.2.2"
