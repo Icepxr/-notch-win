@@ -1,3 +1,4 @@
+// Local customization: LocalSend joins the existing Strict Local-Only policy.
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -5,7 +6,7 @@ using VNotch.Models;
 
 namespace VNotch.Services;
 
-internal enum NetworkFeature { Updates, Artwork, Lyrics, Subtitles, Canvas, Weather, Ai, ExternalLinks, TranslationModels, CurrencyRates }
+internal enum NetworkFeature { Updates, Artwork, Lyrics, Subtitles, Canvas, Weather, Ai, ExternalLinks, TranslationModels, CurrencyRates, LocalSend }
 
 // One policy for production HTTP clients and out-of-process network features.
 // Deny until startup has loaded the user's persisted settings.

@@ -27,6 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Local customization: isolate new headless test project artifacts. -->
+    <Compile Remove="LocalSend.Core/**" />
+    <Compile Remove="LocalSend.UI/**" />
     <ProjectReference Include="..\V-Notch.csproj" />
     <Compile Include="../Tools/TestSupport/BackgroundTestDesktop.cs" Link="BackgroundTestDesktop.cs" />
     <Compile Include="../Tools/VNotch.Benchmarks/Baselines/BaselineFastBlurService.cs" Link="Baselines/BaselineFastBlurService.cs" />

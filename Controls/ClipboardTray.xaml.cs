@@ -1,3 +1,4 @@
+// Local customization: add a LocalSend menu entry without changing existing actions.
 using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -973,6 +974,7 @@ public partial class ClipboardTray : UserControl, IDisposable
         if (selection.Length > 1)
         {
             AddMenu(menu, "clipboard.copy", CopySelectionAsync);
+            AddLocalSendMenu(menu, selection);
             AddMenu(menu, "clipboard.pin", async () =>
             {
                 foreach (var item in selection)
@@ -990,6 +992,7 @@ public partial class ClipboardTray : UserControl, IDisposable
 
         // Section 1: Quick Actions
         AddMenu(menu, "clipboard.copy", () => CopyAsync(card));
+        AddLocalSendMenu(menu, selection);
         AddMenu(menu, card.Entry.IsPinned ? "clipboard.unpin" : "clipboard.pin", () => _controller.Store.UpdateAsync(card.Entry.Id, pinned: !card.Entry.IsPinned));
         AddMenu(menu, "clipboard.details", () => ShowDetailsAsync(card));
         if (card.IsMasked)
