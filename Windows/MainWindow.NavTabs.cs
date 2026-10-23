@@ -1,3 +1,4 @@
+// Local customization: additive Agent tab selection and visibility.
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -429,7 +430,8 @@ public partial class MainWindow
             (_isTimerView && item == TimerIconButton) ||
             (_isSecondaryView && item == ClipboardIconButton) ||
             (_isCameraView && item == CameraIconButton) ||
-            (!_isAudioView && !_isTimerView && !_isSecondaryView && item == HomeIconButton))
+            (_isAgentView && item == AgentIconButton) ||
+            (!_isAgentView && !_isAudioView && !_isTimerView && !_isSecondaryView && item == HomeIconButton))
         {
             targetOpacity = 1.0;
         }
@@ -605,6 +607,7 @@ public partial class MainWindow
 
         // Home/Media is always kept visible
         visibleTokens.Add("Media");
+        if (!_settings.HideAgentMonitor) visibleTokens.Add("Agents"); else visibleTokens.Remove("Agents");
         if (_settings.HideCamera) visibleTokens.Remove("Camera");
         else visibleTokens.Add("Camera");
 
@@ -619,7 +622,7 @@ public partial class MainWindow
         // If the active view's tab was just disabled, return gracefully to Home
         if ((_isAudioView && !visibleTokens.Contains("AudioMixer")) ||
             (_isTimerView && !visibleTokens.Contains("Timer")) ||
-            (_isSecondaryView && !visibleTokens.Contains("Secondary")) || (_isCameraView && !visibleTokens.Contains("Camera")))
+            (_isSecondaryView && !visibleTokens.Contains("Secondary")) || (_isCameraView && !visibleTokens.Contains("Camera")) || (_isAgentView && !visibleTokens.Contains("Agents")))
         {
             NavigateToNotchView(NotchView.Media);
         }

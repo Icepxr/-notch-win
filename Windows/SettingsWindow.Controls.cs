@@ -1,3 +1,4 @@
+// Local customization: reset the new Agent tab alongside the existing navigation defaults.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -408,6 +409,7 @@ public partial class SettingsWindow
     {
         _settings.NavTabOrder = DefaultNavTabs;
         _settings.VisibleNavTabs = DefaultNavTabs;
+        _settings.HideAgentMonitor = false;
         PopulateNavTabsSettings();
         ApplySettingsFromUi(persist: true);
     }

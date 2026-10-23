@@ -1,3 +1,4 @@
+// Local customization: append the Agent view without changing existing enum values.
 namespace VNotch.Models;
 
 public enum NotchView
@@ -7,5 +8,6 @@ public enum NotchView
     Secondary,
     Timer,
     AudioMixer,
-    Camera
+    Camera,
+    Agents // Local customization: independent agent monitoring page.
 }

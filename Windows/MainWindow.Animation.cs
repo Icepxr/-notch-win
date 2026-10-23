@@ -1,3 +1,4 @@
+// Local customization: add Agent view geometry/lifecycle to the existing transition pipeline.
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -15,7 +16,7 @@ public partial class MainWindow
 {
 
     #region Notch Expand/Collapse
-    private enum LastExpandedView { Primary, Secondary, Timer, Audio, Camera }
+    private enum LastExpandedView { Primary, Secondary, Timer, Audio, Camera, Agents }
     private LastExpandedView _lastExpandedViewBeforeCollapse = LastExpandedView.Primary;
 
     private const double ExpandedContentHorizontalInset = 16;
@@ -788,6 +789,7 @@ public partial class MainWindow
         NotchBorder.IsHitTestVisible = true;
 
         _isCameraView = effectiveTarget == VNotch.Models.NotchView.Camera;
+        _isAgentView = effectiveTarget == VNotch.Models.NotchView.Agents;
 
         if (effectiveTarget == VNotch.Models.NotchView.Timer)
         {
@@ -823,6 +825,12 @@ public partial class MainWindow
             StartAudioPoll();
             AudioContent.Refresh(SettleAudioNotchToFit);
             ResizeHostWindowHeight(_audioViewHeight > 0 ? _audioViewHeight : _audioViewMaxHeight);
+        }
+        else if (effectiveTarget == VNotch.Models.NotchView.Agents)
+        {
+            _isTimerView = _isSecondaryView = _isAudioView = false;
+            VNotch.Presenters.NotchContentTransitionPresenter.ClearTransformAndEffects(AgentContent);
+            ResizeHostWindowHeight(AgentViewHeight);
         }
         else if (effectiveTarget == VNotch.Models.NotchView.Camera)
         {
@@ -1034,6 +1042,17 @@ public partial class MainWindow
                 ResizeHostWindowHeight(targetHeight);
             UpdateNavIconsActiveState();
         }
+        else if (effectiveTarget == VNotch.Models.NotchView.Agents)
+        {
+            VNotch.Presenters.NotchContentTransitionPresenter.ClearTransformAndEffects(AgentContent);
+            targetWidth = AgentViewWidth;
+            targetHeight = AgentViewHeight;
+            AgentContent.Width = targetWidth - AgentContent.Margin.Left - AgentContent.Margin.Right;
+            AgentContent.Height = targetHeight - AgentContent.Margin.Top - AgentContent.Margin.Bottom;
+            if (targetHeight > currentHeight) ResizeHostWindowHeight(targetHeight);
+            UpdateNavIconsActiveState();
+            EnableKeyboardInput();
+        }
         else if (effectiveTarget == VNotch.Models.NotchView.AudioMixer)
         {
             VNotch.Presenters.NotchContentTransitionPresenter.ClearTransformAndEffects(AudioContent);
@@ -1189,6 +1208,7 @@ public partial class MainWindow
 
     private LastExpandedView DetermineCurrentExpandedView()
     {
+        if (_isAgentView) return LastExpandedView.Agents;
         if (_isCameraView) return LastExpandedView.Camera;
         if (_isAudioView) return LastExpandedView.Audio;
         if (_isTimerView) return LastExpandedView.Timer;
@@ -1204,6 +1224,7 @@ public partial class MainWindow
             return _lastExpandedViewBeforeCollapse switch
             {
                 LastExpandedView.Timer => VNotch.Models.NotchView.Timer,
+                LastExpandedView.Agents when !_settings.HideAgentMonitor => VNotch.Models.NotchView.Agents,
                 LastExpandedView.Secondary => VNotch.Models.NotchView.Secondary,
                 LastExpandedView.Audio => VNotch.Models.NotchView.AudioMixer,
                 LastExpandedView.Camera when !_settings.HideCamera => VNotch.Models.NotchView.Camera,
@@ -1514,6 +1535,7 @@ public partial class MainWindow
         }
         VNotch.Presenters.NotchContentTransitionPresenter.ResetElementVisualState(SecondaryContent);
         VNotch.Presenters.NotchContentTransitionPresenter.ResetElementVisualState(CameraContent);
+        VNotch.Presenters.NotchContentTransitionPresenter.ResetElementVisualState(AgentContent);
 
         ExpandedContentBlur.BeginAnimation(BlurEffect.RadiusProperty, null);
         ExpandedContentBlur.Radius = 0;
@@ -1526,6 +1548,7 @@ public partial class MainWindow
         _isSecondaryView = false;
         _isAudioView = false;
         _isCameraView = false;
+        _isAgentView = false;
     }
 
     private void PrepareStateBeforeCollapse()
@@ -1708,6 +1731,7 @@ public partial class MainWindow
                 LastExpandedView.Secondary => VNotch.Models.NotchView.Secondary,
                 LastExpandedView.Audio => VNotch.Models.NotchView.AudioMixer,
                 LastExpandedView.Camera => VNotch.Models.NotchView.Camera,
+                LastExpandedView.Agents => VNotch.Models.NotchView.Agents,
                 _ => VNotch.Models.NotchView.Media
             },
             TargetView: VNotch.Models.NotchView.Compact,
@@ -1763,6 +1787,7 @@ public partial class MainWindow
         AnimateAuxiliaryViewCollapse(CameraContent, generation);
         AnimateAuxiliaryViewCollapse(TimerContent, generation);
         AnimateAuxiliaryViewCollapse(AudioContent, generation);
+        AnimateAuxiliaryViewCollapse(AgentContent, generation);
 
         expandedTranslate.BeginAnimation(TranslateTransform.YProperty, slideOutAnim);
         ExpandedContentBlur.Radius = 0;

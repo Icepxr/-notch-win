@@ -12,6 +12,11 @@ try {
     Invoke-DotNet -Arguments @('publish', 'V-Notch.csproj', '--no-restore', '-c', 'Release', '-o', 'artifacts/localsend')
     Copy-Item -LiteralPath 'CUSTOM-LOCALSEND.md' -Destination 'artifacts/localsend/LOCALSEND-README.md'
     Copy-Item -LiteralPath 'CustomPreviews' -Destination 'artifacts/localsend' -Recurse -Force
+    if (Test-Path -LiteralPath 'CUSTOM-AGENTS.md') {
+        Copy-Item -LiteralPath 'CUSTOM-AGENTS.md' -Destination 'artifacts/localsend/AGENTS-README.md'
+        New-Item -ItemType Directory -Path 'artifacts/localsend/Assets/Agents' -Force | Out-Null
+        Get-ChildItem -LiteralPath 'Assets/Agents' -File | Copy-Item -Destination 'artifacts/localsend/Assets/Agents' -Force
+    }
     Write-Output "Built separately: $PSScriptRoot/artifacts/localsend/V-Notch.exe"
 }
 finally { Pop-Location }

@@ -1,3 +1,4 @@
+// Local customization: include Agent in existing tab navigation and Home return.
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -52,7 +53,7 @@ public partial class MainWindow
         var activeTabs = GetActiveTabSequence();
         if (activeTabs.Count <= 1) return;
 
-        NotchView currentView = NotchView.Media;
+        NotchView currentView = _isAgentView ? NotchView.Agents : NotchView.Media;
         if (_isCameraView) currentView = NotchView.Camera;
         else if (_isAudioView)
         {
@@ -118,6 +119,7 @@ public partial class MainWindow
     private void HomeIconButton_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        if (_isAgentView && !_isAnimating) { SwitchToPrimaryView(); return; }
         if (_isCameraView && !_isAnimating) { SwitchToPrimaryView(); return; }
         if (_isAudioView && !_isAnimating)
         {
@@ -194,12 +196,13 @@ public partial class MainWindow
         double timerTarget = 0.45;
         double audioTarget = 0.45;
 
-        var target = _navigationVisualTarget ?? (_isCameraView ? NotchView.Camera : _isAudioView ? NotchView.AudioMixer :
+        var target = _navigationVisualTarget ?? (_isAgentView ? NotchView.Agents : _isCameraView ? NotchView.Camera : _isAudioView ? NotchView.AudioMixer :
             _isTimerView ? NotchView.Timer : _isSecondaryView ? NotchView.Secondary : NotchView.Media);
         homeTarget = target == NotchView.Media ? 1 : 0.45;
         clipboardTarget = target == NotchView.Secondary ? 1 : 0.45;
         timerTarget = target == NotchView.Timer ? 1 : 0.45;
         audioTarget = target == NotchView.AudioMixer ? 1 : 0.45;
+        if (_navDragItem != AgentIconButton) AnimateNavIconOpacity(AgentIconButton, target == NotchView.Agents ? 1 : 0.45, animate);
         if (_navDragItem != CameraIconButton) AnimateNavIconOpacity(CameraIconButton, target == NotchView.Camera ? 1 : 0.45, animate);
 
         // Only update opacity on items not currently being dragged by the user

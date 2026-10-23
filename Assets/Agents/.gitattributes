@@ -1,0 +1,2 @@
+# Preserve original provider asset bytes across Windows checkouts.
+*.svg -text

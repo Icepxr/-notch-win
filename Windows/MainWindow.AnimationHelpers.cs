@@ -1,3 +1,4 @@
+// Local customization: include the Agent page in auxiliary navigation chrome.
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -728,13 +729,14 @@ public partial class MainWindow
         SettingsRotate.BeginAnimation(RotateTransform.AngleProperty, null);
 
         bool showBatterySection = show && _settings.ShowBatteryIndicator;
-        var activeTargetView = _navigationVisualTarget ?? (_isCameraView ? VNotch.Models.NotchView.Camera :
+        var activeTargetView = _navigationVisualTarget ?? (_isAgentView ? VNotch.Models.NotchView.Agents : _isCameraView ? VNotch.Models.NotchView.Camera :
             _isAudioView ? VNotch.Models.NotchView.AudioMixer :
             _isTimerView ? VNotch.Models.NotchView.Timer :
             _isSecondaryView ? VNotch.Models.NotchView.Secondary : VNotch.Models.NotchView.Media);
         bool showNavIconsBg = activeTargetView is VNotch.Models.NotchView.Secondary
             or VNotch.Models.NotchView.Timer
             or VNotch.Models.NotchView.AudioMixer;
+        showNavIconsBg |= activeTargetView == VNotch.Models.NotchView.Agents;
         double iconTargetY = _settings.EnableDynamicIslandMode ? 5 : 0;
 
         if (show)

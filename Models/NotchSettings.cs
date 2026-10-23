@@ -1,3 +1,4 @@
+// Local customization: additive Agent tab visibility; existing defaults remain intact.
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -191,6 +192,7 @@ public class NotchSettings
     public string ExpandedWidget { get; set; } = "clock";
     public string NavTabOrder { get; set; } = "Media,Secondary,Timer,AudioMixer,Camera";
     public string VisibleNavTabs { get; set; } = "Media,Secondary,Timer,AudioMixer,Camera";
+    public bool HideAgentMonitor { get; set; } = false; // Local customization; existing tab preferences are preserved.
     public string ClockPageStyle { get; set; } = "analog";
 
     public string ProcessPriority { get; set; } = "Normal";

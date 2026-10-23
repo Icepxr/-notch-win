@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><EnableDefaultCompileItems>false</EnableDefaultCompileItems><IsPackable>false</IsPackable></PropertyGroup>
+ <ItemGroup>
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/><PackageReference Include="xunit" Version="2.7.0"/><PackageReference Include="xunit.runner.visualstudio" Version="2.5.7"/>
+  <Compile Include="../../Services/Agents/*.cs"/><Compile Include="../../Controls/Agents/AgentDashboard.xaml.cs"/>
+  <Page Include="../../Controls/Agents/AgentDashboard.xaml" Link="AgentDashboard.xaml"/><Page Include="../../Controls/Agents/AgentProviderMarks.xaml" Link="AgentProviderMarks.xaml"/>
+  <Compile Include="../AgentDashboardTests.cs" Link="AgentDashboardTests.cs"/><Compile Include="../LocalSend.UI/HiddenStaRunner.cs" Link="HiddenStaRunner.cs"/>
+  <Compile Include="../../Presenters/NotchContentTransitionPresenter.cs"/><Compile Include="../../Controllers/NotchTransitionCoordinator.cs"/>
+  <Compile Include="../../Models/NotchView.cs"/><Compile Include="../../Models/TransitionPlan.cs"/>
+  <Compile Include="../AgentTransitionTests.cs" Link="AgentTransitionTests.cs"/><Compile Include="PresentationTestServices.cs"/>
+  <Resource Include="../../Fonts/SF-Pro-Display-Regular.otf" Link="Fonts/SF-Pro-Display-Regular.otf"/><Resource Include="../../Fonts/SF-Pro-Display-Semibold.otf" Link="Fonts/SF-Pro-Display-Semibold.otf"/>
+ </ItemGroup>
+</Project>

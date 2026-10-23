@@ -1,3 +1,4 @@
+// Local customization: optional Agent surface follows the existing transition/collapse rules.
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -18,6 +19,7 @@ public sealed class NotchContentViewRefs
     public FrameworkElement? AudioContent { get; init; }
     public FrameworkElement? AudioScrollViewer { get; init; }
     public FrameworkElement? SecondaryContent { get; init; }
+    public FrameworkElement? AgentContent { get; init; } // Local customization.
     public Func<long, bool>? IsSessionCurrent { get; init; }
 }
 
@@ -381,6 +383,7 @@ public sealed class NotchContentTransitionPresenter : IDisposable
             NotchView.AudioMixer => _refs.AudioContent ?? _refs.AudioScrollViewer,
             NotchView.Camera => _refs.CameraContent,
             NotchView.Secondary => _refs.SecondaryContent,
+            NotchView.Agents => _refs.AgentContent,
             _ => null
         };
     }
@@ -393,6 +396,7 @@ public sealed class NotchContentTransitionPresenter : IDisposable
         if (_refs.AudioContent != null) list.Add(_refs.AudioContent);
         else if (_refs.AudioScrollViewer != null) list.Add(_refs.AudioScrollViewer);
         if (_refs.SecondaryContent != null) list.Add(_refs.SecondaryContent);
+        if (_refs.AgentContent != null) list.Add(_refs.AgentContent);
         return list;
     }
 

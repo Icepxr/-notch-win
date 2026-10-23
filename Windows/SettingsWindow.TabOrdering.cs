@@ -1,3 +1,4 @@
+// Local customization: Agent tab visibility/order uses the existing navigation settings.
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -50,6 +51,7 @@ public partial class SettingsWindow
             ["Camera"] = (Loc.Get("nav.camera"), "F0 M28,4 L25,4 L24,2 C23.411,0.837 23.104,0 22,0 L10,0 C8.896,0 8.53,0.954 8,2 L7,4 L4,4 C1.791,4 0,5.791 0,8 L0,24 C0,26.209 1.791,28 4,28 L28,28 C30.209,28 32,26.209 32,24 L32,8 C32,5.791 30.209,4 28,4 Z M16,24 C11.582,24 8,20.418 8,16 C8,11.582 11.582,8 16,8 C20.418,8 24,11.582 24,16 C24,20.418 20.418,24 16,24 Z M16,10 C12.687,10 10,12.687 10,16 C10,19.313 12.687,22 16,22 C19.313,22 22,19.313 22,16 C22,12.687 19.313,10 16,10 L16,10 Z")
         };
 
+        tabMetadata["Agents"] = ("AI Agent", "M2,2 L6,2 6,6 2,6 Z M10,2 L14,2 14,6 10,6 Z M2,10 L6,10 6,14 2,14 Z M10,10 L14,10 14,14 10,14 Z");
         var orderTokens = (_settings.NavTabOrder ?? DefaultNavTabs)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -62,6 +64,7 @@ public partial class SettingsWindow
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries),
             StringComparer.OrdinalIgnoreCase);
         visibleTokens.Add(NavTabMedia);
+        if (!_settings.HideAgentMonitor) visibleTokens.Add("Agents"); else visibleTokens.Remove("Agents");
         if (_settings.HideCamera) visibleTokens.Remove("Camera");
         else visibleTokens.Add("Camera");
 
@@ -105,6 +108,7 @@ public partial class SettingsWindow
             check.Checked += (s, e) =>
             {
                 visibleTokens.Add(capturedToken);
+                if (capturedToken == "Agents") _settings.HideAgentMonitor = false;
                 if (capturedToken == "Camera")
                 {
                     _isSyncingCameraVisibility = true;
@@ -118,6 +122,7 @@ public partial class SettingsWindow
             check.Unchecked += (s, e) =>
             {
                 visibleTokens.Remove(capturedToken);
+                if (capturedToken == "Agents") _settings.HideAgentMonitor = true;
                 if (capturedToken == "Camera")
                 {
                     _isSyncingCameraVisibility = true;

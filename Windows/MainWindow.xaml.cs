@@ -1,3 +1,4 @@
+// Local customization: attach the additive Agent page to the existing shell/coordinator.
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -276,9 +277,11 @@ public partial class MainWindow : Window
             AudioContent = AudioContent,
             AudioScrollViewer = AudioScrollViewer,
             SecondaryContent = SecondaryContent,
+            AgentContent = AgentContent,
             CameraContent = CameraContent,
             IsSessionCurrent = sessionId => !_cleanedUp && sessionId == _transitionCoordinator.ActiveTransitionId
         });
+        AgentDashboardView.Attach(new VNotch.Services.Agents.AgentMonitor(() => NetworkPrivacy.Current.Acquire(NetworkFeature.Ai)));
         _viewModel = viewModel;
         DataContext = _viewModel;
         MediaPlayback.Attach(_viewModel.Media, mediaService);
@@ -696,6 +699,7 @@ public partial class MainWindow : Window
         InputMonitorService.MouseActionTriggered -= GlobalMouseHook_MouseLeftButtonDown;
 
         ClipboardTrayView.Dispose();
+        AgentDashboardView.Dispose();
         _clipboardShutdown = _clipboardHistory?.DisposeAsync().AsTask() ?? Task.CompletedTask;
         _clipboardShutdown.SafeFireAndForget("CLIPBOARD-SHUTDOWN");
         DisposeClipboardHotkey();
@@ -768,6 +772,7 @@ public partial class MainWindow : Window
         _localAudioView = snapshot.CurrentView == VNotch.Models.NotchView.AudioMixer;
         _localSecondaryView = snapshot.CurrentView == VNotch.Models.NotchView.Secondary;
         _localTimerView = snapshot.CurrentView == VNotch.Models.NotchView.Timer;
+        _isAgentView = snapshot.CurrentView == VNotch.Models.NotchView.Agents;
         UpdateGlassMotionState();
         SyncPrivacyDotVisibilityForCurrentView();
         UpdateSpotifyCanvasPresentationContext();
@@ -836,7 +841,7 @@ public partial class MainWindow : Window
         else if (args.TargetView == VNotch.Models.NotchView.Camera && _pendingCameraPreviewVisualTeardown)
             FinalizePendingCameraPreviewTeardown();
         if (args.TargetView != VNotch.Models.NotchView.Compact && args.Reason != "CountdownCompletion" &&
-            (args.TargetView is VNotch.Models.NotchView.Secondary or VNotch.Models.NotchView.Camera || args.FromView is VNotch.Models.NotchView.Secondary or VNotch.Models.NotchView.Camera))
+            (args.TargetView is VNotch.Models.NotchView.Secondary or VNotch.Models.NotchView.Camera or VNotch.Models.NotchView.Agents || args.FromView is VNotch.Models.NotchView.Secondary or VNotch.Models.NotchView.Camera or VNotch.Models.NotchView.Agents))
         {
             ExpandNotch(args.TransitionId, targetView: args.TargetView, fromView: args.FromView);
             return;
@@ -1159,10 +1164,10 @@ public partial class MainWindow : Window
     }
 
     private double MaxExpandedNotchHeight =>
-        Math.Max(CameraViewHeight,
+        Math.Max(AgentViewHeight, Math.Max(CameraViewHeight,
         Math.Max(ClipboardTrayHeight,
         Math.Max(_clockViewHeight,
-        Math.Max(_expandedHeight, _audioViewMaxHeight))));
+        Math.Max(_expandedHeight, _audioViewMaxHeight)))));
 
     private void PositionAtTop()
     {

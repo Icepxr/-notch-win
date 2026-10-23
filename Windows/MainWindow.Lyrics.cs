@@ -1,3 +1,4 @@
+// Local customization: keep the existing lyrics/canvas layer out of the Agent page.
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -76,6 +77,7 @@ public partial class MainWindow
 
     private bool IsSpotifyCanvasSurfaceVisible =>
         _isLyricsActive &&
+        !_isAgentView &&
         !_isSecondaryView &&
         !_isTimerView &&
         !_isAudioView &&
@@ -163,6 +165,7 @@ public partial class MainWindow
         if (_spotifyCanvasController == null) return;
 
         bool canFadeIn = _isLyricsActive &&
+                         !_isAgentView &&
                          _isExpanded &&
                          !_isAnimating &&
                          !_isTimerView &&
