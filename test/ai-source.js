@@ -73,7 +73,7 @@ app.whenReady().then(async()=>{
     check(await js(`document.querySelector('.ai-agent[data-agent="codex"] .ai-win-value').textContent==='—'&&!document.querySelector('.ai-agent[data-agent="codex"] .ai-win-bar').hasAttribute('aria-valuenow')`),'expired readings are unknown rather than a false zero');
     check(await js(`AiPanel.closedReading('codex')===null`),'resting readout falls back to elapsed time when no current quota is available');
     await js(`document.querySelector('.ai-customize').open=true;document.querySelectorAll('[data-ai-card]').forEach(input=>{if(input.checked)input.click()});document.querySelector('.ai-customize').open=false`);await delay(700);
-    check(await js(`document.querySelector('[data-ai-show-all]')&&Math.round(card.getBoundingClientRect().height)===280`),'all-hidden layout offers direct recovery in a shorter island');
+    check(await js(`document.querySelector('[data-ai-show-all]')&&Math.abs(card.getBoundingClientRect().height-ExpandedPages.requestFor('ai').requested)<=1&&card.getBoundingClientRect().height<510`),'all-hidden layout offers direct recovery at its measured content height');
     await js(`document.querySelector('[data-ai-show-all]').click()`);await delay(80);
     check(await js(`document.querySelectorAll('#ai-cards > .ai-card').length>0`),'Show all restores a usable layout');
     await js(`applyPreferences({...preferences,expandedWidth:480})`);await delay(700);

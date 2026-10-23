@@ -166,14 +166,16 @@
     const detail = document.createElement('div'); detail.className = 'system-detail'; detail.id = 'system-detail'; detail.hidden = true;
     const detailHead = document.createElement('div'); detailHead.className = 'section-head';
     const back = document.createElement('button'); back.className = 'ghost-btn'; back.textContent = '‹ Overview';
+    back.id = 'system-overview-action'; back.disabled = true;
     back.type = 'button'; back.addEventListener('click', () => showDetail(null));
     const detailTitle = document.createElement('span'); detailTitle.className = 'section-label';
     detailHead.append(back, detailTitle);
     detail.append(detailHead, grid, disksHead, disks);
     root.append(head, overview, detail);
     els = { root, meta, cpu, memory, disks, disksHead, overview, summaries, detail, detailTitle, back, selected: null };
-    detail.addEventListener('keydown', (event) => {
-      if (event.key !== 'Escape') return;
+    update(null);
+    root.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape' || !els.selected) return;
       event.preventDefault(); event.stopPropagation(); showDetail(null);
     });
   }
@@ -181,6 +183,7 @@
   function showDetail(id) {
     const previous = els.selected;
     els.selected = id;
+    els.back.disabled = !id;
     els.overview.hidden = Boolean(id); els.detail.hidden = !id;
     els.cpu.card.hidden = id !== 'cpu'; els.memory.card.hidden = id !== 'memory';
     els.disks.hidden = id !== 'storage'; els.disksHead.hidden = true;
@@ -199,11 +202,15 @@
 
   function update(sample) {
     if (!els) return;
-    if (!sample) {
-      els.meta.textContent = 'Reading sensors…';
+    if (!sample || sample.error || !sample.cpu || !sample.memory || !Array.isArray(sample.disks)) {
+      els.meta.textContent = !sample ? 'Reading sensors…' : 'Sensors unavailable. Waiting for the next reading.';
+      els.root.setAttribute('aria-busy', String(!sample));
+      for (const summary of Object.values(els.summaries)) { summary.button.disabled = true; summary.reading.textContent = '—'; }
+      if (els.selected) showDetail(null);
       return;
     }
-
+    els.root.setAttribute('aria-busy', 'false');
+    for (const summary of Object.values(els.summaries)) summary.button.disabled = false;
     els.meta.textContent = sample.host + ' · Up ' + formatUptime(sample.uptime);
     paintSummary('cpu', sample.cpu.overall, pct(sample.cpu.overall));
     paintSummary('memory', sample.memory.ratio, pct(sample.memory.ratio));

@@ -20,7 +20,10 @@ window.NotesPanel = (() => {
   async function saveNow(text) {
     let ok = false;
     try { ok = await bridge.saveNote(text); } catch {}
-    if (editor.value === text) status(ok ? 'Saved locally' : 'Cannot save. Try editing again.');
+    if (editor.value === text) {
+      status(ok ? 'Saved locally' : 'Cannot save. Retry or keep editing.');
+      root.querySelector('#note-retry').hidden = ok;
+    }
     return ok;
   }
   function paintCount() {
@@ -68,10 +71,14 @@ window.NotesPanel = (() => {
       <select id="note-text-size" aria-label="Note text size" title="Text size">${Array.from({ length: 13 }, (_, i) => `<option value="${i + 10}">${i + 10} px</option>`).join('')}</select></div></div>
       <div class="note-find-bar" id="note-find-bar" role="search" aria-label="Find in note" hidden><input id="note-query" type="search" aria-label="Find text in note" placeholder="Find in note" maxlength="200"/><span id="note-find-count" role="status">Find text</span><button type="button" data-note-find="-1" aria-label="Previous match" title="Previous · Shift+Enter">‹</button><button type="button" data-note-find="1" aria-label="Next match" title="Next · Enter">›</button><button type="button" id="note-find-close" aria-label="Close find">×</button></div>
       <textarea id="scratchpad" class="scratchpad" maxlength="100000" placeholder="Start writing…" aria-label="Notes" spellcheck="true"></textarea>
-      <div class="notes-status"><span class="section-meta" id="note-status" role="status">Saved only on this device</span><span class="section-meta" id="note-action-status" role="status"></span><span class="section-meta" id="note-count">0 characters</span></div>`;
+      <div class="notes-status"><span class="section-meta" id="note-status" role="status">Saved only on this device</span><button id="note-retry" type="button" hidden>Retry save</button><span class="section-meta" id="note-action-status" role="status"></span><span class="section-meta" id="note-count">0 characters</span></div>`;
     editor = root.querySelector('#scratchpad'); query = root.querySelector('#note-query'); findBar = root.querySelector('#note-find-bar');
     size = root.querySelector('#note-text-size'); copyButton = root.querySelector('#note-copy'); findButton = root.querySelector('#note-find');
     applyPreferences({ notesTextSize: fontSize });
+    root.querySelector('#note-retry').addEventListener('click', async event => {
+      const button = event.currentTarget; button.disabled = true; status('Saving…');
+      try { await saveNow(editor.value); } finally { button.disabled = false; }
+    });
     findButton.addEventListener('click', () => findBar.hidden ? showFind() : closeFind());
     root.querySelector('#note-find-close').addEventListener('click', closeFind);
     query.addEventListener('input', () => { hitIndex = 0; refreshFind(true); });

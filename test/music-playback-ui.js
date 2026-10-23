@@ -28,7 +28,7 @@ app.whenReady().then(async () => {
   try {
     await win.webContents.session.clearStorageData({ storages: ['localstorage'] }); await win.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'index.html')); await delay(250);
     await js(`openNotch('media');pointerInside=true;activityQueue.clear()`); emit('now-playing', state('Playing', { thumb: cover })); await delay(650);
-    check(await js(`(()=>{const panel=document.querySelector('[data-panel="media"]'),player=document.querySelector('.np');return player.clientWidth>=panel.clientWidth-1&&els.npArt.offsetWidth===76&&getComputedStyle(els.npTitle.parentElement).fontSize==='16px'&&Math.round(card.getBoundingClientRect().height)===260})()`), 'larger artwork and type fill the music panel instead of a narrow floating column');
+    check(await js(`(()=>{const panel=document.querySelector('[data-panel="media"]'),player=document.querySelector('.np');return player.clientWidth>=panel.clientWidth-1&&els.npArt.offsetWidth===96&&getComputedStyle(els.npTitle.parentElement).fontSize==='14px'&&Math.round(card.getBoundingClientRect().height)===260})()`), 'expanded artwork and type preserve the hover player while filling the music panel');
     await shot('music-fuller');
     check(await js(`els.npToggle.click();els.npToggle.getAttribute('aria-label')==='Play'&&!document.body.classList.contains('is-playing')`), 'Pause changes both icons and the equalizer synchronously before the IPC reply');
     await delay(30); check(commands[0].action === 'pause' && commands[0].playback.app === 'chrome.exe', 'playback uses an explicit action and the displayed player identity');
@@ -52,7 +52,7 @@ app.whenReady().then(async () => {
     ack(commands.at(-1)); emit('now-playing', state('Playing', { app: 'Spotify.exe', title: 'Another player' })); await delay(40);
     await js(`openNotch('media');applyPreferences({...preferences,expandedWidth:480})`);
     emit('now-playing', state('Playing', { title: 'เรื่องเล่าและเสียงเพลงยามค่ำคืน — A very long title for the smallest music notch', sources: ['chrome.exe', 'Spotify.exe'], selectedSource: 'chrome.exe', duration: 3798, thumb: cover })); await delay(650);
-    check(await js(`(()=>{const p=document.querySelector('[data-panel="media"]'),bar=document.querySelector('.np-progress'),buttons=document.querySelector('.np-buttons');return p.scrollWidth<=p.clientWidth&&p.scrollHeight<=p.clientHeight+1&&bar.getBoundingClientRect().width>=p.clientWidth-1&&buttons.getBoundingClientRect().bottom<=p.getBoundingClientRect().bottom})()`), 'long titles, hour-long tracks, player selection and larger controls fit the narrowest notch');
+    check(await js(`(()=>{const p=document.querySelector('[data-panel="media"]'),bar=document.querySelector('.np-progress').getBoundingClientRect(),text=document.querySelector('.np-text').getBoundingClientRect(),buttons=document.querySelector('.np-buttons');return p.scrollWidth<=p.clientWidth&&p.scrollHeight<=p.clientHeight+1&&Math.abs(bar.width-text.width)<=1&&Math.abs(bar.left-text.left)<=1&&buttons.getBoundingClientRect().bottom<=p.getBoundingClientRect().bottom})()`), 'long titles, hour-long tracks and source selection fit the narrowest notch with the timeline aligned to the hover middle column');
     await shot('music-fuller-narrow');
     assert.deepEqual(errors, []); console.log('Music playback UI: ' + checks + ' latency/state/layout checks passed'); app.exit(0);
   } catch (error) { console.error(error); console.error(errors); app.exit(1); }

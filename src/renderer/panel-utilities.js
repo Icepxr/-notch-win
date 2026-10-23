@@ -24,7 +24,8 @@ window.UtilityPanels = (() => {
   function scheduleSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveSetup, 180); }
   function showFailure() {
     if (!timerRoot) return;
-    const node = timerRoot.querySelector('#timer-status'); node.textContent = failure; node.hidden = !failure;
+    const node = timerRoot.querySelector('#timer-status'); node.textContent = failure || (busy ? 'Updating timer…' : ''); node.hidden = !failure && !busy;
+    timerRoot.setAttribute('aria-busy', String(busy));
   }
   function selectMinutes(value) {
     if (timer.hasSession) return;
@@ -133,6 +134,6 @@ window.UtilityPanels = (() => {
   }
   function updateTimer(value) { timer = { ...value, configuration: TimerTools.configuration(value?.configuration) }; if (timer.hasSession) ruler?.cancel(); paintTimer(); }
   function updateNote(value) { NotesPanel.update(value); }
-  function preferredHeight() { return (timer.hasSession ? 230 : setup.mode === 'pomodoro' ? 280 : 260) + (failure ? 24 : 0); }
+  function preferredHeight() { return window.ExpandedPages?.requestFor('timer')?.requested || (timer.hasSession ? 230 : setup.mode === 'pomodoro' ? 280 : 260) + (failure ? 24 : 0); }
   return { mount, updateTimer, updateNote, clock, phaseName, preferredHeight, hasSession: () => Boolean(timer.hasSession) };
 })();

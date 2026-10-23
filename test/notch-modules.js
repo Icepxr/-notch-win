@@ -8,3 +8,4 @@ assert.equal(M.visible({ hiddenModules: M.ids }).length, 1, 'the last module sta
 assert.equal(M.visible({ hiddenModules: M.ids, moduleOrder: ['timer'] })[0], 'timer');
 assert.deepEqual(M.normalize({ moduleOrder: 'bad', hiddenModules: {} }), M.normalize());
 console.log('Module preferences: canonical order, deduplication, unknown IDs and last-visible protection passed');
+require('./expanded-pages-contract');

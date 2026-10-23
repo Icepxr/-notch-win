@@ -2,14 +2,13 @@
 
 // Run with Electron, without starting production discovery or reading user data.
 // Offscreen Chromium exercises the real renderer, preload boundary and resizes.
-const { app, BrowserWindow, ipcMain } = require('electron');
-const assert = require('node:assert/strict');
-const path = require('node:path');
-const fs = require('node:fs');
-const geometry = require('../src/renderer/notch-geometry');
-const appearance = require('../src/renderer/notch-appearance');
-const modules = require('../src/renderer/notch-modules');
-const { NotchTimer } = require('../src/timer');
+let app, BrowserWindow, ipcMain, assert, path, fs, geometry, appearance, modules, NotchTimer, expandedChecks;
+try {
+  ({ app, BrowserWindow, ipcMain } = require('electron'));
+  assert = require('node:assert/strict'); path = require('node:path'); fs = require('node:fs');
+  geometry = require('../src/renderer/notch-geometry'); appearance = require('../src/renderer/notch-appearance'); modules = require('../src/renderer/notch-modules');
+  ({ NotchTimer } = require('../src/timer')); expandedChecks = require('./expanded-pages-checks');
+} catch (error) { process.stderr.write(String(error.stack || error)); process.exit(1); }
 
 const output = path.join(__dirname, '..', 'docs', 'previews');
 const profile = path.join(__dirname, '..', '.tmp', 'renderer-profile');
@@ -753,6 +752,7 @@ app.whenReady().then(async () => {
     emit('system-action', { action: 'brightness', value: 20 }); await delay(150);
     check(await js(`activeNotice === null`), 'system feedback can be disabled in Settings');
     await pjs(`{ const input = document.querySelector('[data-preference="systemFeedback"]'); input.checked = true; input.dispatchEvent(new Event('change')); }`); await delay(100);
+    await expandedChecks({ win, emit, check, ipcMain });
     check(errors.length === 0, 'renderer completes without console errors' + (errors.length ? ': ' + errors.join('; ') : ''));
     console.log('\nAll ' + checks + ' renderer checks passed. Screenshots: docs/previews');
     app.exit(0);

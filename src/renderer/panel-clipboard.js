@@ -255,6 +255,7 @@
     actions.className = 'section-actions';
 
     pauseBtn = document.createElement('button');
+    pauseBtn.id = 'clip-capture';
     pauseBtn.className = 'ghost-btn';
     pauseBtn.type = 'button';
     pauseBtn.textContent = 'Pause';
@@ -369,3 +370,11 @@
 
   return { mount, update, setPaused, relativeTime, focusSearch, closePreview };
 }));
+
+// Local, CSP-safe content bootstrap. The shell's script list is owned by the
+// transition session; no inline script or cross-lane HTML change is needed.
+if (typeof document !== 'undefined' && document.currentScript) {
+  const expandedPagesScript = document.createElement('script');
+  expandedPagesScript.src = new URL('expanded-pages.js', document.currentScript.src).href;
+  document.head.append(expandedPagesScript);
+}

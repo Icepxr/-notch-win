@@ -92,7 +92,7 @@ app.whenReady().then(async () => {
     check(timer.snapshot().running && timer.snapshot().reading > 2518, 'Start launches the selected real timer duration');
     check(await js(`document.querySelector('.timer-duration').hidden && getComputedStyle(document.getElementById('timer-clock')).fontSize === '62px'`), 'active timer replaces setup with the large clock');
     await snapshot('timer-running');
-    check(await js(`Math.round(card.getBoundingClientRect().height) === 230 && document.querySelector('[data-panel="timer"]').scrollHeight <= document.querySelector('[data-panel="timer"]').clientHeight + 1`), 'the active clock fits its shorter island');
+    check(await js(`Math.abs(card.getBoundingClientRect().height - ExpandedPages.requestFor('timer').requested) <= 1 && card.getBoundingClientRect().height <= 230 && document.querySelector('[data-panel="timer"]').scrollHeight <= document.querySelector('[data-panel="timer"]').clientHeight + 1`), 'the active clock fits its measured, bounded shorter island');
     await js(`document.getElementById('timer-action').click()`); await delay(40);
     check(timer.snapshot().paused, 'active timer pauses');
     await js(`document.getElementById('timer-reset').click()`); await delay(40);

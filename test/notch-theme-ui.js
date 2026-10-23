@@ -35,7 +35,7 @@ app.whenReady().then(async () => {
     await music('Teal cover',cover([0,170,170]));
     check(await js(`document.querySelector('.np').style.getPropertyValue('--music-accent')==='#0febeb'&&getComputedStyle(els.npFill).backgroundColor==='rgb(15, 235, 235)'`), 'source averaged tint reaches only the music meter');
     check(await js(`document.documentElement.style.getPropertyValue('--accent')==='#ffffff'&&!document.body.style.getPropertyValue('--artwork-rgb')&&!document.body.style.getPropertyValue('--artwork-url')&&!document.documentElement.style.getPropertyValue('--mood')`), 'artwork does not write any global theme or backdrop token');
-    check(await js(`getComputedStyle(els.npTime).color!==getComputedStyle(els.npFill).backgroundColor&&getComputedStyle(document.querySelector('.shell-content'),'::before').display==='none'&&getComputedStyle(document.querySelector('.shell-content'),'::after').boxShadow==='none'`), 'time labels, backdrop and shell edge remain neutral');
+    check(await js(`getComputedStyle(els.npTime).color===getComputedStyle(els.npFill).backgroundColor&&getComputedStyle(document.querySelector('.expanded-duration')).color===getComputedStyle(els.npTime).color&&getComputedStyle(document.querySelector('.shell-content'),'::before').display==='none'&&getComputedStyle(document.querySelector('.shell-content'),'::after').boxShadow==='none'`), 'readable time labels follow the music while the backdrop and shell edge remain neutral');
     for (const tab of ['send','media','clipboard','system','ai','timer','notes']) {
       await js(`setTab(${JSON.stringify(tab)});activityQueue.clear()`); await delay(550);
       check(await blackPixel() && await js(`getComputedStyle(card).backgroundColor==='rgb(0, 0, 0)'&&getComputedStyle(card).backgroundImage==='none'`), tab + ' keeps an opaque black shell while music plays');
@@ -50,6 +50,7 @@ app.whenReady().then(async () => {
     check(await js(`getComputedStyle(els.npFill).backgroundColor==='rgb(255, 255, 255)'`), 'missing artwork clears the previous song tint');
     await music('Blue cover',cover([0,0,220]));
     check(await js(`NotchAppearance.contrast(document.querySelector('.np').style.getPropertyValue('--music-accent'),'#000000')>=3`), 'a dark artwork hue stays visible on the interactive meter');
+    check(await js(`NotchAppearance.contrast(document.querySelector('[data-panel="media"]').style.getPropertyValue('--expanded-time-accent'),'#000000')>=4.5`), 'dark artwork also supplies a readable text accent without changing the meter or hover');
     await shot('black-theme-music');
     await js(`pinned=false;setState('peek')`); await delay(600);
     check(await blackPixel() && await js(`getComputedStyle(document.querySelector('.equalizer i')).backgroundColor!==getComputedStyle(card).backgroundColor`), 'compact music uses a tinted equalizer on an opaque black strip');

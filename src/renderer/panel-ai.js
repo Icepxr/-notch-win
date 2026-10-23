@@ -19,7 +19,7 @@ window.AiPanel = (() => {
   const container=root.querySelector('#ai-cards'),meta=root.querySelector('#ai-meta'),custom=root.querySelector('.ai-customize'),orderList=root.querySelector('#ai-card-order'),scrollElement=root.querySelector('.ai-scroll');
   let currentTiles=[],emptyState=true,trendDays=[],activityDays=[];
   root.querySelectorAll('[data-ai-provider]').forEach(button=>{if(button.dataset.aiProvider!=='all')button.prepend(ProviderMarks.markElement(button.dataset.aiProvider,document));});
-  function preferredHeight(){return custom.open?510:AiView.height(currentTiles,emptyState);}
+  function preferredHeight(){return window.ExpandedPages?.requestFor('ai')?.requested||(custom.open?510:AiView.height(currentTiles,emptyState));}
   function notifyLayout(){const height=preferredHeight();if(height!==lastHeight){lastHeight=height;panel.dispatchEvent(new CustomEvent('notch:layout',{bubbles:true}));}}
   function preferencesChanged(){save();paint();root.dispatchEvent(new CustomEvent('ai:view-change',{bubbles:true}));}
   function moveCard(id,to){const from=view.order.indexOf(id);if(from<0||to<0||to>=view.order.length)return;const order=[...view.order];order.splice(from,1);order.splice(to,0,id);view={...view,order};preferencesChanged();}
@@ -53,7 +53,7 @@ window.AiPanel = (() => {
   document.addEventListener('pointerdown',event=>{if(custom.open&&!custom.contains(event.target))closeEditor();});
   const refresh=root.querySelector('#ai-refresh');
   function setMessage(text){message=text;messageUntil=Date.now()+7000;meta.textContent=text;}
-  refresh.addEventListener('click',async()=>{refresh.disabled=true;refresh.classList.add('is-checking');try{const next=await notch.refreshAi();if(next)update(next);setMessage('Refresh requested');}catch{setMessage('Could not refresh. Try again.');}finally{refresh.classList.remove('is-checking');setTimeout(()=>{refresh.disabled=false;},10000);}});
+  refresh.addEventListener('click',async()=>{refresh.disabled=true;refresh.classList.add('is-checking');root.setAttribute('aria-busy','true');setMessage('Checking accounts and activity…');let failed=false;try{const next=await notch.refreshAi();if(!next)throw new Error('Missing account reply');update(next);setMessage('Refresh requested');}catch{failed=true;setMessage('Could not refresh. Try again.');}finally{refresh.classList.remove('is-checking');root.setAttribute('aria-busy','false');if(failed)refresh.disabled=false;else setTimeout(()=>{refresh.disabled=false;},10000);}});
   root.addEventListener('click',async event=>{
     if(event.target.closest('[data-ai-show-all]')){resetLayout();return;}
     const connect=event.target.closest('[data-ai-connect]');if(connect){if(connecting)return;connecting=true;connect.disabled=true;try{const result=await notch.connectClaude();setMessage(result?.ok?'Complete Claude sign-in in Terminal, then Refresh.':'Could not open sign-in. Run Claude Code in Terminal.');}catch{setMessage('Could not open sign-in. Run Claude Code in Terminal.');}finally{connecting=false;if(connect.isConnected)connect.disabled=false;}return;}
