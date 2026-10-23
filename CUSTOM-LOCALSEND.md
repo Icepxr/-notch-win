@@ -1,6 +1,15 @@
 # V-Notch 2.1.0 — local LocalSend addition
 
-This is a separate custom source checkout on `codex/localsend-transfer`. It is based on rainaku/V-Notch commit `b843d2340bacd94bab1b4ea6439fb29b91555f17`. Its original application, controls, windows, services and models match the `v2.1.0` release tag. The installed application at `E:/V-Notch` reports 2.1.0 and has not been replaced or modified.
+This is a separate custom source checkout on `codex/localsend-transfer`. It is based on rainaku/V-Notch commit `b843d2340bacd94bab1b4ea6439fb29b91555f17`. Its original application, controls, windows, services and models match the `v2.1.0` release tag. The original installation reported 2.1.0. During the user's authorized setup on 2026-10-23, this custom build was installed at `E:/V-Notch-Custom` and the old `E:/V-Notch` program folder was removed after the new app started successfully.
+
+## Current local installation
+
+- Open **V-Notch** on the Desktop or in the Start Menu. Both shortcuts point to `E:/V-Notch-Custom/V-Notch.exe`.
+- The existing startup preference remains enabled and now opens that custom executable when the user signs in to Windows.
+- All 66 published files were copied and SHA-256 verified. The running process path and successful startup log were checked.
+- The old Islet Desktop launcher was removed. Its source checkout, dependencies, other sessions' test processes and user data were retained; no separately installed Islet executable or startup registration was found.
+- Existing V-Notch settings remain in `%APPDATA%/V-Notch`. A pre-setup copy is `settings.before-localsend-setup-20261023-195311.json` in the same directory. Original shortcut/registration metadata is in the workspace's `.tmp/v-notch-setup-backup-20261023` folder.
+- `E:/V-Notch-Custom/localsend-install.json` records the installed source revision, executable hash, settings backup and completed setup state.
 
 ## What was added
 
@@ -12,7 +21,7 @@ The new send window follows `Windows/SpotlightPreferencesDialog.xaml`: the bundl
 
 ## Using it
 
-1. Run a custom build allowed by your Windows application policy. Close the official V-Notch instance first; upstream single-instance behavior is retained. The custom build uses the existing upstream settings/data location, so it is not a separate settings profile.
+1. Open the **V-Notch** Desktop shortcut. For a fresh installation elsewhere, run the complete custom build folder allowed by your Windows application policy and close any other V-Notch instance first. Upstream single-instance behavior is retained. The custom build uses the existing upstream settings/data location, so it is not a separate settings profile.
 2. Open LocalSend on the iPad, keep it in the foreground and connect both devices to the same local network. LocalSend does not need to be installed on the Windows PC for this addition.
 3. Add a file, folder or image to V-Notch's existing clipboard shelf. Right-click its public card (or select multiple eligible cards) and choose **Send via LocalSend…**.
 4. Select the receiving device and choose **Send files**. Accept the request on the iPad. If a PIN is required, enter the receiver's PIN and retry.
@@ -55,7 +64,7 @@ The upstream update system is retained. An official update can replace custom ch
 - 24 isolated core tests: protocol parsing/bounds, file selection, partial acceptance, error statuses, PIN encoding, permission denial/revocation, cancellation, and real loopback mutual-TLS upload with exact byte verification. A wrong certificate pin is rejected before metadata is sent.
 - 2 isolated WPF tests: loading/empty/selected/PIN/success/pending/cancelled states, preserved PIN during discovery updates, layout bounds at 420px, five visible port digits, original visual tokens, and an offscreen rendered preview using the actual new XAML and bundled fonts. No native application window is shown.
 - The application Release publish and the full test project compile. This is not a full application runtime verification.
-- **Full application tests are blocked on this machine**: Windows Application Control refuses to load the custom `V-Notch.dll`, error `0x800711C7` (Code Integrity event 3077). The resulting “No test matches” message is not a passing test result. No security policy, trust store or installed executable was changed. A full build allowed by the machine's signing/application policy is needed for integrated testing and use here.
+- **Full application tests remain blocked on this machine**: Windows Application Control refuses to load the custom `V-Notch.dll` in the test host, error `0x800711C7` (Code Integrity event 3077). The resulting “No test matches” message is not a passing test result. Separately, the user launched the published executable successfully, and setup subsequently started the same verified executable from `E:/V-Notch-Custom`; its process was responsive and startup logs showed module initialization. This confirms application startup, not complete UI/transfer coverage. No security policy or trust store was changed.
 - A physical iPad transfer has not been tested. The preview uses synthetic device/file data; loopback protocol tests do not prove Wi-Fi discovery or iPad compatibility on the user's network.
 
 The isolated suites compile only the new component sources; they do not load or launch the blocked V-Notch application. `Test-LocalSend.ps1` checks fresh TRX reports and actual passing test counts, including a guard against zero tests being reported as success.
@@ -64,4 +73,4 @@ The isolated suites compile only the new component sources; they do not load or 
 
 Only two existing production files change: two additive shelf-menu calls in `Controls/ClipboardTray.xaml.cs`, and one appended `LocalSend` feature enum member in `Services/NetworkPrivacy.cs`. The existing test project excludes the new nested test projects' generated sources. All other implementation lives in new `Controls/ClipboardTray.LocalSend.cs`, `Services/LocalSend/`, and `Windows/LocalSendWindow.*` files.
 
-Upstream Apache-2.0 `LICENSE` and third-party notices are retained. Changed existing files carry modification notices. Nothing has been pushed, merged, installed over the official app or migrated from the former Islet application.
+Upstream Apache-2.0 `LICENSE` and third-party notices are retained. Changed existing files carry modification notices. Nothing has been pushed or merged. The user authorized removal of both old application launchers/installations while retaining source and user data. Former Islet application data has not been migrated into V-Notch.
