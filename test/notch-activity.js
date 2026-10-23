@@ -33,6 +33,13 @@ queue.push({ id: 'volume', title: 'Volume 50', coalesceKey: 'hardware', replace:
 queue.push({ id: 'brightness', title: 'Brightness 60', coalesceKey: 'hardware', replace: true, priority: 70, expiresAt: time + 1700 });
 assert.equal(queue.pending.length, 1, 'system updates waiting behind important activities coalesce too');
 advance(2800); assert.equal(current, null, 'an old adjustment never reappears after a higher-priority activity');
+queue.push({ id: 'main', title: 'Main', priority: 200 });
+queue.push({ id: 'timer-complete', title: 'Time is up', priority: 100 });
+queue.push({ id: 'agent', title: 'Done', priority: 50 });
+queue.remove('timer-complete'); assert.equal(current.id, 'main'); assert.equal(queue.pending.length, 1, 'starting a new phase removes only its stale queued completion');
+queue.remove('main'); assert.equal(current.id, 'agent', 'removing the current completion keeps unrelated pending activities');
+queue.remove('missing'); assert.equal(current.id, 'agent');
+queue.remove('agent'); assert.equal(current, null); assert.equal(timers.size, 0);
 const swipe = new Swipe();
 assert.equal(swipe.wheel(10, 30, 1000), null, 'vertical scrolling cannot switch pages');
 assert.equal(swipe.wheel(25, 0, 1010), null);

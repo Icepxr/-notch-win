@@ -8,6 +8,49 @@ Source revision: `02a13224062342f289753733487f6da85db4e332`.
 
 Adapted files and concepts:
 
+- `UI/Settings/SettingsView.swift`, `NotchSettings.swift`,
+  `NotchSettingsTabRow.swift` and `SettingsCard.swift`: the 210px sidebar,
+  Layout/Content/Activity/Behavior routing, grouped card metrics, icon rows,
+  existing-module order/visibility and keyboard/search navigation. Adapted in
+  `settings-navigation.js`, `settings-source.css` and `notch-modules.js`.
+- `UI/Notch/NotchView.swift`, `NotchMusicView.swift`, `NotchSectionsView.swift`
+  and `Services/Notch/NotchSupport.swift`: page-first chrome, secondary-click
+  island commands, responsive shoulders, 344px player reading width,
+  56px artwork, 14/13px titles, time labels beside the timeline and complete
+  gallery rows. Adapted in `notch-source.css` and `renderer.js`.
+- `Services/Notch/NotchSupport.swift` (`capsuleRadius`, `capsulePath`) and
+  `UI/Notch/NotchView.swift`: circular compact capsule ends, 28px expanded
+  corners and retaining the floating silhouette on hover, adapted in the
+  renderer's persistent contour and spring frames.
+- `UI/Notch/NotchFilesView.swift`, `UI/Shelf/ShelfTilesView.swift`,
+  `NotchClipboardView.swift`, `NotchSystemView.swift`, `NotchTimerView.swift`,
+  `NotchScratchpadView.swift` and `NotchAgentsView.swift`: sideways file tiles,
+  tray empty state, clipboard search/copy feedback, system overview/details,
+  timer ruler/clock/actions, scratchpad insets and paired provider layout.
+  Adapted in `notch-source.css`, `renderer.js`, `panel-clipboard.js`,
+  `panel-system.js`, `panel-utilities.js`, `panel-ai.js` and `notch-geometry.js`.
+- `Core/NotchClipboardSizeStrings.swift`,
+  `Services/Clipboard/ClipboardHistoryService.swift` and `UI/Notch/NotchClipboardView.swift`:
+  pin order, clear-recent behavior, pointer/key dwell, lifted previews and exit
+  timing, adapted in `clipboard.js`, `panel-clipboard.js` and `notch-source.css`.
+- `Services/QuickTools/ScratchpadSupport.swift`, `ScratchpadService.swift`
+  and `UI/Notch/NotchScratchpadView.swift`: text size bounds, local find actions
+  and copy feedback, adapted in `notes-tools.js` and `panel-notes.js`.
+- `UI/Notch/NotchScrollEdgeFade.swift`: geometry-dependent 16px scroll fades,
+  adapted in `scroll-edges.js` and `notch-source.css`.
+- `UI/Notch/NotchTimerRuler.swift`, `NotchTimerView.swift`, `NotchComponents.swift`
+  and `Services/Notch/NotchTimerSupport.swift`: centered 14px ruler spacing,
+  relative pointer/scroll selection, bounded saved Focus configuration, captured
+  cycle settings, explicit phase transitions and 300ms numeric movement.
+  Adapted in `timer-tools.js`, `timer-ruler.js`, `timer-source.css`,
+  `panel-utilities.js` and `timer.js`; native HTML range/select controls provide
+  keyboard interaction and Windows accessibility.
+- `UI/Notch/NotchAgentsView.swift`, `NotchAgentComponents.swift`,
+  `NotchAgentStrip.swift` and `Services/Notch/NotchAgentSupport.swift`:
+  independent provider tiles, paired rows, card order/visibility, quota mode,
+  time-window ticks, pressure thresholds, chart inspection and compact readout,
+  adapted in `ai-source.css`, `ai-view.js`, `panel-ai.js` and `renderer.js`.
+
 - `Sources/Vorssaint/Services/Notch/NotchSupport.swift`: spring progress,
   per-axis growth/shrink parameters, overshoot bound, settling/frames.
 - `Sources/Vorssaint/Services/Notch/NotchGestureSupport.swift`: accumulated
@@ -16,6 +59,11 @@ Adapted files and concepts:
   rounding and timer/stopwatch/Pomodoro session behavior.
 - `Sources/Vorssaint/Services/Notch/NotchMusicSupport.swift`: artwork tint
   normalization and the 1.5-second playback metadata grace period.
+- `Sources/Vorssaint/Services/Notch/NotchMusicService.swift`: averaged one-pixel
+  sRGB artwork sampling, adapted with the tint normalization in
+  `artwork-palette.js` and `renderer.js`. Music timeline/equalizer scoping follows
+  `NotchMusicView.swift`; the Windows meter has a minimum contrast adaptation.
+  `NotchComponents.swift` and `NotchView.swift` inform the solid black surface.
 - `Sources/Vorssaint/UI/Notch/NotchSectionsView.swift`: module gallery navigation.
   The current `islet.css` and renderer use its 86px tile/8px row spacing,
   whole-row stepping and shortcut-label hierarchy. `NotchMusicView.swift` and
@@ -38,11 +86,16 @@ name, icons, logo, signing identity and update feed are not used as this app's b
 
 # Provider marks
 
-`src/renderer/provider-marks.js` carries Claude's mark, taken from
-[simple-icons](https://github.com/simple-icons/simple-icons), whose icon files
-are dedicated under CC0 1.0. The mark is a trademark of Anthropic and is used
-only to identify Anthropic's product.
+`src/renderer/assets/providers/` bundles original, unmodified SVG files from
+the [OpenAI logo package](https://cdn.openai.com/brand/OpenAI-Logos-2025.zip)
+and [Anthropic press kit](https://www.anthropic.com/press-kit), retrieved
+2026-10-23. The white OpenAI Blossom identifies the Codex integration; the
+Clay Claude Spark identifies Claude. These marks belong to OpenAI and
+Anthropic respectively and are not covered by Islet's GPL license.
 
-No OpenAI mark is included. simple-icons does not carry one, which is what
-happens when a brand asks to be left out, so Codex is shown with a mark of our
-own rather than a logo lifted from a brand page against that signal.
+They identify connected providers within Islet and do not imply endorsement
+or affiliation. See [OpenAI's design guidelines](https://openai.com/brand/)
+and the trademark guidelines in [Anthropic's legal center](https://www.anthropic.com/legal).
+Archive members and SHA-256 hashes are recorded in
+`src/renderer/assets/providers/README.md`. All marks load locally; no logo
+service or network request is used by the renderer.

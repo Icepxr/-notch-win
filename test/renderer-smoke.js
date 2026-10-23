@@ -8,6 +8,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 const geometry = require('../src/renderer/notch-geometry');
 const appearance = require('../src/renderer/notch-appearance');
+const modules = require('../src/renderer/notch-modules');
 const { NotchTimer } = require('../src/timer');
 
 const output = path.join(__dirname, '..', 'docs', 'previews');
@@ -47,6 +48,7 @@ let reservedHostWidth = geometry.hostSize.width;
 let rejectPreferences = false;
 let connectedClaude = 0;
 let openedSystemSettings = null;
+let stableHostViewport;
 function check(value, message) { assert.ok(value, message); checks++; console.log('  ok  ' + message); }
 async function settled() { await delay(780); }
 /**
@@ -103,8 +105,8 @@ async function pjsOrSkip(source) {
   return pjs(source);
 }
 
-async function cssColor(token) {
-  const value = await js(`getComputedStyle(document.documentElement).getPropertyValue(${JSON.stringify(token)}).trim()`);
+async function cssColor(token, selector = ":root") {
+  const value = await js(`getComputedStyle(document.querySelector(${JSON.stringify(selector)})).getPropertyValue(${JSON.stringify(token)}).trim()`);
   const rgb = value.match(/\d+/g);
   if (value.startsWith('#')) {
     const parts = value.slice(1).match(/../g).map((p) => parseInt(p, 16));
@@ -143,7 +145,10 @@ app.whenReady().then(async () => {
   ipcMain.handle('fixture:send', () => sendResult);
   ipcMain.handle('fixture:choose-files', () => { filePickerOpened++; return { added: 1, rejected: [] }; });
   ipcMain.handle('fixture:media', (_event, command) => { mediaCommands.push(command); return true; });
+  ipcMain.handle('fixture:clip-pick', () => true);
   ipcMain.handle('fixture:ai-refresh', () => null);
+  ipcMain.handle('fixture:context-menu', () => true);
+  ipcMain.handle('fixture:panel-open-module', (_event, tab) => { emit('navigate', tab); return true; });
   ipcMain.handle('fixture:claude-signin', () => { connectedClaude++; return { ok: true }; });
   ipcMain.handle('fixture:system-settings', (_event, page) => { openedSystemSettings = page; return true; });
   ipcMain.handle('fixture:timer', (_event, command) => {
@@ -152,7 +157,7 @@ app.whenReady().then(async () => {
   ipcMain.handle('fixture:note', (_event, value) => { fixtureNote = value; return true; });
   ipcMain.handle('fixture:preferences', (_event, value) => {
     if (rejectPreferences) return { ok: false, ...panelState() };
-    fixturePreferences = { ...fixturePreferences, ...value, ...appearance.normalize({ ...fixturePreferences, ...value }) };
+    fixturePreferences = { ...fixturePreferences, ...value, ...appearance.normalize({ ...fixturePreferences, ...value }), ...modules.normalize({ ...fixturePreferences, ...value }) };
     reservedHostWidth = Math.max(reservedHostWidth, geometry.hostFor(fixturePreferences).width);
     const zoom = fixturePreferences.notchScale / 100;
     win.setSize(Math.ceil(reservedHostWidth * zoom), Math.ceil(geometry.hostSize.height * zoom));
@@ -185,6 +190,7 @@ app.whenReady().then(async () => {
     await win.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'index.html'));
     await settled();
     let box = await layout();
+    stableHostViewport = box.viewport;
     check(box.width === 184 && box.height === 28, 'closed notch uses shared geometry');
     // With nothing playing, parked or running, the notch is meant to be
     // indistinguishable from the bezel.
@@ -253,7 +259,7 @@ app.whenReady().then(async () => {
     await settled();
     box = await layout();
     check(box.width === 520 && box.height === 350, 'file shelf opens at a compact content height');
-    check(box.viewport[0] === geometry.hostSize.width && box.viewport[1] === geometry.hostSize.height, 'Windows backing surface stays reserved for every state and spring overshoot');
+    check(box.viewport.every((value, i) => value === stableHostViewport[i]) && Math.abs(box.viewport[0] - geometry.hostSize.width) <= 1 && Math.abs(box.viewport[1] - geometry.hostSize.height) <= 1, 'Windows backing surface stays reserved for every state and spring overshoot (within one DIP of mixed-DPI rounding)');
     check(box.panelOverflow <= 1 && box.footerBottom < box.bottom, 'empty send panel fits without clipping');
     // The shelf clips its own overflow, so a caption can disappear inside it
     // while the panel around it still measures clean.
@@ -279,9 +285,8 @@ app.whenReady().then(async () => {
       'every module icon carries its own saturated hue (lowest '
       + Math.min(...saturation).toFixed(2) + ')');
     await snapshot('explore');
-    check(await js(`Math.round(document.querySelector('.tab').getBoundingClientRect().height) === 86 && document.querySelectorAll('#gallery-rail button').length === 2`), 'source-sized gallery tiles have whole-row pagination');
-    await js(`document.querySelectorAll('#gallery-rail button')[1].click()`); await delay(450);
-    check(await js(`Math.abs(els.tabs.scrollTop - 94) <= 1`), 'gallery steps by one whole row without cutting tiles');
+    check(await js(`Math.round(document.querySelector('.tab').getBoundingClientRect().height) === 86 && getComputedStyle(els.tabs).gridTemplateColumns.split(' ').length === 4`), 'source-sized gallery places existing modules in four columns');
+    check(await js(`els.tabs.scrollHeight <= els.tabs.clientHeight + 1`), 'both complete gallery rows remain visible without cutting tiles');
     await snapshot('explore-more');
     await js(`els.exploreSearch.value = 'Timer'; els.exploreSearch.dispatchEvent(new Event('input'));`);
     check(await js(`els.tabs.querySelectorAll('.tab:not([hidden])').length === 1`), 'module gallery search filters available destinations');
@@ -344,7 +349,7 @@ app.whenReady().then(async () => {
     check(await js(`document.activeElement.id === 'tab-send'`), 'gallery keyboard navigation moves focus to the first destination');
     await js(`document.activeElement.click()`);
     await js(`setTab('send'); document.getElementById('module-next').click()`); await settled();
-    check((await layout()).activeTab === 'media' && (await layout()).height === 270, 'module buttons switch to the compact source-like player');
+    check((await layout()).activeTab === 'media' && (await layout()).height === 260, 'module buttons switch to the fuller music player');
     await js(`card.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true, bubbles: true }))`); await settled();
     check((await layout()).activeTab === 'send', 'Alt+Arrow is an accessible alternative to module swipes');
     await js(`document.querySelector('.notch-header').dispatchEvent(new WheelEvent('wheel', { deltaX: 65, deltaY: 0, bubbles: true, cancelable: true }))`); await settled();
@@ -403,12 +408,12 @@ app.whenReady().then(async () => {
     await js(`document.querySelector('[data-ai-provider="claude"]').click()`);
     check(await js(`document.querySelector('[data-card="tokens"] .ai-total').textContent.includes('5K') && !document.querySelector('[data-card="limits"]').textContent.includes('73%')`), 'provider filter changes tokens and does not invent Claude quota');
     await js(`document.querySelector('[data-ai-provider="all"]').click(); document.getElementById('ai-period').value = '30'; document.getElementById('ai-period').dispatchEvent(new Event('change'))`);
-    check(await js(`document.querySelectorAll('.ai-trend > div').length === 30`), '30-day period expands daily token history');
+    check(await js(`document.querySelectorAll('.ai-trend > [data-day]').length === 30`), '30-day period expands daily token history');
     await js(`document.querySelector('.ai-customize summary').click(); document.querySelector('[data-ai-card="activity"]').click()`);
     check(await js(`!document.querySelector('[data-card="activity"]')`), 'AI cards can be customized without hiding the controls');
     await js(`document.querySelector('[data-ai-card="activity"]').click(); document.querySelector('.ai-customize summary').click()`);
-    await js(`document.querySelector('[data-panel="ai"]').scrollTop = 400`); await delay(80); await snapshot('ai-detail');
-    check(await js(`document.querySelector('[data-panel="ai"]').scrollTop > 0 && document.querySelector('[data-panel="ai"]').scrollWidth <= document.querySelector('[data-panel="ai"]').clientWidth`), 'AI details scroll inside the notch without horizontal overflow');
+    await js(`document.querySelector('.ai-scroll').scrollTop = 400`); await delay(80); await snapshot('ai-detail');
+    check(await js(`document.querySelector('.ai-scroll').scrollTop > 0 && document.querySelector('.ai-scroll').scrollWidth <= document.querySelector('.ai-scroll').clientWidth`), 'AI details scroll inside the notch without horizontal overflow');
     check(await js(`document.body.classList.contains('ai-waiting')`), 'waiting AI sessions keep their compact indicator');
     await js(`setTab('clipboard'); const search = document.querySelector('[data-panel="clipboard"] .clip-search'); search.value = 'missing'; search.dispatchEvent(new Event('input'));`);
     check(await js(`document.querySelectorAll('.clip-row').length === 0 && document.querySelector('.clip-list').textContent.includes('No matching')`), 'clipboard search filters the local preview list');
@@ -454,7 +459,7 @@ app.whenReady().then(async () => {
     })`);
     check(musicFrames.frames.filter((f) => f.at > 130).every((f) => f.outgoing < .01), 'large music artwork exits before the shell finishes collapsing');
     check(musicFrames.changes === 0 && musicFrames.art, 'media polling never reloads compact artwork during collapse');
-    check(musicFrames.morphs === 1 && musicFrames.frames.every((f) => f.viewport === geometry.hostSize.width), 'repeated media updates do not restart the spring or resize the native surface');
+    check(musicFrames.morphs === 1 && musicFrames.frames.every((f) => f.viewport === stableHostViewport[0]), 'repeated media updates do not restart the spring or resize the native surface');
     check(Math.max(...musicFrames.frames.map((f) => f.layerWidth)) - Math.min(...musicFrames.frames.map((f) => f.layerWidth)) < 1, 'music content keeps a stable layout throughout shell motion');
     const deltas = musicFrames.frames.map((f) => f.delta).sort((a, b) => a - b);
     console.log('  music collapse frame timing (isolated renderer): p95=' + deltas[Math.floor(deltas.length * .95)].toFixed(1) + 'ms, max=' + deltas.at(-1).toFixed(1) + 'ms');
@@ -465,7 +470,7 @@ app.whenReady().then(async () => {
     check(box.width === 360 && box.height === 50, 'media peek resizes without clipping');
     await snapshot('peek-media');
     await js(`els.peekToggle.click()`); await delay(80);
-    check((await layout()).state.includes('state-peek') && mediaCommands.some((command) => command.action === 'toggle'), 'compact play/pause controls do not expand the notch');
+    check((await layout()).state.includes('state-peek') && mediaCommands.some((command) => ['play','pause'].includes(command.action)), 'compact play/pause controls do not expand the notch');
     await js(`collapseNotch()`); await settled();
     await js(`els.closedTrigger.click()`); await settled();
     check((await layout()).activeTab === 'media', 'clicking the compact album art opens Now Playing directly');
@@ -478,7 +483,7 @@ app.whenReady().then(async () => {
     await js(`setState('closed'); setTimeout(() => setState('open'), 35); setTimeout(() => setState('peek'), 75); setTimeout(() => setState('closed'), 110)`);
     await delay(900);
     box = await layout();
-    check(box.width === 184 && box.height === 28 && box.viewport[0] === geometry.hostSize.width, 'rapid morph reversals settle without reallocating the Windows backing surface');
+    check(box.width === 184 && box.height === 28 && box.viewport[0] === stableHostViewport[0], 'rapid morph reversals settle without reallocating the Windows backing surface');
 
     await js(`pinned = false; openedByClick = false; window.demoDrag = new DataTransfer(); window.demoDrag.items.add(new File(['demo'], 'Notes.pdf')); document.dispatchEvent(new DragEvent('dragenter', { dataTransfer: window.demoDrag }));`); await settled();
     check(await js(`document.body.classList.contains('dragging') && getComputedStyle(els.shelf, '::after').content.includes('Release to park')`), 'dragging files shows a clear shelf drop intention');
@@ -503,7 +508,7 @@ app.whenReady().then(async () => {
     await delay(2000);
     await settled();
     box = await layout();
-    check(box.state.includes('state-closed') && box.width === 184 && box.viewport[0] === geometry.hostSize.width, 'the song preview returns to compact mode automatically');
+    check(box.state.includes('state-closed') && box.width === 184 && box.viewport[0] === stableHostViewport[0], 'the song preview returns to compact mode automatically');
     await snapshot('closed-media');
 
     await js(`openNotch('timer')`); await settled();
@@ -531,7 +536,7 @@ app.whenReady().then(async () => {
       'the Settings tile opens the control panel instead of taking over the notch');
 
     panelWin = new BrowserWindow({
-      width: 560, height: 660, show: false, frame: false,
+      width: 960, height: 760, show: false, frame: false,
       webPreferences: { preload: path.join(__dirname, 'fixtures', 'panel-preload.js'),
         offscreen: true, contextIsolation: true, nodeIntegration: false, backgroundThrottling: false },
     });
@@ -542,6 +547,7 @@ app.whenReady().then(async () => {
     await panelWin.loadFile(path.join(__dirname, '..', 'src', 'renderer', 'settings.html'));
     await settled();
     await panelSnapshot('settings');
+    await pjs(`SettingsNavigation.showPage('displays')`);
 
     check(await pjs(`!/[฀-๿]/.test(document.body.innerText)`), 'the control panel uses English interface text');
     check(await pjs(`document.querySelectorAll('[data-preference="displayId"] option').length === 2
@@ -577,49 +583,15 @@ app.whenReady().then(async () => {
     await pjs(`document.querySelector('#group-displays').scrollIntoView({ block: 'start' })`);
     await delay(160);
     await panelSnapshot('settings-displays');
+    await pjs(`SettingsNavigation.showPage('island','layout')`);
 
-    // --- glass ---------------------------------------------------------------
-    check(await js(`document.body.dataset.glass === 'high'`), 'the notch starts on the full glass treatment');
-    const lit = await js(`(() => {
-      const surface = getComputedStyle(document.querySelector('.panel.is-active .card') || document.querySelector('.shelf'));
-      return { blur: surface.backdropFilter, card: getComputedStyle(card).backgroundImage };
-    })()`);
-    check(lit.blur.includes('blur') && lit.card.includes('gradient'),
-      'open glass gives inner surfaces a real backdrop blur over a lit card');
-
-    await pjs(`document.querySelector('.segmented[data-preference="glass"] button[data-value="off"]').click()`);
-    await delay(200);
-    check(fixturePreferences.glass === 'off' && await js(`document.body.dataset.glass === 'off'
-      && getComputedStyle(document.querySelector('.shelf')).backdropFilter === 'none'`),
-      'turning glass off in the control panel reaches the notch and drops the blur');
-    // Three levels the eye can separate, measured off the rendered pixels.
-    // A control that changes a CSS value nobody can see is a control that
-    // does not work, which is exactly how this one shipped the first time.
-    const drawn = {};
-    for (const level of ['high', 'medium', 'off']) {
-      await pjs(`document.querySelector('.segmented[data-preference="glass"] button[data-value="${level}"]').click()`);
-      await delay(320);
-      drawn[level] = await meanLuminanceOf('#card');
-    }
-    console.log('      glass levels, mean panel luminance: '
-      + Object.entries(drawn).map(([k, v]) => k + ' ' + v.toFixed(4)).join(', '));
-    const spread = [['high', 'medium'], ['medium', 'off'], ['high', 'off']]
-      .map(([a, b]) => Math.abs(drawn[a] - drawn[b]));
-    check(Math.min(...spread) > 0.0015,
-      'each glass level draws a visibly different surface (closest pair differs by '
-      + Math.min(...spread).toFixed(4) + ')');
-
-    await pjs(`document.querySelector('.segmented[data-preference="glass"] button[data-value="high"]').click()`);
-    await delay(200);
-    // Glass is at its most visible with a cover behind it, which is the
-    // state it was designed around.
-    emit('now-playing', { type: 'state', session: true, title: 'A Quiet Morning', artist: 'Local artist',
-      app: 'Spotify.exe', status: 'Playing', duration: 240, position: 87, thumb: fixtureArt,
-      canPause: true, canNext: true, canPrev: true, canSeek: true, sources: ['Spotify.exe'] });
+    // Black is invariant, including old saved glass/color preferences.
+    check(await js(`document.body.dataset.glass==='off'&&getComputedStyle(card).backgroundColor==='rgb(0, 0, 0)'&&getComputedStyle(card).backgroundImage==='none'`), 'the notch stays opaque black with legacy glass preferences');
+    check(await pjs(`!document.querySelector('input[type="color"],[data-preset],[data-preference="glass"]')`), 'Settings offers the fixed black theme without palette or glass controls');
+    emit('now-playing', {type:'state',session:true,title:'A Quiet Morning',artist:'Local artist',app:'Spotify.exe',status:'Playing',duration:240,position:87,thumb:fixtureArt,canPause:true,canNext:true,canPrev:true,canSeek:true,sources:['Spotify.exe']});
     await js(`setTab('media')`); await settled();
-    check(await js(`getComputedStyle(document.querySelector('.shell-content'), '::before').backgroundImage.includes('url("data:image')`),
-      'a playing cover becomes the light behind the glass');
-    await snapshot('glass');
+    check(await js(`getComputedStyle(document.querySelector('.shell-content'),'::before').display==='none'&&getComputedStyle(document.querySelector('.shell-content'),'::after').boxShadow==='none'`), 'artwork adds neither a shell bloom nor a colored rim');
+    await snapshot('black-music');
 
     // Worst case for legibility: the brightest possible cover blooming behind
     // the panel. Anything that passes here passes on a dark album too.
@@ -631,35 +603,25 @@ app.whenReady().then(async () => {
     console.log('      contrast over a white cover: '
       + Object.entries(measured).map(([k, v]) => k + ' ' + v + ':1').join(', '));
     const worst = Math.min(...Object.values(measured).filter((v) => v !== null));
-    check(worst >= 4.5, 'every label stays above 4.5:1 with the brightest cover behind the glass (worst ' + worst + ':1)');
+    check(worst >= 4.5, 'every music label stays above 4.5:1 over the fixed black base (worst ' + worst + ':1)');
 
-    // --- colour that follows the music ---------------------------------------
+    // The source artwork average colors music meters only.
     const neutral = await cssColor('--accent');
-    // A cover with one unmistakable hue, so the expected answer is knowable.
-    const teal = 'data:image/png;base64,' + solidCover([0, 170, 170]).toString('base64');
-    emit('now-playing', { type: 'state', session: true, title: 'Teal', artist: 'Local artist',
-      app: 'Spotify.exe', status: 'Playing', duration: 200, position: 10, thumb: teal,
-      canPause: true, canNext: true, canPrev: true, canSeek: true, sources: ['Spotify.exe'] });
+    const teal='data:image/png;base64,'+solidCover([0,170,170]).toString('base64');
+    emit('now-playing',{type:'state',session:true,title:'Teal',artist:'Local artist',app:'Spotify.exe',status:'Playing',duration:200,position:10,thumb:teal,canPause:true,canNext:true,canPrev:true,canSeek:true,sources:['Spotify.exe']});
     await settled(); await settled();
-    const dressed = await cssColor('--accent');
-    check(dressed !== neutral && await js(`document.body.classList.contains('is-dressed-by-music')`),
-      'a playing cover lends the notch its colour');
-    const [r, g, b] = dressed.split(',').map(Number);
-    check(g > r + 40 && b > r + 40 && Math.abs(g - b) < 60,
-      'the borrowed accent is the hue of the cover, not an average of it (' + dressed + ')');
-    check(await contrastOf('#np-sub') >= 4.5, 'secondary text survives the borrowed palette');
+    const musicColor=await cssColor('--music-accent','.np');
+    check(musicColor!==neutral&&await cssColor('--accent')===neutral&&await cssColor('--surface-open')==='0,0,0', 'cover tint changes music meters while the shell and global accent remain fixed');
+    const [r,g,b]=musicColor.split(',').map(Number);
+    check(g>r+40&&b>r+40&&Math.abs(g-b)<60, 'source averaging produces the cover hue on the music meter');
+    check(await contrastOf('#np-sub')>=4.5,'neutral music labels remain readable');
     await snapshot('music-colour');
-
-    // Handing the colour back has to work, or the notch keeps the last album
-    // it saw forever.
-    emit('now-playing', { type: 'state', session: false });
-    await settled(); await settled();
-    check(await cssColor('--accent') === neutral && !await js(`document.body.classList.contains('is-dressed-by-music')`),
-      'the user palette returns when the music stops');
-    emit('now-playing', { type: 'state', session: true, title: 'A Quiet Morning', artist: 'Local artist',
-      app: 'Spotify.exe', status: 'Playing', duration: 240, position: 87, thumb: fixtureArt,
-      canPause: true, canNext: true, canPrev: true, canSeek: true, sources: ['Spotify.exe'] });
-    await settled();
+    await js(`setTab('ai')`);await settled();
+    check(await cssColor('--accent')===neutral&&await js(`getComputedStyle(card).backgroundColor==='rgb(0, 0, 0)'`),'switching modules does not inherit music tint');
+    emit('now-playing',{type:'state',session:false});await settled();
+    check(await cssColor('--music-accent','.np')===neutral&&!await js(`document.querySelector('.np').classList.contains('music-tinted')`),'ending music clears the scoped tint to white');
+    emit('now-playing',{type:'state',session:true,title:'A Quiet Morning',artist:'Local artist',app:'Spotify.exe',status:'Playing',duration:240,position:87,thumb:fixtureArt,canPause:true,canNext:true,canPrev:true,canSeek:true,sources:['Spotify.exe']});
+    await js(`setTab('media')`);await settled();
 
     await pjs(`document.querySelector('.segmented[data-preference="silhouette"] button[data-value="capsule"]').click()`);
     await settled();
@@ -679,7 +641,7 @@ app.whenReady().then(async () => {
 
     // Appearance edits cross the same IPC boundary as the real Settings window.
     await js(`openNotch('media')`); await settled();
-    await pjs(`document.querySelector('.sheet').scrollTop = 0`);
+    await pjs(`SettingsNavigation.showPage('island','layout'); document.querySelector('.sheet').scrollTop = 0`);
     await pjs(`{ const input = document.querySelector('#expanded-width'); for (const width of [552,576,600,624,640]) { input.value = width; input.dispatchEvent(new Event('input')); } }`);
     check(await pjs(`document.querySelector('#expanded-width-value').textContent === '640 px' && document.querySelector('#preview-caption').textContent.includes('640 px')`), 'sliders update their value and live preview immediately');
     check(fixturePreferences.expandedWidth === 520, 'a slider drag batches persistence instead of resizing the HWND on every input');
@@ -699,27 +661,23 @@ app.whenReady().then(async () => {
     await pjs(`{ const input = document.querySelector('#notch-scale'); input.value = 85; input.dispatchEvent(new Event('change')); }`);
     await settled();
     check(win.webContents.getZoomFactor() === .85 && await js(`Math.abs(card.getBoundingClientRect().x + card.getBoundingClientRect().width / 2 - innerWidth / 2) < 1`), 'the smallest overall size remains centered');
-    await pjs(`{ const input = document.querySelector('#notch-scale'); input.value = 100; input.dispatchEvent(new Event('change')); } document.querySelector('[data-preset="2"]').click();`);
+    await pjs(`{ const input = document.querySelector('#notch-scale'); input.value = 100; input.dispatchEvent(new Event('change')); } `);
     await js(`openNotch('media')`); await settled();
-    check(await cssColor('--surface-open') === '48,33,62' && await cssColor('--accent') === '204,180,255',
-      'a named palette changes the real notch surface and accent');
+    await js(`applyPreferences({...preferences,surfaceTint:'#30213e',accentColor:'#ccb4ff',glass:'high'})`); await settled();
+    check(await cssColor('--surface-open')==='0,0,0'&&await cssColor('--accent')==='255,255,255', 'legacy named palettes are normalized to the fixed black theme');
     await snapshot('appearance-music');
     await pjs(`document.querySelector('[data-preview="resting"]').click()`); await delay(450);
     check(await pjs(`document.querySelector('#appearance-preview').dataset.expanded === 'false' && document.querySelector('[data-preview="resting"]').getAttribute('aria-pressed') === 'true'`), 'the preview can morph independently between resting and expanded states');
     await panelSnapshot('appearance-studio');
-    await pjs(`{ const a = document.querySelector('#surface-tint'); a.value = '#ffffff'; a.dispatchEvent(new Event('input')); const b = document.querySelector('#accent-color'); b.value = '#000000'; b.dispatchEvent(new Event('change')); }`);
-    await settled();
-    check(await js(`{ const c = NotchAppearance.colors(preferences); NotchAppearance.contrast(c.accent, c.raised) >= 4.5 }`), 'custom white surfaces and black accents adapt to readable dark-theme colors');
-    const customContrast = await contrastOf('#np-sub');
-    check(customContrast >= 4.5, 'custom surface keeps real rendered music labels readable (' + customContrast + ':1)');
+    check(await contrastOf('#np-sub')>=4.5,'fixed-theme music labels remain readable');
     rejectPreferences = true;
-    await pjs(`document.querySelector('[data-preset="1"]').click()`); await delay(180);
-    check(await pjs(`document.querySelector('#status').textContent.includes('Cannot save') && document.querySelector('#surface-tint').value === '#ffffff'`), 'failed saves restore stored appearance and show an error');
+    await pjs(`{const input=document.querySelector("#expanded-width");input.value=616;input.dispatchEvent(new Event("change"));}`); await delay(180);
+    check(await pjs(`document.querySelector('#status').textContent.includes('Cannot save') && document.querySelector('#expanded-width').value === '480'`), 'failed saves restore stored appearance and show an error');
     rejectPreferences = false;
     await pjs(`document.querySelector('#reset-appearance').click()`); await settled();
-    check(Object.keys(appearance.defaults).every(key => fixturePreferences[key] === appearance.defaults[key]), 'Reset appearance restores every size and color without changing behavior preferences');
+    check(Object.keys(appearance.defaults).every(key => fixturePreferences[key] === appearance.defaults[key]), 'Reset size restores dimensions without changing behavior preferences');
     await pjs(`document.querySelector('[data-preview="expanded"]').click(); document.querySelector('#group-color').scrollIntoView({ block: 'start' });`); await delay(450);
-    await panelSnapshot('appearance-colors');
+    await panelSnapshot('appearance-black-theme');
 
     const claudeNow = Date.now();
     emit('ai-dashboard', { updatedAt: claudeNow, buckets: [], providers: ['claude'], sessions: [{ provider: 'claude', sessionId: 'live', name: 'Local project', status: 'busy', statusAt: claudeNow, startedAt: claudeNow, inferred: false }], limits: { claude: { source: 'account', plan: 'Claude', observedAt: claudeNow, windows: [{ used: 26, minutes: 300, resetsAt: claudeNow + 3600000 }, { used: 40, minutes: 10080, scope: 'Opus', resetsAt: claudeNow + 86400000 }] } }, claudeAccountStatus: 'ready' });

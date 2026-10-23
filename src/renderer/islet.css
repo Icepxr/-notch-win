@@ -1,10 +1,10 @@
 /* Vorssaint-inspired desktop notch. Source dimensions: 56px artwork,
    86px gallery tiles, 8px row gaps. Islet keeps its own name and symbols. */
 :root {
-  --surface-rest: #050506;
-  --surface-open: #080809;
-  --surface-sheen: #0e0e0f;
-  --surface-raised: #151516;
+  --surface-rest: #000000;
+  --surface-open: #000000;
+  --surface-sheen: #000000;
+  --surface-raised: #181818;
   --text-primary: #f3f3f5;
   --text-secondary: #b2b2b8;
   --text-muted: #9c9ca5;
@@ -12,7 +12,7 @@
   --ink: var(--text-primary);
   --dim: var(--text-secondary);
   --faint: var(--text-muted);
-  --accent: #aac4ef;
+  --accent: #ffffff;
   --motion-enter: 220ms;
   --motion-exit: 140ms;
 }
@@ -25,74 +25,14 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
   outline: 2px solid #bcd3ff; outline-offset: -2px;
 }
 body.state-open #card { background: var(--surface-open); box-shadow: 0 16px 32px -12px #000c; }
-body.state-open:not([data-glass="off"]) #card {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, var(--islet-lens, .03)), rgba(255, 255, 255, 0) 62%),
-    linear-gradient(180deg, var(--surface-sheen), var(--surface-open) 78%);
-}
-body.state-closed #card, body.state-peek #card { background: var(--surface-rest); }
+body.state-closed #card, body.state-peek #card { background: #000000; }
 button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus-visible { outline-color: var(--accent); }
-body.state-open .layer-open::before { display: none; }
-body.state-open:not([data-glass="off"]) .layer-open::before { display: none; }
-/* The sweep rides the gradient across a fixed-size box instead of moving the
-   box itself: a translated overlay widens .layer-open's scroll area, which
-   pushes real content around at narrow widths. */
-body.state-open[data-glass="high"] .layer-open::before {
-  display: block;
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  background: linear-gradient(104deg, transparent 42%, #ffffff14 50%, transparent 58%);
-  background-size: 300% 100%;
-  transform: none;
-  animation: islet-sweep 820ms cubic-bezier(.24, .7, .3, 1) 90ms 1 both;
+.shell-content::before,.layer-open::before { display: none; }
+.shell-content::after { box-shadow: none; }
+body.state-open :is(.card,.shelf,.device,.ai-card,.clip-list,.disk-list,.scratchpad) {
+  background: #ffffff08; border-color: var(--edge-soft); box-shadow: none; backdrop-filter: none;
 }
-@keyframes islet-sweep {
-  from { background-position: 150% 0; }
-  to { background-position: -50% 0; }
-}
-@media (prefers-reduced-motion: reduce) {
-  body.state-open[data-glass="high"] .layer-open::before { animation: none; background: none; }
-}
-body.state-open.has-media:not([data-glass="off"]) .shell-content::before {
-  opacity: var(--islet-bloom, .2); filter: blur(40px) saturate(120%) brightness(.45);
-}
-body.state-open:not([data-tab="media"]) .shell-content::before { opacity: calc(var(--islet-bloom, .2) * .3); }
-body.state-open .shell-content::after {
-  box-shadow: inset 1px 0 #ffffff06, inset -1px 0 #ffffff06, inset 0 -1px var(--islet-rim, #ffffff12);
-}
-/* Three glass levels have to be three things a person can tell apart at a
-   glance, or the control is a lie. Blur alone does not do it: there is very
-   little behind these surfaces to blur, so 8px and 12px look identical. What
-   separates them is how much light and colour the panel carries — bloom
-   strength, surface translucency and saturation — with blur along for the
-   ride. Solid is genuinely opaque, not a thin sheet. */
-body[data-glass="high"] {
-  --islet-blur: 18px; --islet-sat: 155%; --islet-surface: #ffffff1a; --islet-lens: .115;
-  --islet-surface-lift: #ffffff24; --islet-bloom: .4; --islet-rim: #ffffff26;
-}
-body[data-glass="medium"] {
-  --islet-blur: 9px; --islet-sat: 112%; --islet-surface: #ffffff09; --islet-lens: .012;
-  --islet-surface-lift: #ffffff0e; --islet-bloom: .1; --islet-rim: #ffffff14;
-}
-body[data-glass="off"] {
-  --islet-surface: #16161b; --islet-surface-lift: #1c1c22; --islet-bloom: 0; --islet-rim: #ffffff10;
-}
-
-body.state-open :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
-  background: var(--islet-surface); border-color: var(--edge-soft); box-shadow: none; backdrop-filter: none;
-}
-body.state-open :is(.ai-card, .clip-list, .scratchpad) { background: var(--islet-surface-lift); }
-body.state-open:not([data-glass="off"]):not(.is-morphing) :is(.card, .shelf, .device, .ai-card, .clip-list, .disk-list, .scratchpad) {
-  backdrop-filter: blur(var(--islet-blur)) saturate(var(--islet-sat));
-}
-/* Only the top level gets the lit top lip; it is the cheapest cue that the
-   surface is glass rather than paint. */
-body.state-open[data-glass="high"] :is(.card, .shelf, .device, .ai-card, .clip-list, .scratchpad) {
-  box-shadow: inset 0 1px 0 #ffffff1a;
-}
-body.is-morphing .shell-content::before { visibility: hidden; }
+body.state-open :is(.ai-card,.clip-list,.scratchpad) { background: #ffffff0b; }
 .layer-open, body[data-tab="ai"] .layer-open { height: var(--page-height, 350px); padding: 14px 22px 12px; gap: 10px; }
 .notch-header { position: relative; flex: 0 0 26px; gap: 9px; }
 .notch-heading { font-size: 12px; font-weight: 550; color: #dedee3; letter-spacing: -.2px; }
@@ -140,7 +80,7 @@ body.is-exploring #gallery-rail { position: absolute; display: flex; flex-direct
 
 /* Music follows the reference: cover/title row, full-width timeline, transport. */
 [data-panel="media"] { justify-content: center; gap: 0; }
-body.state-open:not([data-glass="off"]) .np, .np { background: none; border: 0; box-shadow: none; padding: 3px 7px 0; gap: 14px; }
+.np { background: none; border: 0; box-shadow: none; padding: 3px 7px 0; gap: 14px; }
 .np { grid-template-columns: 56px minmax(0, 1fr); }
 .np .art-lg { width: 56px; height: 56px; border-radius: 11px; box-shadow: 0 2px 12px #0006; }
 .np-text .marquee-box { font-size: 16px; font-weight: 550; letter-spacing: -.25px; }
@@ -168,13 +108,13 @@ body.state-open:not([data-glass="off"]) .np, .np { background: none; border: 0; 
 .section-actions button { min-height: 24px; border-radius: 6px; padding: 4px 8px; font-size: 10px; background: #ffffff0b; color: #d0d0d8; }
 .section-actions button:hover { background: #ffffff18; }
 .devices { gap: 7px; }
-.device, body.state-open:not([data-glass="off"]) .device { border-radius: 13px; background: var(--islet-surface, #ffffff08); border: 1px solid #ffffff08; min-height: 51px; transition: background 140ms, border-color 140ms, transform 180ms; }
+.device { border-radius: 13px; background: var(--islet-surface, #ffffff08); border: 1px solid #ffffff08; min-height: 51px; transition: background 140ms, border-color 140ms, transform 180ms; }
 .device .alias { font-size: 12px; font-weight: 500; }
 .device .addr { font-size: 10px; color: #b1b1bb; }
 body.dragging .shelf { border-color: #b3d3ff; background: #9fc7ff12 !important; transform: translate(var(--drop-x,0), var(--drop-y,0)); }
 body.dragging .shelf::after { content: 'Release to park'; position: absolute; inset: 0; display: grid; place-items: center; border-radius: inherit; background: #111a28ec; color: #e1ecff; font-size: 16px; font-weight: 500; pointer-events: none; }
 body.aiming-device .shelf::after { content: 'Release on the device to send'; font-size: 13px; color: #b7c8df; }
-.device.drop-target, body.state-open:not([data-glass="off"]) .device.drop-target { background: #a9d9bf20; border-color: #b1e2ca; transform: scale(1.025); }
+.device.drop-target { background: #a9d9bf20; border-color: #b1e2ca; transform: scale(1.025); }
 .device.drop-target .device-send { transform: translateX(3px); color: #c8f0dc; }
 body.drop-complete .shelf { animation: parked 600ms ease both; }
 @keyframes parked { 30% { border-color: #aad6bb; box-shadow: 0 0 0 3px #aad6bb18; } }
@@ -270,70 +210,6 @@ body.notice-passive .activity-inline > svg { display: none; }
   .device, .shelf, .layer-notice { transition: none !important; }
   #closed-progress { animation: none !important; }
   #gallery-rail, .tabs { scroll-behavior: auto; }
-}
-
-/* --- colour that follows the music ----------------------------------------
-
-   The notch itself stays the black it was. Washing the whole surface in the
-   album's colour made it look like a different app every track, and a notch
-   is supposed to read as part of the bezel. So the mood colour goes where
-   colour belongs on a dark surface: the linework, the artwork's aura, and
-   the playback readout. Everything else stays black.
-
-   Registering the colour tokens is what lets one album hand over to the next
-   as a fade instead of a jump. --mood is the album's colour after
-   NotchAppearance.colors() has held it to the readability floor. */
-
-@property --accent { syntax: '<color>'; inherits: true; initial-value: #aac4ef; }
-@property --mood { syntax: '<color>'; inherits: true; initial-value: #aac4ef; }
-
-:root {
-  transition:
-    --accent 620ms cubic-bezier(.4, 0, .2, 1),
-    --mood 620ms cubic-bezier(.4, 0, .2, 1);
-}
-
-/* The aura. box-shadow rather than a pseudo-element because .art clips its
-   own overflow to keep the cover's corners, and a glow has to escape that.
-   It breathes, slowly, so the panel is never completely still. */
-body.is-dressed-by-music .np .art-lg {
-  box-shadow:
-    0 6px 20px -4px color-mix(in srgb, var(--mood) 48%, transparent),
-    0 0 26px -6px color-mix(in srgb, var(--mood) 34%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--mood) 30%, transparent);
-  animation: aura-breathe 5.6s ease-in-out infinite;
-}
-
-@keyframes aura-breathe {
-  50% {
-    box-shadow:
-      0 8px 28px -4px color-mix(in srgb, var(--mood) 64%, transparent),
-      0 0 38px -6px color-mix(in srgb, var(--mood) 46%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--mood) 38%, transparent);
-  }
-}
-
-/* Where the track has got to, in the colour of the track. */
-body.is-dressed-by-music #np-time { color: var(--mood); }
-body.is-dressed-by-music .np-bar { background: color-mix(in srgb, var(--mood) 16%, #ffffff18); }
-#np-fill { background: var(--mood); opacity: 1; }
-body.is-dressed-by-music .peek-np .art-sm { box-shadow: 0 0 12px -2px color-mix(in srgb, var(--mood) 55%, transparent); }
-
-/* The equalizer on the resting notch is linework too. */
-body.is-dressed-by-music .equalizer i { background: var(--mood); }
-
-/* A single faint line of the album's colour along the free edge: enough to
-   tie the object to what is playing without colouring the surface. */
-body.is-dressed-by-music.state-open .shell-content::after {
-  box-shadow:
-    inset 1px 0 0 #ffffff14,
-    inset -1px 0 0 #ffffff14,
-    inset 0 -1px 0 color-mix(in srgb, var(--mood) 38%, #ffffff2e);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root { transition-duration: 1ms; }
-  body.is-dressed-by-music .np .art-lg { animation: none; }
 }
 
 /* --- one colour per agent --------------------------------------------------
@@ -577,6 +453,10 @@ body.ai-working.state-closed:not(.has-files):not(.has-media):not(.has-timer) .cl
 }
 
 .agent-mark svg { width: 100%; height: 100%; fill: currentColor; }
+
+/* Bundled original provider marks. OpenAI's file includes its clear space. */
+.provider-logo { width: var(--provider-logo-size,13px); height: var(--provider-logo-size,13px); object-fit: contain; flex: 0 0 auto; pointer-events: none; user-select: none; }
+.provider-logo[data-provider="codex"] { width: calc(var(--provider-logo-size,13px) * 1.5); height: calc(var(--provider-logo-size,13px) * 1.5); margin: calc(var(--provider-logo-size,13px) * -.25); }
 
 .agent-time { color: #c2c2cc; }
 

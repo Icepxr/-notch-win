@@ -55,13 +55,17 @@ class MediaBridge extends EventEmitter {
   }
 
   /** Commands are validated before they cross the newline-delimited pipe. */
-  command(action, value) {
+  command(action, value, playback) {
     if (!ACTIONS.has(action)) return false;
     if (action === 'seek' && (!Number.isFinite(value) || value < 0 || value > Number.MAX_SAFE_INTEGER / 10000000)) return false;
     if (action === 'source' && (typeof value !== 'string' || value.length > 512 || /[\r\n\0]/.test(value))) return false;
+    if (playback !== undefined && (!['play', 'pause'].includes(action) || !playback || typeof playback !== 'object'
+      || typeof playback.id !== 'string' || !/^[a-zA-Z0-9-]{1,80}$/.test(playback.id)
+      || typeof playback.app !== 'string' || playback.app.length > 512 || /[\r\n\0]/.test(playback.app))) return false;
     if (!this.child || !this.child.stdin.writable) return false;
     try {
-      this.child.stdin.write((action === 'seek' || action === 'source' ? JSON.stringify({ action, value }) : action) + '\n');
+      this.child.stdin.write((playback ? JSON.stringify({ action, id: playback.id, app: playback.app })
+        : action === 'seek' || action === 'source' ? JSON.stringify({ action, value }) : action) + '\n');
       return true;
     } catch (err) {
       this.emit('log', 'command failed: ' + err.message);

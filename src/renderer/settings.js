@@ -46,19 +46,6 @@ for (const input of document.querySelectorAll('[data-appearance]')) {
   input.addEventListener('input', () => editAppearance(patch()));
   input.addEventListener('change', () => editAppearance(patch(), true));
 }
-for (const [index, preset] of NotchAppearance.presets.entries()) {
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.dataset.preset = index;
-  button.setAttribute('aria-pressed', 'false');
-  const dot = document.createElement('i');
-  dot.style.background = preset.accentColor;
-  const label = document.createElement('span');
-  label.textContent = preset.name;
-  button.append(dot, label);
-  button.addEventListener('click', () => editAppearance({ surfaceTint: preset.surfaceTint, accentColor: preset.accentColor }, true));
-  document.getElementById('color-presets').append(button);
-}
 document.getElementById('reset-appearance').addEventListener('click', () => editAppearance({ ...NotchAppearance.defaults }, true));
 for (const button of document.querySelectorAll('[data-preview]')) {
   button.addEventListener('click', () => {
@@ -84,10 +71,6 @@ function paintAppearance(value) {
       input.setAttribute('aria-valuetext', label.textContent);
       input.style.setProperty('--range-fill', (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min)) * 100 + '%');
     } else label.textContent = input.value.toUpperCase();
-  }
-  for (const button of document.querySelectorAll('[data-preset]')) {
-    const preset = NotchAppearance.presets[Number(button.dataset.preset)];
-    button.setAttribute('aria-pressed', String(preset.surfaceTint === prefs.surfaceTint && preset.accentColor === prefs.accentColor));
   }
 }
 
@@ -133,7 +116,7 @@ for (const group of document.querySelectorAll('.segmented')) {
   });
 }
 
-for (const input of document.querySelectorAll('.switch')) {
+for (const input of document.querySelectorAll('.switch[data-preference]')) {
   input.addEventListener('change', () => write({ [input.dataset.preference]: input.checked }));
 }
 
@@ -152,13 +135,7 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closePanel();
 });
 
-const SEGMENT_DEFAULT = { silhouette: 'notch', glass: 'high' };
-
-const GLASS_DETAIL = {
-  high: 'Layered translucency and a lit rim while the notch is open.',
-  medium: 'A softer sheen. Less light, same shape.',
-  off: 'A flat surface. Easiest to read, lightest to draw.',
-};
+const SEGMENT_DEFAULT = { silhouette: 'notch' };
 
 function paint(state) {
   if (!state) return;
@@ -166,6 +143,7 @@ function paint(state) {
   const preferences = state.preferences || {};
   currentPreferences = preferences;
   paintAppearance({ ...preferences, ...appearanceDraft });
+  window.SettingsNavigation?.paint(preferences);
 
   for (const group of document.querySelectorAll('.segmented')) {
     const key = group.dataset.preference;
@@ -176,11 +154,10 @@ function paint(state) {
     }
   }
 
-  for (const input of document.querySelectorAll('.switch')) {
+  for (const input of document.querySelectorAll('.switch[data-preference]')) {
     input.checked = preferences[input.dataset.preference] !== false;
   }
 
-  document.getElementById('glass-detail').textContent = GLASS_DETAIL[preferences.glass] || GLASS_DETAIL.high;
 
   const displays = state.displayState;
   if (displays) {
@@ -229,6 +206,7 @@ function paint(state) {
 }
 
 window.panel.onState(paint);
+document.addEventListener('settings:patch', event => write(event.detail));
 
 (async function boot() {
   paint(await window.panel.init());

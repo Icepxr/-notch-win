@@ -1,6 +1,75 @@
 # Islet notch — design system
 
-Updated 2026-10-22. Electron 38, vanilla HTML/CSS/JavaScript, Windows desktop.
+Updated 2026-10-23. Electron 38, vanilla HTML/CSS/JavaScript, Windows desktop.
+
+## Source-port override (current)
+
+The [source-port mapping](../../docs/vorssaint-source-port.md) is the authority
+for this pass. `notch-source.css` and `settings-source.css` load after earlier
+presentation styles. Settings uses the source's split-view/sidebar and four
+Dynamic Island tabs. The island has no artificial camera band or footer toolbar;
+its commands use the native context menu. Existing Windows services and profile
+data remain intact. Earlier tables below are a baseline where not overridden.
+
+Current metrics: content inset 28px, row gap 10px, dynamic shoulder at most 14px,
+music page 520×260 by default with a full-width reading area, artwork 76px,
+title 16px/artist 14px and a timeline with side times. Explore has four columns
+of 86px tiles in two rows. Settings has a 210px sidebar, 22px detail inset,
+20px section spacing, 16px group radius and 26px icon tiles with 12px gaps.
+The notch is always opaque `#000000`, including its shoulders, compact states and
+capsule shape. Global accent is white. Legacy surface/accent/glass preferences
+normalize to this policy; settings offers size/shape controls and no color/glass
+picker. Only music timelines and equalizers inherit artwork color. Labels,
+transport controls and other modules do not. Semantic module/provider colors stay.
+
+Capsule keeps four equal circular corners at rest/hover (`min(height / 2, 28)`),
+and 28px corners when expanded, following `NotchLayout.capsuleRadius`. Persist
+the complete contour beneath the spring keyframes; releasing an animation must
+not reveal square-top media CSS. Capsule has no concave shoulders. Refresh the
+native hit region after a shape-only change, as dimensions can remain equal.
+An empty shelf mounts no decorative green ready dot, including during hover
+crossfades; parked files retain the actual count.
+
+Music refinement requested by the user: `music-source.css` overrides the earlier
+344px/56px source metrics to reduce empty space. The player fills the available
+panel width, keeps a 48px primary control and a wider 4px timeline. Artwork stays
+separate from the transport to preserve collapse behavior. Play/Pause paints
+immediately; actual Windows observations are kept separately until the matching
+command and state confirm the intent. Stale polls cannot flip the icon back.
+Rapid clicks coalesce, failed/timed-out requests restore observed state, and a
+new source retires old pending results. No continuous extra polling is added.
+
+Module source details: shelf tiles 78×88px and tray empty state; clipboard cards
+52px/8px gaps with on-demand search and row feedback; Timer ruler 82px,
+setup clock 26px/active clock 62px, orange mode underline; Scratchpad radius
+12px and 6px vertical inset; System overview cards 72px/18px radius with a
+180px overview island and 290px detail island. Timer uses 260px setup/230px
+active height. AI providers pair across the strip with stacked window meters.
+
+Additional interaction pass: clipboard pointer dwell 700ms/key dwell 1.4s,
+exit delay 150ms; lifted preview bounded to the list with button/F2 alternative
+and Escape focus restoration. Pins use a muted gold edge and keep their order.
+Notes offers local find, Copy all and persisted 10–22px type. Scroll masks fade
+16px over 180ms only on overflowing edges, with reduced-motion overrides.
+
+AI refinement: `ai-source.css` is authoritative for this module. Independent
+provider tiles, 18px radius, 12×10px padding, 10px gaps, full-row charts, fixed
+controls above the scrolling cards. Used/Remaining and window-time ticks are
+readings, never predictions. Keyed updates preserve focus/scroll and keep pulse
+layers mounted. Empty layouts fit a 280px island; ordinary content is capped
+at 510px. Personalization holds that height while its editor is open.
+
+Timer refinement: `timer-source.css` is authoritative. Use the source's centered
+14px minute scale, orange 4×38px ticks and fixed pointer; provide native range
+keyboard operation. Remember Timer/Focus durations separately. Four quiet Focus
+readouts configure breaks, long-break interval and session count. Focus setup is
+280px; regular setup 260px; active clock 230px. The main service owns a captured
+cycle configuration. The 62px clock moves changed digits for 300ms only on the
+open Timer page; Reduce Motion bypasses it. Tick updates do not change geometry.
+
+Content preferences persist existing module order/visibility. Keep at least one
+module and always keep Settings accessible. Search takes users to the actual
+field; Alt+Left/Right navigates settings history. Shift+F10 opens island commands.
 
 The user explicitly requested closer fidelity to Vorssaint and prioritized file
 dragging, module gestures and brief activities. Preserve Islet branding, English
@@ -26,16 +95,16 @@ interface text, separate Settings window, monitor placement, and existing servic
 
 | Role | Value |
 |---|---|
-| Resting surface | `#050506` |
-| Expanded surface | `#080809` |
+| Resting surface | `#000000` |
+| Expanded surface | `#000000` |
 | Raised surface | white at 3–6% |
 | Primary text | `#f3f3f5` |
 | Secondary text | `#b2b2b8` |
 | Supporting text | `#9c9ca5` or lighter |
-| Accent | `#aac4ef`; semantic colors for activities/modules |
+| Accent | `#ffffff`; semantic colors for activities/modules |
 | Font | Segoe UI Variable Text / Segoe UI |
 | Content inset | 22px horizontal, 14px top, 12px bottom |
-| Artwork | 56px, 11px corner radius |
+| Artwork | 76px, 15px corner radius |
 | Gallery tile | 86px high, 16px radius, 8px gap |
 | Gallery viewport | Two rows, one 94px whole-row step |
 | Pointer targets | At least 24px for desktop icon controls |
@@ -43,7 +112,7 @@ interface text, separate Settings window, monitor placement, and existing servic
 Use system typography for Windows rather than importing a marketing font.
 Compact supporting labels follow the source's desktop density; primary content
 uses 12–16px. Preserve OS DPI scaling and the app's existing small-screen fitting.
-Verify text contrast with rendered pixels, including bright artwork behind glass.
+Verify text contrast and opaque black shell pixels in the actual renderer.
 
 ## Geometry
 
@@ -75,16 +144,16 @@ Disable expensive inner blur while morphing.
 
 ## Appearance studio
 
-Settings contains a miniature resting/expanded preview, labeled sliders with
-numeric outputs, named color presets, custom surface/accent pickers and a reset
-limited to appearance. Preview immediately; batch persistence after 180ms idle or
+Settings contains a miniature resting/expanded preview, labeled size sliders with
+numeric outputs, a fixed Black theme readout and Reset size. Preview immediately;
+batch persistence after 180ms idle or
 on release. Preserve draft values across older IPC broadcasts, and restore stored
 values on failure. Flush pending changes before closing Settings.
 
-Obsidian is the default; Midnight, Iris and Moss add restrained colored surfaces.
-Keep a chosen hue dark enough for the existing text hierarchy; adapt accent
-brightness to at least 4.5:1 over the raised surface. The music timeline uses the
-selected accent; a dark album cannot make progress disappear. Native range inputs
+Average one sRGB artwork pixel and apply the source's saturation/darkness checks
+and channel normalization. Tint only the music timeline and equalizer; ensure
+at least 3:1 meter contrast against black. Neutral, missing or invalid artwork
+falls back to white. The Music setting can disable this tint. Native range inputs
 retain keyboard interaction, focus rings and value text. Reduced motion bypasses
 the miniature morph.
 
@@ -111,7 +180,7 @@ controls and feedback use the skill's general accessibility/forms defaults.
   Update meters in place while keys repeat; switching system controls replaces the
   previous one. Expire stale pending adjustments rather than replaying them after
   a timer/transfer. An open module keeps its page and receives inline feedback.
-  Clicking opens the relevant Windows Settings page; System feedback can be disabled.
+  Feedback is a readout with no click action; System feedback can be disabled.
 
 Runtime styling is in `src/renderer/islet.css`; geometry and activity logic have
 dedicated modules and synthetic-data tests.

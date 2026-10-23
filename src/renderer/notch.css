@@ -390,7 +390,7 @@ body.is-exploring .tab { flex-direction: column; gap: 8px; width: 100%; height: 
 body.is-exploring .tab svg { width: 22px; height: 22px; }
 body.is-exploring .tab:hover { background: #202024; }
 body.is-exploring .tab.is-active { background: #25252a; }
-.np { display: none; grid-template-columns: 72px 1fr; align-content: center; align-items: center; gap: 18px; padding: 10px 16px; background: radial-gradient(ellipse at 15% 30%, rgba(var(--artwork-rgb, 0, 0, 0), .12), transparent 65%); box-shadow: none; }
+.np { display: none; grid-template-columns: 72px 1fr; align-content: center; align-items: center; gap: 18px; padding: 10px 16px; background: none; box-shadow: none; }
 body.has-media .np { display: grid; }
 .np .art-lg { width: 72px; height: 72px; border-radius: 13px; grid-column: 1; grid-row: 1; transition: transform 300ms ease; }
 body.has-media:not(.is-playing) .np .art-lg { transform: scale(.94); }
@@ -418,7 +418,7 @@ body.has-timer .layer-closed > svg { display: block; }
 body.has-timer.has-media .peek-np, body.has-timer.has-media .peek-toggle { display: none; }
 body.has-timer.has-media .layer-peek #peek-clock, body.has-timer.has-media .layer-peek #peek-shelf, body.has-timer.has-media .layer-peek .peek-dot { display: inline; }
 body.has-timer.has-media .peek-spacer { display: block; }
-body[data-silhouette="capsule"] #card { border-radius: 24px; }
+/* The renderer owns all four corners throughout the spring and after settling. */
 body[data-silhouette="capsule"] #card::before, body[data-silhouette="capsule"] #card::after { display: none; }
 
 .utility-modes { display: flex; align-items: center; justify-content: center; gap: 16px; flex: 0 0 30px; }
@@ -486,135 +486,3 @@ body.is-exploring .tab[data-tab="settings"] svg { color: var(--module); }
 .ai-window progress { height: 3px; }
 .scratchpad { background: linear-gradient(140deg, #151518, #101012); border: 1px solid #ffffff07; font-family: inherit; line-height: 1.8; }
 @media (prefers-reduced-motion: reduce) { body.is-exploring .tab:hover { transform: none; } }
-
-/* --- liquid glass ----------------------------------------------------------
-
-   The notch window has to stay transparent — concave shoulders, a rounded
-   bottom and a click-through shadow all depend on it — and Windows will not
-   draw a system backdrop material behind a transparent window. So there is no
-   real desktop blur to be had in here; the settings window, which is an
-   ordinary opaque window, is where acrylic lives.
-
-   What the open card can do is behave like a lit pane of glass. Four things
-   together sell it, and the order matters:
-
-     1. the cover art, blown up and blurred past recognition, as coloured
-        light inside the card. This is the part that gives the blur in (3)
-        something real to work on.
-     2. a lens gradient: light gathers along the top and falls away.
-     3. inner surfaces that are genuinely translucent and blur what is behind
-        them, so the album colour bleeds up through every card.
-     4. a rim that catches light on the free edges, and a sweep that runs once
-        as the card opens.
-
-   All of it is scoped to body.state-open. Closed and peek stay flat and black
-   so they vanish into the bezel, which is the whole point of a notch.
-   data-glass is the user's dial, set from the control panel window. */
-
-body[data-glass="high"] { --glass-tint: .24; --glass-bloom: .62; --glass-blur: 22px; --glass-wash: .1; }
-body[data-glass="medium"] { --glass-tint: .13; --glass-bloom: .34; --glass-blur: 11px; --glass-wash: .05; }
-
-body.state-open:not([data-glass="off"]) #card {
-  background:
-    /* Colour picked up from the album art. Transparent when nothing plays. */
-    radial-gradient(120% 78% at 50% -6%, rgba(var(--artwork-rgb, 0, 0, 0), var(--glass-tint)), transparent 70%),
-    /* The specular: a tight catch where the pane meets the bezel, then a
-       broad falloff. Two stops rather than one is what reads as curvature. */
-    radial-gradient(85% 42% at 50% -8%, #ffffff26, transparent 64%),
-    linear-gradient(180deg, #ffffff14, #ffffff06 26%, #ffffff02 58%, transparent 78%),
-    /* A cool wash at the foot, so the glass has a colour of its own even
-       when nothing is playing. */
-    radial-gradient(110% 60% at 50% 112%, rgba(90, 140, 230, var(--glass-wash)), transparent 68%),
-    linear-gradient(180deg, #181820, #0e0e15 54%, #09090e);
-}
-
-/* The cover as light. Scaled past the edges so no seam shows, blurred far
-   past recognition so it reads as a glow rather than a picture. */
-body.state-open.has-media:not([data-glass="off"]) .shell-content::before {
-  content: '';
-  position: absolute;
-  inset: -22%;
-  pointer-events: none;
-  /* The scrim rides on top of the cover inside this same layer, so a bright
-     album can never wash the text out. Covers range from near-black to pure
-     white, and the panel has to stay readable against all of them. */
-  background-image:
-    linear-gradient(180deg, rgba(8, 8, 12, .7), rgba(8, 8, 12, .86)),
-    var(--artwork-url, none);
-  background-size: cover;
-  background-position: center 22%;
-  filter: blur(44px) saturate(185%) brightness(.6);
-  opacity: var(--glass-bloom);
-  transform: translateZ(0);
-}
-
-/* Inner surfaces become glass over that light. */
-body.state-open:not([data-glass="off"]) .card,
-body.state-open:not([data-glass="off"]) .shelf,
-body.state-open:not([data-glass="off"]) .device,
-body.state-open:not([data-glass="off"]) .ai-card,
-body.state-open:not([data-glass="off"]) .clip-list,
-body.state-open:not([data-glass="off"]) .disk-list,
-body.state-open:not([data-glass="off"]) .clip-search,
-body.state-open:not([data-glass="off"]) .scratchpad {
-  background: rgba(255, 255, 255, .1);
-  backdrop-filter: blur(var(--glass-blur)) saturate(165%);
-  border-color: rgba(255, 255, 255, .16);
-  box-shadow:
-    /* a drawn edge, a lit top lip, and a shadow that lifts it off the pane */
-    inset 0 0 0 .7px rgba(255, 255, 255, .16),
-    inset 0 1px 0 rgba(255, 255, 255, .14),
-    0 2px 12px -6px rgba(0, 0, 0, .75);
-}
-
-body.state-open:not([data-glass="off"]) .device:hover:not(:disabled) {
-  background: rgba(255, 255, 255, .095);
-}
-
-/* The free edges catch light; the top edge does not, because it is supposed
-   to read as continuous with the bezel above it. A capsule floats, so it gets
-   the full rim. */
-body.state-open:not([data-glass="off"]) .shell-content::after {
-  box-shadow:
-    inset 1px 0 0 #ffffff14,
-    inset -1px 0 0 #ffffff14,
-    inset 0 -1px 0 #ffffff2e;
-}
-
-body.state-open[data-silhouette="capsule"]:not([data-glass="off"]) .shell-content::after {
-  box-shadow:
-    inset 0 1px 0 #ffffff20,
-    inset 1px 0 0 #ffffff0d,
-    inset -1px 0 0 #ffffff0d,
-    inset 0 -1px 0 #ffffff1c;
-}
-
-/* One sweep as the card opens. It restarts whenever the state class lands,
-   which is exactly once per expand. */
-body.state-open:not([data-glass="off"]) .layer-open::before {
-  content: '';
-  position: absolute;
-  inset: -40% -10%;
-  pointer-events: none;
-  background: linear-gradient(104deg, transparent 40%, #ffffff0f 49%, transparent 58%);
-  animation: glass-sweep 760ms cubic-bezier(.24, .7, .3, 1) 90ms 1 both;
-}
-
-@keyframes glass-sweep {
-  from { transform: translateX(-115%); }
-  to { transform: translateX(115%); }
-}
-
-/* A morph is the one moment the blur is expensive and least visible, so it
-   steps aside until the card has settled. */
-body.is-shrinking .card,
-body.is-shrinking .shelf,
-body.is-shrinking .device,
-body.is-shrinking .ai-card,
-body.is-shrinking .clip-list,
-body.is-shrinking .disk-list,
-body.is-shrinking .scratchpad { backdrop-filter: none; }
-
-@media (prefers-reduced-motion: reduce) {
-  body.state-open:not([data-glass="off"]) .layer-open::before { animation: none; }
-}

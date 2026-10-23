@@ -1,0 +1,26 @@
+/* A fuller reading area, following the user's music-layout refinement. */
+[data-panel="media"] { --source-player-width: 100%; gap: 12px; }
+[data-panel="media"] .np { width: 100%; grid-template-columns: 76px minmax(0,1fr) 16px; column-gap: 16px; row-gap: 16px; align-items: center; }
+body.state-open [data-panel="media"] .np { background: none; border: 0; box-shadow: none; backdrop-filter: none; }
+[data-panel="media"] .np .art-lg { width: 76px; height: 76px; border-radius: 15px; }
+[data-panel="media"] .np-text { align-self: center; padding: 0; min-height: 0; }
+[data-panel="media"] .np-text .marquee-box { font-size: 16px; line-height: 1.4; }
+[data-panel="media"] .np-sub { margin-top: 4px; font-size: 14px; line-height: 1.35; }
+[data-panel="media"] .np-source { margin-top: 4px; font-size: 11px; max-width: 100%; }
+[data-panel="media"] .np-progress { grid-template-columns: 43px minmax(0,1fr) 48px; gap: 9px; height: 22px; }
+[data-panel="media"] .np-time { font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-panel="media"] .np-bar { height: 4px; border-radius: 3px; }
+[data-panel="media"] .np-seek { left: 52px; right: 57px; width: calc(100% - 109px); top: -1px; height: 24px; }
+[data-panel="media"] .np-buttons { height: 48px; margin: -2px 0 0; gap: clamp(36px,8vw,52px); }
+[data-panel="media"] .np-buttons button { width: 44px; height: 44px; }
+[data-panel="media"] #np-toggle { width: 48px; height: 48px; border-radius: 50%; background: #ffffff0c; }
+[data-panel="media"] #np-toggle:hover { background: #ffffff18; }
+[data-panel="media"] .np-buttons #np-toggle svg { width: 26px; height: 26px; }
+[data-panel="media"] .np-buttons svg { width: 20px; height: 20px; }
+[data-panel="media"] .np-buttons button:active:not(:disabled) { transform: scale(.94); }
+[data-panel="media"] .media-feedback { font-size: 11px; line-height: 1.4; }
+.np #np-fill,.equalizer i { background: var(--music-accent,#ffffff); }
+.np .player-bars { color: var(--music-accent,#ffffff); }
+.np .np-seek::-webkit-slider-thumb { background: var(--music-accent,#ffffff); }
+.np .art-lg { box-shadow: inset 0 0 0 .5px #ffffff1f; }
+@media (prefers-reduced-motion: reduce) { [data-panel="media"] .np-buttons button:active:not(:disabled) { transform: none; } }

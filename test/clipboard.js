@@ -212,6 +212,41 @@ test('relative time reads naturally in English', () => {
   assert.strictEqual(relativeTime(now + 60000, now), 'Just now');
 });
 
+test('pinned text survives reload, promotion and recent-history eviction', () => {
+  const clipboard = stubClipboard('keep this');
+  const storePath = tempStore();
+  const watcher = new ClipboardWatcher({ clipboard, storePath, limit: 2 }); watcher.poll();
+  const id = watcher.entries[0].id;
+  assert.deepStrictEqual(watcher.togglePin(id), { ok: true, pinned: true });
+  for (const value of ['recent a','recent b','recent c','keep this']) { clipboard.value = value; watcher.poll(); }
+  assert.strictEqual(watcher.entries[0].id, id);
+  assert.strictEqual(watcher.entries[0].pinned, true);
+  assert.strictEqual(watcher.entries.length, 3, 'pin does not consume the recent history budget');
+  const restored = new ClipboardWatcher({ clipboard, storePath, limit: 2 }); restored.load();
+  assert.strictEqual(restored.entries[0].id, id); assert.strictEqual(restored.entries[0].pinned, true);
+  assert.ok(restored.view()[0].canPin && !('text' in restored.view()[0]));
+  watcher.clear(true);
+  assert.deepStrictEqual(watcher.entries.map(e => e.id), [id]);
+  watcher.poll(); assert.strictEqual(watcher.entries.length, 1, 'clear recent does not re-record the current clipboard');
+  assert.strictEqual(watcher.togglePin(id).pinned, false);
+  watcher.clear(true); assert.strictEqual(watcher.entries.length, 0);
+});
+
+test('pinning is bounded and a failed write restores the old history', () => {
+  const clipboard = stubClipboard(); const watcher = new ClipboardWatcher({ clipboard, storePath: tempStore() });
+  for (let i = 0; i < 20; i++) { clipboard.value = 'pin ' + i; watcher.poll(); assert.ok(watcher.togglePin(watcher.entries.find(e => !e.pinned).id).ok); }
+  clipboard.value = 'one more'; watcher.poll(); const id = watcher.entries.find(e => !e.pinned).id;
+  assert.deepStrictEqual(watcher.togglePin(id), { ok: false, reason: 'limit' });
+  watcher.togglePin(watcher.entries[0].id);
+  const previous = watcher.entries;
+  watcher.save = () => false;
+  assert.deepStrictEqual(watcher.togglePin(id), { ok: false, reason: 'save' });
+  assert.strictEqual(watcher.entries, previous);
+  assert.deepStrictEqual(watcher.togglePin('missing'), { ok: false, reason: 'missing' });
+  const image = makeEntry({ imageDataUrl: 'data:image/png;base64,AAA' }); watcher.entries = [image];
+  assert.deepStrictEqual(watcher.togglePin(image.id), { ok: false, reason: 'temporary' });
+});
+
 (async function run() {
   let failed = 0;
   for (const { name, fn } of tests) {

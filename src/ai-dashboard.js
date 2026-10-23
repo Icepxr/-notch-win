@@ -55,7 +55,7 @@ class AiDashboard extends EventEmitter {
         ? 1800000 : Math.min(1800000, 300000 * 2 ** Math.min(3, this.claudeFailures - 1));
       this.claudeNextCheck = Date.now() + delay;
       this.publish();
-    }).finally(() => { this.fetchingClaude = null; });
+    }).finally(() => { this.fetchingClaude = null; this.publish(); });
     return this.fetchingClaude;
   }
   refreshAccount() {
@@ -69,7 +69,7 @@ class AiDashboard extends EventEmitter {
         }
       }
       this.account = account; this.publish();
-    }).finally(() => { this.fetching = null; });
+    }).finally(() => { this.fetching = null; this.publish(); });
     return this.fetching;
   }
   refresh() {
@@ -92,7 +92,8 @@ class AiDashboard extends EventEmitter {
       buckets: [...buckets.values()], sessions: [...live, ...this.claude.map((s) => ({ ...s, provider: 'claude', inferred: false }))],
       limits: { ...this.data.limits, ...(this.account.limits ? { codex: this.account.limits } : {}),
         ...(this.claudeAccount.limits ? { claude: this.claudeAccount.limits } : {}) },
-      accountStatus: this.account.status, claudeAccountStatus: this.claudeAccount.status, resets: this.account.resets ?? null };
+      accountStatus: this.account.status, claudeAccountStatus: this.claudeAccount.status, resets: this.account.resets ?? null,
+      checking: { codex: !!this.fetching, claude: !!this.fetchingClaude } };
   }
   publish() { if (!this.stopped) this.emit('change', this.snapshot()); }
   stop() { this.stopped = true; clearInterval(this.poller); clearInterval(this.accountPoller); this.worker?.terminate(); this.worker = null; this.child?.kill(); this.claudeChild?.kill(); }

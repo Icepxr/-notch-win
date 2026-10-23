@@ -2,6 +2,11 @@
 
 ## Current redesign
 
+The [2026-10-23 source port](vorssaint-source-port.md) maps each existing module
+to its Vorssaint source view. Settings is now a split view with sidebar/search,
+four Dynamic Island tabs and live module order/visibility controls. Pin, Settings,
+Collapse and Quit are in the island's native context menu (Shift+F10).
+
 Appearance now exposes independent resting/expanded widths, overall scale and
 surface/accent colors. Settings previews on input, batches saves and rolls back
 failed writes. See the design system for bounds and native-host reservation.
@@ -16,13 +21,15 @@ monitor hardware buttons and DDC/CI-only changes are not observed by this bridge
 Rapid changes replace one activity and restart its brief expiry, rather than
 adding a queue entry per key press. A different system control replaces the prior
 one. Critical timer/transfer activities retain priority; queued system feedback
-expires after 2.2 seconds and cannot appear late. Click a volume/brightness/lock
-activity for Sound/Display/Keyboard settings. The open page remains open, with a
-small inline meter. Reduced motion removes meter animation.
+expires after 2.2 seconds and cannot appear late. Volume/brightness/lock
+feedback is a passive readout. The open page remains open, with a small inline
+meter. Reduced motion removes meter animation.
 
 The current [design system](../design-system/islet/MASTER.md) follows the source
-gallery's two 86px rows and 94px row stepping. Music is a compact 520×270 player;
-Files and Notes use 520×350. The native host remains stable through these changes.
+gallery's two 86px rows/four columns. Music is a compact 520×230 player;
+Files and Notes use 520×350. System uses 520×180 for overview and 520×290
+for detail; Timer uses 520×260 setup and 520×230 active. The native host
+remains stable through these changes. The widths remain customizable.
 
 Horizontal trackpad gestures and deliberate pointer swipes on the header switch
 modules; music gestures keep their track behavior. Previous/next controls, Alt+Arrow,
@@ -41,7 +48,9 @@ The tests use synthetic data and never send the user's files. Offscreen Electron
 does not generate native focus events for hidden windows, so focus-handler tests
 dispatch the corresponding DOM event; pure queue tests verify pause/resume timing.
 
-Current validation: the full Node suite and 122 offscreen renderer checks pass.
+Current validation includes the full Node suite, 137 full-renderer checks,
+the two-window Settings integration, long-title layout and targeted module
+interaction checks. See the source-port document for scope and screenshots.
 `node test/system-actions-live-read.js` additionally reads three live Windows
 samples with stdin kept open, then closes the helper normally. Audio, WMI
 brightness and Caps Lock are available on the development machine. The test

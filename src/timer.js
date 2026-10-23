@@ -3,6 +3,7 @@
 // Windows/Node adaptation of NotchTimerSession. See THIRD_PARTY_NOTICES.md.
 'use strict';
 const { EventEmitter } = require('node:events');
+const TimerTools = require('./renderer/timer-tools');
 
 class NotchTimer extends EventEmitter {
   constructor({ now = () => Number(process.hrtime.bigint()) / 1e9 } = {}) {
@@ -11,7 +12,7 @@ class NotchTimer extends EventEmitter {
   reset(publish = true) {
     this.mode = 'timer'; this.phase = 'timer'; this.duration = 300;
     this.anchor = null; this.paused = null; this.completed = false; this.focuses = 0;
-    this.configuration = { focus: 25, shortBreak: 5, longBreak: 15, interval: 4, sessions: 4 };
+    this.configuration = TimerTools.configuration();
     if (publish) this.publish();
   }
   get countsUp() { return this.mode === 'stopwatch'; }
@@ -24,6 +25,10 @@ class NotchTimer extends EventEmitter {
     return { mode: this.mode, phase: this.phase, duration: this.duration, reading: this.reading(),
       running: this.anchor !== null, paused: this.paused !== null, completed: this.completed,
       hasSession: this.hasSession, countsUp: this.countsUp, focuses: this.focuses,
+      configuration: { ...this.configuration },
+      sessionNumber: Math.min(this.configuration.sessions, this.focuses + (this.phase === 'focus' && !this.completed ? 1 : 0)),
+      cycleFinished: this.mode === 'pomodoro' && this.completed && this.focuses >= this.configuration.sessions,
+      nextPhase: this.phase === 'focus' ? (this.focuses % this.configuration.interval === 0 ? 'longBreak' : 'shortBreak') : 'focus',
       canNext: this.mode === 'pomodoro' && this.completed && this.focuses < this.configuration.sessions };
   }
   finishIfDue() {
@@ -41,8 +46,9 @@ class NotchTimer extends EventEmitter {
       this.mode = options.mode;
       this.phase = this.countsUp ? 'stopwatch' : this.mode === 'pomodoro' ? 'focus' : 'timer';
       const minutes = Number.isFinite(options.minutes) ? Math.round(Math.max(1, Math.min(180, options.minutes))) : 5;
-      this.configuration.focus = minutes;
-      this.duration = this.countsUp ? 0 : minutes * 60;
+      this.configuration = TimerTools.configuration(options.configuration);
+      if (!options.configuration || typeof options.configuration !== 'object') this.configuration.focus = minutes;
+      this.duration = this.countsUp ? 0 : (this.mode === 'pomodoro' ? this.configuration.focus : minutes) * 60;
       this.anchor = this.countsUp ? this.now() : this.now() + this.duration;
     } else if (action === 'pause' && this.anchor !== null) {
       if (!this.finishIfDue()) { this.paused = this.reading(); this.anchor = null; }

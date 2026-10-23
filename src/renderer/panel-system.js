@@ -1,4 +1,7 @@
 'use strict';
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Vorssaint
+// Overview card geometry/pressure threshold ported from NotchSystemView.
 
 // SystemPanel panel. Loaded both with require() (so the pure helpers can be
 // tested without a window) and as a plain <script> in the renderer, hence
@@ -105,7 +108,7 @@
     meter.caption.textContent = captionText;
     meter.spark.line.setAttribute('points', sparkPoints(history));
     // Colour follows pressure rather than being decorative.
-    const level = ratio >= 0.9 ? 'is-high' : ratio >= 0.7 ? 'is-warm' : '';
+    const level = ratio >= 0.85 ? 'is-warm' : '';
     meter.card.classList.remove('is-high', 'is-warm');
     if (level) meter.card.classList.add(level);
   }
@@ -125,6 +128,27 @@
     const grid = document.createElement('div');
     grid.className = 'meter-grid';
 
+    const overview = document.createElement('div');
+    overview.className = 'system-overview';
+    const summaries = {};
+    const symbols = { cpu: 'M4 4h12v12H4zM7 1v3m6-3v3M7 16v3m6-3v3M1 7h3m-3 6h3m12-6h3m-3 6h3',
+      memory: 'M2 5h16v10H2zM5 8v4m3-4v4m4-4v4m3-4v4M5 15v3m5-3v3m5-3v3',
+      storage: 'M3 4h14l2 12H1zM1 12h18M14 14h2' };
+    for (const [id, title] of Object.entries({ cpu: 'CPU', memory: 'Memory', storage: 'Available' })) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'system-summary'; button.dataset.metric = id;
+      button.setAttribute('aria-expanded', 'false'); button.setAttribute('aria-controls', 'system-detail');
+      const name = document.createElement('span'); name.className = 'summary-label';
+      const svg = svgEl('svg', { viewBox: '0 0 20 20', 'aria-hidden': 'true' });
+      svg.append(svgEl('path', { d: symbols[id] })); name.append(svg, document.createTextNode(title));
+      const reading = document.createElement('strong'); reading.className = 'summary-value'; reading.textContent = '…';
+      const bar = document.createElement('span'); bar.className = 'meter-bar';
+      const fill = document.createElement('span'); fill.className = 'meter-fill'; bar.append(fill);
+      button.append(name, reading, bar); overview.append(button);
+      button.addEventListener('click', () => showDetail(id));
+      summaries[id] = { button, reading, fill };
+    }
+
     const cpu = makeMeter('CPU');
     const memory = makeMeter('Memory');
     grid.append(cpu.card, memory.card);
@@ -139,8 +163,38 @@
     const disks = document.createElement('div');
     disks.className = 'card disk-list';
 
-    root.append(head, grid, disksHead, disks);
-    els = { meta, cpu, memory, disks };
+    const detail = document.createElement('div'); detail.className = 'system-detail'; detail.id = 'system-detail'; detail.hidden = true;
+    const detailHead = document.createElement('div'); detailHead.className = 'section-head';
+    const back = document.createElement('button'); back.className = 'ghost-btn'; back.textContent = '‹ Overview';
+    back.type = 'button'; back.addEventListener('click', () => showDetail(null));
+    const detailTitle = document.createElement('span'); detailTitle.className = 'section-label';
+    detailHead.append(back, detailTitle);
+    detail.append(detailHead, grid, disksHead, disks);
+    root.append(head, overview, detail);
+    els = { root, meta, cpu, memory, disks, disksHead, overview, summaries, detail, detailTitle, back, selected: null };
+    detail.addEventListener('keydown', (event) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault(); event.stopPropagation(); showDetail(null);
+    });
+  }
+
+  function showDetail(id) {
+    const previous = els.selected;
+    els.selected = id;
+    els.overview.hidden = Boolean(id); els.detail.hidden = !id;
+    els.cpu.card.hidden = id !== 'cpu'; els.memory.card.hidden = id !== 'memory';
+    els.disks.hidden = id !== 'storage'; els.disksHead.hidden = true;
+    els.detailTitle.textContent = { cpu: 'CPU activity', memory: 'Memory usage', storage: 'Storage' }[id] || '';
+    Object.entries(els.summaries).forEach(([key, { button }]) => button.setAttribute('aria-expanded', String(key === id)));
+    if (id) els.back.focus(); else els.summaries[previous]?.button.focus();
+    els.root.dispatchEvent(new CustomEvent('notch:layout', { bubbles: true }));
+  }
+
+  function paintSummary(id, ratio, text) {
+    const summary = els.summaries[id]; summary.reading.textContent = text;
+    summary.fill.style.width = pct(ratio);
+    summary.button.classList.toggle('is-warm', id === 'storage' ? ratio < .1 : ratio >= .85);
+    summary.button.setAttribute('aria-label', ({ cpu: 'CPU', memory: 'Memory', storage: 'Storage available' }[id]) + ' ' + text + ' · Show details');
   }
 
   function update(sample) {
@@ -151,6 +205,10 @@
     }
 
     els.meta.textContent = sample.host + ' · Up ' + formatUptime(sample.uptime);
+    paintSummary('cpu', sample.cpu.overall, pct(sample.cpu.overall));
+    paintSummary('memory', sample.memory.ratio, pct(sample.memory.ratio));
+    const primaryDisk = sample.disks[0];
+    paintSummary('storage', primaryDisk ? 1 - primaryDisk.ratio : 0, primaryDisk ? formatBytes(primaryDisk.free) : '—');
 
     paintMeter(
       els.cpu,
@@ -180,7 +238,7 @@
     for (const disk of sample.disks) {
       const row = document.createElement('div');
       row.className = 'disk-row';
-      if (disk.ratio >= 0.9) row.classList.add('is-high');
+      if (disk.ratio >= 0.9) row.classList.add('is-warm');
 
       const name = document.createElement('span');
       name.className = 'disk-name';
@@ -224,5 +282,5 @@
     return mins + ' min';
   }
 
-  return { mount, update, sparkPoints, shortenCpu, formatUptime };
+  return { mount, update, sparkPoints, shortenCpu, formatUptime, detailOpen: () => Boolean(els?.selected) };
 }));

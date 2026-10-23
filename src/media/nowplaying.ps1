@@ -134,16 +134,27 @@ function Send-MediaKey($action) {
   return $true
 }
 
-function Invoke-Action($action, $value = 0) {
+function Write-CommandResult($action, $via, $requestId = '', $targetApp = '') {
+  $payload = @{ type = 'command'; action = $action; via = $via }
+  if ($requestId) { $payload.id = $requestId; $payload.app = $targetApp }
+  Write-Line $payload
+}
+
+function Invoke-Action($action, $value = 0, $requestId = '', $targetApp = '') {
   if ($action -eq 'source') {
     $script:selectedSource = [string] $value
     $script:lastTrackKey = ''
-    Write-Line @{ type = 'command'; action = $action; via = 'source' }
+    Write-CommandResult $action 'source' $requestId $targetApp
     return
   }
   $viaWinRt = $false
+  $session = $null
   try {
-    $session = Get-Session
+    if ($targetApp) {
+      foreach ($candidate in (Get-Manager).GetSessions()) {
+        if ([string] $candidate.SourceAppUserModelId -eq $targetApp) { $session = $candidate; break }
+      }
+    } else { $session = Get-Session }
     if ($null -ne $session) {
       switch ($action) {
         'toggle' { $viaWinRt = Await ($session.TryTogglePlayPauseAsync()) ([bool]) }
@@ -165,13 +176,27 @@ function Invoke-Action($action, $value = 0) {
   }
 
   if ($viaWinRt) {
-    Write-Line @{ type = 'command'; action = $action; via = 'winrt' }
+    Write-CommandResult $action 'winrt' $requestId $targetApp
     return
   }
 
   $sent = $false
-  try { $sent = Send-MediaKey $action } catch { $sent = $false }
-  Write-Line @{ type = 'command'; action = $action; via = $(if ($sent) { 'mediakey' } else { 'none' }) }
+  try {
+    # Play/Pause requests are explicit and idempotent. Do not send a toggle key
+    # when WinRT already reached the requested state, or to another player.
+    if ($null -ne $session -and $action -in @('play', 'pause')) {
+      $status = [string] $session.GetPlaybackInfo().PlaybackStatus
+      if (($action -eq 'play' -and $status -eq 'Playing') -or ($action -eq 'pause' -and $status -ne 'Playing')) {
+        Write-CommandResult $action 'unchanged' $requestId $targetApp
+        return
+      }
+    }
+    $current = (Get-Manager).GetCurrentSession()
+    if (-not $targetApp -or ($null -ne $current -and [string] $current.SourceAppUserModelId -eq $targetApp)) {
+      $sent = Send-MediaKey $action
+    }
+  } catch { $sent = $false }
+  Write-CommandResult $action $(if ($sent) { 'mediakey' } else { 'none' }) $requestId $targetApp
 }
 
 # --- poll loop --------------------------------------------------------------
@@ -288,17 +313,21 @@ while ($true) {
       if ($null -eq $line) { exit 0 }   # parent went away
       $action = $line.Trim().ToLowerInvariant()
       $value = 0
+      $requestId = ''
+      $targetApp = ''
       if ($action.StartsWith('{')) {
         try {
           $command = $line | ConvertFrom-Json
           $action = [string] $command.action
           $value = $command.value
+          $requestId = [string] $command.id
+          $targetApp = [string] $command.app
         } catch { continue }
       }
       if ($action -eq 'quit') { exit 0 }
       if ($action) {
         try {
-          Invoke-Action $action $value
+          Invoke-Action $action $value $requestId $targetApp
         } catch {
           Write-Line @{ type = 'error'; message = [string] $_.Exception.Message }
         }

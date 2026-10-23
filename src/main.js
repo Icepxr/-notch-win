@@ -23,6 +23,8 @@ const { NotchTimer } = require('./timer');
 const { NotesStore } = require('./notes');
 const NotchGeometry = require('./renderer/notch-geometry');
 const NotchAppearance = require('./renderer/notch-appearance');
+const NotchModules = require('./renderer/notch-modules');
+const NotesTools = require('./renderer/notes-tools');
 const { DisplayController, pointerInside, MODES: DISPLAY_MODES } = require('./displays');
 const { chooseProfile } = require('./profile');
 const { SystemActions } = require('./system-actions');
@@ -81,6 +83,8 @@ function loadSettings() {
     fingerprint: crypto.randomBytes(16).toString('hex'),
     pin: '',
     ...stored,
+    ...NotchAppearance.normalize(stored),
+    glass: 'off',
   };
 }
 
@@ -95,16 +99,16 @@ function saveSettings() {
   }
 }
 
-const GLASS_LEVELS = ['high', 'medium', 'off'];
 // What the resting notch shows when several things are happening at once.
 const NOTCH_FOCUS = ['auto', 'transfer', 'timer', 'music', 'agent'];
 
 function clientPreferences() {
-  return { ...NotchAppearance.normalize(settings), autoDismiss: settings.autoDismiss !== false, musicPreview: settings.musicPreview !== false,
+  return { ...NotchModules.normalize(settings), ...NotchAppearance.normalize(settings), autoDismiss: settings.autoDismiss !== false, musicPreview: settings.musicPreview !== false,
     systemFeedback: settings.systemFeedback !== false, musicColors: settings.musicColors !== false,
     gestures: settings.gestures !== false, silhouette: settings.silhouette === 'capsule' ? 'capsule' : 'notch',
-    glass: GLASS_LEVELS.includes(settings.glass) ? settings.glass : 'high',
+    glass: 'off',
     notchFocus: NOTCH_FOCUS.includes(settings.notchFocus) ? settings.notchFocus : 'auto',
+    notesTextSize: NotesTools.textSize(settings.notesTextSize),
     displayMode: DISPLAY_MODES.includes(settings.displayMode) ? settings.displayMode : 'selected',
     displayId: displayController?.snapshot().preferredDisplayId ?? screen.getPrimaryDisplay().id };
 }
@@ -116,14 +120,16 @@ function clientPreferences() {
  */
 function applyPreferencePatch(patch) {
   const previous = { ...settings };
+  Object.assign(settings, NotchModules.normalize({ ...settings, ...patch }));
   const appearance = NotchAppearance.normalize({ ...settings, ...patch });
   for (const key of Object.keys(NotchAppearance.defaults)) settings[key] = appearance[key];
   for (const key of ['autoDismiss', 'musicPreview', 'gestures', 'systemFeedback', 'musicColors']) {
     if (typeof patch?.[key] === 'boolean') settings[key] = patch[key];
   }
   if (['notch', 'capsule'].includes(patch?.silhouette)) settings.silhouette = patch.silhouette;
-  if (GLASS_LEVELS.includes(patch?.glass)) settings.glass = patch.glass;
+  settings.glass = 'off';
   if (NOTCH_FOCUS.includes(patch?.notchFocus)) settings.notchFocus = patch.notchFocus;
+  if (typeof patch?.notesTextSize === 'number' && Number.isFinite(patch.notesTextSize)) settings.notesTextSize = NotesTools.textSize(patch.notesTextSize);
   if (DISPLAY_MODES.includes(patch?.displayMode)) settings.displayMode = patch.displayMode;
   const display = screen.getAllDisplays().find((d) => d.id === patch?.displayId);
   if (display) {
@@ -280,11 +286,12 @@ function openPanelWindow() {
     return;
   }
   const material = acrylicMaterial();
+  const panelWorkArea = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
   panelWin = new BrowserWindow({
-    width: 560,
-    height: 660,
-    minWidth: 480,
-    minHeight: 520,
+    width: Math.min(960, panelWorkArea.width - 40),
+    height: Math.min(760, panelWorkArea.height - 40),
+    minWidth: Math.min(740, panelWorkArea.width - 40),
+    minHeight: Math.min(540, panelWorkArea.height - 40),
     show: false,
     frame: false,
     // The notch cannot use a system backdrop because it needs a transparent
@@ -519,14 +526,39 @@ function registerIpc() {
 
   ipcMain.handle('notch:timer', (_event, command) => timer.command(command?.action, command?.options));
   ipcMain.handle('notch:note', (_event, value) => notes.set(value));
+  ipcMain.handle('notch:note-copy', (_event, text) => {
+    if (typeof text !== 'string' || !text.length || text.length > 100000) return false;
+    try { electronClipboard.writeText(text); return true; } catch { return false; }
+  });
   ipcMain.on('notch:note-cache', (_event, value) => notes.cache(value));
   ipcMain.handle('notch:preferences', (_event, patch) => applyPreferencePatch(patch));
   ipcMain.on('notch:open-settings', () => openPanelWindow());
+  ipcMain.handle('notch:context-menu', (_event, pinned) => {
+    if (!win || win.isDestroyed()) return false;
+    const action = (name) => () => send('notch:menu-action', name);
+    Menu.buildFromTemplate([
+      { label: 'Explore modules', click: action('explore') },
+      { label: 'Next activity', click: action('next-activity') },
+      { type: 'separator' },
+      { label: 'Keep open', type: 'checkbox', checked: pinned === true, click: action('pin') },
+      { label: 'Settings…', click: () => openPanelWindow() },
+      { label: 'Collapse', click: action('collapse') },
+      { type: 'separator' },
+      { label: 'Quit Islet', click: () => { app.isQuitting = true; app.quit(); } },
+    ]).popup({ window: win });
+    return true;
+  });
 
   // The control panel is a separate window with a deliberately small surface:
   // read the settings, write the settings, and manage its own frame.
   ipcMain.handle('panel:init', () => panelState());
   ipcMain.handle('panel:update', (_event, patch) => applyPreferencePatch(patch));
+  ipcMain.handle('panel:open-module', (_event, tab) => {
+    if (!NotchModules.ids.includes(tab)) return false;
+    send('notch:navigate', tab);
+    win?.show(); win?.focus();
+    return true;
+  });
   ipcMain.on('panel:close', () => panelWin?.close());
   ipcMain.on('panel:minimize', () => panelWin?.minimize());
   ipcMain.on('panel:reveal-data', () => shell.openPath(app.getPath('userData')));
@@ -541,7 +573,7 @@ function registerIpc() {
       if (command.value !== '' && !media.state.sources?.includes(command.value)) return false;
       return media.command('source', command.value);
     }
-    return media.command(command.action);
+    return media.command(command.action, undefined, command.playback);
   });
 
   ipcMain.on('notch:focus', () => { if (win && !win.isDestroyed()) win.focus(); });
@@ -573,8 +605,9 @@ function registerIpc() {
   ipcMain.on('notch:shelf-clear', () => shelf.clear());
 
   ipcMain.handle('notch:clip-pick', (_event, id) => (clipboard ? clipboard.pick(id) : false));
+  ipcMain.handle('notch:clip-pin', (_event, id) => clipboard?.togglePin(id) || { ok: false, reason: 'missing' });
   ipcMain.on('notch:clip-remove', (_event, id) => clipboard?.remove(id));
-  ipcMain.on('notch:clip-clear', () => clipboard?.clear());
+  ipcMain.on('notch:clip-clear', (_event, keepPinned) => clipboard?.clear(keepPinned === true));
   ipcMain.on('notch:clip-pause', (_event, paused) => clipboard?.setPaused(paused));
 
   ipcMain.on('notch:reveal', (_event, id) => {
@@ -686,10 +719,10 @@ if (!app.requestSingleInstanceLock()) {
     notes.load();
     timer = new NotchTimer();
     timer.on('change', (state) => send('notch:timer-state', state));
-    timer.on('complete', () => {
+    timer.on('complete', (state) => {
       try {
         if (!Notification.isSupported()) { shell.beep(); return; }
-        const notification = new Notification({ title: 'Islet', body: 'Time is up · Click to open the timer', silent: false });
+        const notification = new Notification({ title: 'Islet', body: (state.cycleFinished ? 'Focus cycle complete' : 'Time is up') + ' · Click to open the timer', silent: false });
         notification.on('click', () => send('notch:navigate', 'timer'));
         notification.on('failed', () => shell.beep());
         notification.show();

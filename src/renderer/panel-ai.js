@@ -1,164 +1,123 @@
 'use strict';
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 Vorssaint
+// NotchAgentsView, NotchAgentComponents and NotchAgentSupport for Windows.
 window.AiPanel = (() => {
-  const root = document.getElementById('ai-dashboard');
-  let data = { buckets: [], sessions: [], limits: {}, providers: [], accountStatus: 'loading' };
-  let provider = 'all', period = 'today', hidden = [];
-  try { const p = JSON.parse(localStorage.getItem('ai-view') || '{}'); provider = ['all', 'codex', 'claude'].includes(p.provider) ? p.provider : 'all'; period = ['today', '7', '30'].includes(p.period) ? p.period : 'today'; hidden = Array.isArray(p.hidden) ? p.hidden : []; } catch {}
-  const labels = { all: 'All', codex: 'Codex', claude: 'Claude' };
-  const cards = { limits: 'Remaining quota', tokens: 'Token', live: 'Sessions', trend: 'Trend', models: 'Models', projects: 'Projects', activity: 'Activity' };
-  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const count = (n) => new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(n || 0);
-  const dayKey = (value) => { const d = new Date(value); return [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-'); };
-  function save() { try { localStorage.setItem('ai-view', JSON.stringify({ provider, period, hidden })); } catch {} }
-  root.innerHTML = `<div class="ai-toolbar"><div class="ai-providers" role="group" aria-label="AI provider">${Object.entries(labels).map(([id, label]) => `<button data-ai-provider="${id}" aria-pressed="false">${label}</button>`).join('')}</div><select id="ai-period" aria-label="Usage period"><option value="today">Today</option><option value="7">7d</option><option value="30">30d</option></select><button id="ai-refresh" class="icon-btn" title="Refresh usage" aria-label="Refresh AI usage">↻</button><details class="ai-customize"><summary aria-label="Visible cards" title="Customize">⋯</summary><div>${Object.entries(cards).map(([id, name]) => `<label><input type="checkbox" data-ai-card="${id}" checked> ${name}</label>`).join('')}</div></details></div><div class="ai-readout" id="ai-meta" role="status"></div><div class="ai-grid" id="ai-cards"></div><p class="ai-privacy">Local activity · Tokens are not your plan’s bill.</p>`;
-  const container = root.querySelector('#ai-cards'), meta = root.querySelector('#ai-meta');
-  root.querySelectorAll('[data-ai-provider]').forEach((button) => button.addEventListener('click', () => { provider = button.dataset.aiProvider; save(); paint(); }));
-  root.querySelector('#ai-period').addEventListener('change', (e) => { period = e.target.value; save(); paint(); });
-  root.querySelectorAll('[data-ai-card]').forEach((input) => {
-    input.checked = !hidden.includes(input.dataset.aiCard);
-    input.addEventListener('change', () => { hidden = [...root.querySelectorAll('[data-ai-card]')].filter((e) => !e.checked).map((e) => e.dataset.aiCard); save(); paint(); });
+  const root=document.getElementById('ai-dashboard'),panel=root.closest('.panel');
+  const defaults={buckets:[],sessions:[],limits:{},providers:[],accountStatus:'loading',claudeAccountStatus:'loading'};
+  let data={...defaults},receivedDashboard=false,view=AiView.normalize(),lastHeight=0;
+  let hoverDay=null,selectedDay=null,hoverActivity=null,selectedActivity=null,message='',messageUntil=0,dragged=null,connecting=false;
+  try{view=AiView.normalize(JSON.parse(localStorage.getItem('ai-view')||'{}'));}catch{}
+  const labels={all:'All',codex:'Codex',claude:'Claude'};
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const count=n=>new Intl.NumberFormat('en',{notation:'compact',maximumFractionDigits:1}).format(AiView.number(n));
+  const paths={refresh:'M16 7a6 6 0 1 0 0 6M16 3v4h-4',settings:'M3 5h14M3 10h14M3 15h14M7 3v4m6 1v4m-5 1v4',usage:'M3 17V9m5 8V3m5 14V7m4 10V5',live:'m2 11 4-1 2-6 4 12 2-6h4',trend:'M3 3v14h14M6 13l4-5 3 2 4-6',models:'M4 4h12v12H4zM7 1v3m6-3v3M7 16v3m6-3v3M1 7h3m-3 6h3m12-6h3m-3 6h3',projects:'M2 5h6l2 2h8v10H2z',activity:'M3 3h4v4H3zm10 0h4v4h-4zM3 13h4v4H3zm10 0h4v4h-4z'};
+  const icon=name=>'<svg viewBox="0 0 20 20" aria-hidden="true"><path d="'+paths[name]+'"/></svg>';
+  function mark(id){return '<span class="ai-agent-mark" aria-hidden="true">'+ProviderMarks.markHtml(id)+'</span>';}
+  function save(){try{localStorage.setItem('ai-view',JSON.stringify(view));}catch{}}
+  root.innerHTML=`<div class="ai-toolbar"><div class="ai-providers" role="group" aria-label="AI provider">${Object.entries(labels).map(([id,label])=>`<button type="button" data-ai-provider="${id}" aria-pressed="false">${label}</button>`).join('')}</div><select id="ai-period" aria-label="Usage period"><option value="today">Today</option><option value="7">7 days</option><option value="30">30 days</option></select><button type="button" id="ai-refresh" class="ai-toolbar-icon" title="Refresh accounts and activity" aria-label="Refresh AI usage">${icon('refresh')}</button><details class="ai-customize"><summary aria-label="Customize AI cards" title="Customize cards">${icon('settings')}</summary><div class="ai-editor"><div class="ai-editor-head"><strong>Your cards</strong><button type="button" id="ai-reset-layout">Reset layout</button></div><label class="ai-setting">Quota display<select id="ai-limit-display"><option value="remaining">Remaining</option><option value="used">Used</option></select></label><label class="ai-setting">Resting notch<select id="ai-readout"><option value="elapsed">Elapsed time</option><option value="quota">Quota</option></select></label><p class="ai-editor-hint">Drag to arrange, or use the arrow buttons.</p><div id="ai-card-order"></div></div></details></div><div class="ai-readout"><span id="ai-meta" role="status"></span><span id="ai-live-summary"></span></div><div class="ai-scroll" tabindex="-1"><div class="ai-grid" id="ai-cards"></div><p class="ai-privacy">Local activity · Token counts are separate from plan limits.</p></div>`;
+  const container=root.querySelector('#ai-cards'),meta=root.querySelector('#ai-meta'),custom=root.querySelector('.ai-customize'),orderList=root.querySelector('#ai-card-order'),scrollElement=root.querySelector('.ai-scroll');
+  let currentTiles=[],emptyState=true,trendDays=[],activityDays=[];
+  root.querySelectorAll('[data-ai-provider]').forEach(button=>{if(button.dataset.aiProvider!=='all')button.prepend(ProviderMarks.markElement(button.dataset.aiProvider,document));});
+  function preferredHeight(){return custom.open?510:AiView.height(currentTiles,emptyState);}
+  function notifyLayout(){const height=preferredHeight();if(height!==lastHeight){lastHeight=height;panel.dispatchEvent(new CustomEvent('notch:layout',{bubbles:true}));}}
+  function preferencesChanged(){save();paint();root.dispatchEvent(new CustomEvent('ai:view-change',{bubbles:true}));}
+  function moveCard(id,to){const from=view.order.indexOf(id);if(from<0||to<0||to>=view.order.length)return;const order=[...view.order];order.splice(from,1);order.splice(to,0,id);view={...view,order};preferencesChanged();}
+  function paintEditor(){
+    const focused=orderList.contains(document.activeElement)?document.activeElement:null;
+    AiDom.render(orderList,view.order.map((id,i)=>`<div class="ai-editor-row" data-ai-key="${id}" data-order-card="${id}"><span class="ai-card-grip" draggable="true" title="Drag ${AiView.cards[id]}">⠿</span><label><input type="checkbox" data-ai-card="${id}" ${view.hidden.includes(id)?'':'checked'}><span>${AiView.cards[id]}</span></label><button type="button" data-ai-move="-1" data-id="${id}" aria-label="Move ${AiView.cards[id]} up" ${i===0?'disabled':''}>↑</button><button type="button" data-ai-move="1" data-id="${id}" aria-label="Move ${AiView.cards[id]} down" ${i===view.order.length-1?'disabled':''}>↓</button></div>`).join(''));
+    orderList.querySelectorAll('input').forEach(input=>{input.checked=!view.hidden.includes(input.dataset.aiCard);});
+    if(focused?.isConnected&&focused.disabled)focused.closest('[data-order-card]')?.querySelector('button:not(:disabled)')?.focus({preventScroll:true});
+    root.querySelector('#ai-limit-display').value=view.limitDisplay;root.querySelector('#ai-readout').value=view.readout;
+  }
+  root.querySelectorAll('[data-ai-provider]').forEach(button=>button.addEventListener('click',()=>{view={...view,provider:button.dataset.aiProvider};hoverDay=selectedDay=null;preferencesChanged();}));
+  root.querySelector('#ai-period').addEventListener('change',event=>{view={...view,period:event.target.value};hoverDay=selectedDay=null;preferencesChanged();});
+  root.querySelector('#ai-limit-display').addEventListener('change',event=>{view={...view,limitDisplay:event.target.value};preferencesChanged();});
+  root.querySelector('#ai-readout').addEventListener('change',event=>{view={...view,readout:event.target.value};preferencesChanged();});
+  orderList.addEventListener('change',event=>{const id=event.target.dataset.aiCard;if(!id)return;view.hidden=event.target.checked?view.hidden.filter(x=>x!==id):[...view.hidden,id];preferencesChanged();});
+  orderList.addEventListener('click',event=>{const b=event.target.closest('[data-ai-move]');if(b)moveCard(b.dataset.id,view.order.indexOf(b.dataset.id)+Number(b.dataset.aiMove));});
+  function finishDrag(){dragged=null;orderList.querySelectorAll('.is-dragging,.is-drop-target').forEach(node=>node.classList.remove('is-dragging','is-drop-target'));}
+  orderList.addEventListener('dragstart',event=>{const grip=event.target.closest('.ai-card-grip');if(!grip)return;dragged=grip.closest('[data-order-card]').dataset.orderCard;event.dataTransfer.setData('application/x-islet-ai-card',dragged);event.dataTransfer.effectAllowed='move';grip.parentElement.classList.add('is-dragging');});
+  orderList.addEventListener('dragover',event=>{const row=event.target.closest('[data-order-card]');if(!dragged||!row||row.dataset.orderCard===dragged)return;event.preventDefault();orderList.querySelectorAll('.is-drop-target').forEach(node=>node.classList.remove('is-drop-target'));row.classList.add('is-drop-target');});
+  orderList.addEventListener('drop',event=>{const target=event.target.closest('[data-order-card]')?.dataset.orderCard;if(!dragged||!target)return;event.preventDefault();const id=dragged;finishDrag();if(id===target)return;const order=view.order.filter(x=>x!==id);order.splice(order.indexOf(target),0,id);view={...view,order};preferencesChanged();});
+  orderList.addEventListener('dragend',finishDrag);
+  function resetLayout(){view={...view,order:AiView.normalize().order,hidden:[]};preferencesChanged();}
+  root.querySelector('#ai-reset-layout').addEventListener('click',resetLayout);custom.addEventListener('toggle',notifyLayout);
+  root.addEventListener('keydown',event=>{
+    if(event.key==='Escape'&&custom.open){event.preventDefault();event.stopPropagation();custom.open=false;custom.querySelector('summary').focus();}
+    const chart=event.target.closest('[data-ai-chart]'),button=event.target.closest('[data-day]');if(!chart||!button||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key))return;
+    event.preventDefault();const buttons=[...chart.querySelectorAll('[data-day]')],index=buttons.indexOf(button),delta=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:event.key==='ArrowUp'?-7:7;
+    const next=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+delta+buttons.length)%buttons.length;buttons[next].focus({preventScroll:true});
   });
-  root.querySelector('#ai-refresh').addEventListener('click', async (e) => {
-    const button = e.currentTarget; button.disabled = true; meta.textContent = 'Refreshing usage…';
-    try { const next = await notch.refreshAi(); if (next) update(next); } catch { meta.textContent = 'Cannot refresh. Try again.'; }
-    setTimeout(() => { button.disabled = false; }, 10000);
+  function closeEditor(){custom.open=false;finishDrag();}
+  document.addEventListener('pointerdown',event=>{if(custom.open&&!custom.contains(event.target))closeEditor();});
+  const refresh=root.querySelector('#ai-refresh');
+  function setMessage(text){message=text;messageUntil=Date.now()+7000;meta.textContent=text;}
+  refresh.addEventListener('click',async()=>{refresh.disabled=true;refresh.classList.add('is-checking');try{const next=await notch.refreshAi();if(next)update(next);setMessage('Refresh requested');}catch{setMessage('Could not refresh. Try again.');}finally{refresh.classList.remove('is-checking');setTimeout(()=>{refresh.disabled=false;},10000);}});
+  root.addEventListener('click',async event=>{
+    if(event.target.closest('[data-ai-show-all]')){resetLayout();return;}
+    const connect=event.target.closest('[data-ai-connect]');if(connect){if(connecting)return;connecting=true;connect.disabled=true;try{const result=await notch.connectClaude();setMessage(result?.ok?'Complete Claude sign-in in Terminal, then Refresh.':'Could not open sign-in. Run Claude Code in Terminal.');}catch{setMessage('Could not open sign-in. Run Claude Code in Terminal.');}finally{connecting=false;if(connect.isConnected)connect.disabled=false;}return;}
+    const day=event.target.closest('[data-day]');if(day){if(day.closest('[data-ai-chart="trend"]'))selectedDay=day.dataset.day;else selectedActivity=day.dataset.day;paintInspection();}
   });
-  root.addEventListener('click', async (event) => {
-    const button = event.target.closest('[data-ai-connect]');
-    if (!button) return;
-    button.disabled = true;
-    try {
-      const result = await notch.connectClaude();
-      meta.textContent = result?.ok ? 'Complete Claude sign-in in Terminal, then Refresh.' : 'Cannot open Claude sign-in. Run Claude Code in Terminal.';
-    } catch { meta.textContent = 'Cannot open Claude sign-in. Run Claude Code in Terminal.'; }
-    finally { if (button.isConnected) button.disabled = false; }
-  });
-  function card(id, content, wide = false) { return hidden.includes(id) ? '' : `<article class="ai-card ${wide ? 'ai-wide' : ''}" data-card="${id}">${content}</article>`; }
-  function resetText(w, now) {
-    if (!w.resetsAt) return 'Reset time unavailable';
-    const delta = w.resetsAt - now;
-    if (delta <= 0) return 'Reset due · Awaiting update';
-    const m = Math.ceil(delta / 60000);
-    return 'Resets in ' + (m >= 1440 ? Math.floor(m / 1440) + 'd ' + Math.floor(m % 1440 / 60) + 'h' : m >= 60 ? Math.floor(m / 60) + 'h ' + m % 60 + ' min' : m + ' min');
+  function inspect(event){const day=event.target.closest('[data-day]');if(!day)return;if(day.closest('[data-ai-chart="trend"]'))hoverDay=day.dataset.day;else hoverActivity=day.dataset.day;paintInspection();}
+  root.addEventListener('pointerover',inspect);root.addEventListener('focusin',inspect);
+  root.addEventListener('pointerout',event=>{const day=event.target.closest('[data-day]');if(!day||day.contains(event.relatedTarget))return;if(day.closest('[data-ai-chart="trend"]'))hoverDay=null;else hoverActivity=null;paintInspection();});
+  function windowLabel(w){const m=w.minutes,label=m>=10080?'Weekly':m>=1440?Math.round(m/1440)+' days':m>=60?Math.round(m/60)+' hours':m?m+' min':'Window';return label+(w.scope?' · '+w.scope:'');}
+  function resetText(w,now){if(!w.reset)return'Reset time unavailable';if(w.expired)return'Reset due · Awaiting update';const m=Math.max(1,Math.ceil((w.reset-now)/60000));return'Resets in '+(m>=1440?Math.floor(m/1440)+'d '+Math.floor(m%1440/60)+'h':m>=60?Math.floor(m/60)+'h '+m%60+' min':m+' min');}
+  function windowCell(id,w,now){
+    const value=w.value===null?'—':w.value+'<i>%</i>',label=windowLabel(w);
+    return `<div class="ai-win ${w.stale||w.expired?'is-stale':''} ${w.level==='low'?'is-low':w.level==='critical'?'is-critical':''}" data-ai-key="window.${esc(w.key)}"><span class="ai-win-label">${esc(label)}</span><strong class="ai-win-value">${value}</strong><span class="ai-win-bar" role="progressbar" aria-label="${labels[id]} ${view.limitDisplay} · ${esc(label)}" aria-valuemin="0" aria-valuemax="100" ${w.value===null?'aria-valuetext="Reading unavailable"':`aria-valuenow="${w.value}" aria-valuetext="${w.value}% ${view.limitDisplay}"`}><i data-fill="${w.value??0}"></i>${w.pace===null?'':`<b class="ai-pace" data-pace="${w.pace}" title="${Math.round(w.pace)}% of this time window ${view.limitDisplay==='used'?'elapsed':'remaining'}"></b>`}</span><small title="${w.reset?esc(new Date(w.reset).toLocaleString('en-US')):''}">${esc(resetText(w,now))}</small></div>`;
   }
-  /** "5 hours", "Weekly" — the two windows people actually think in. */
-  function windowLabel(minutes, scope) {
-    const base = minutes >= 10080 ? 'Weekly'
-      : minutes >= 1440 ? Math.round(minutes / 1440) + ' days'
-        : minutes >= 60 ? Math.round(minutes / 60) + ' hours'
-          : minutes ? minutes + ' min' : 'Window';
-    return scope ? base + ' · ' + scope : base;
+  function providerCard(id,now,rows,sessions){
+    const windows=AiView.quota(data,id,view.limitDisplay,now),mine=rows.filter(row=>row.provider===id),total=AiView.totals(mine),status=id==='codex'?data.accountStatus:data.claudeAccountStatus;
+    const working=sessions.some(s=>s.provider===id&&AiState.kindOf(s,now)==='working'),checking=Boolean(data.checking?.[id]),limits=data.limits[id];
+    const reason=({loading:'Checking account…',missing:labels[id]+' CLI not found',signin:'Not signed in','no-limits':'No plan limits published',outdated:'Update Claude Code to check limits',unavailable:'Account limits unavailable'})[status]||'No account reading yet';
+    const source=windows.length?(windows.some(w=>w.expired)?'Reset due':windows.every(w=>!w.stale)?'Live':'Snapshot'):null;
+    const activity=`<div class="ai-agent-windows ai-local-stats"><div class="ai-win is-measured"><span class="ai-win-label">Local tokens</span><strong class="ai-win-value">${mine.length?count(total.total):'—'}</strong></div><div class="ai-win is-measured"><span class="ai-win-label">Responses</span><strong class="ai-win-value">${mine.length?count(total.responses):'—'}</strong></div></div><small class="ai-account-note">Not a plan allowance</small>`;
+    const badge=checking?'<span class="ai-checking" role="status" aria-label="Checking account"></span>'
+      :working?'<span class="ai-working-pill">Working</span>'
+        :source?`<span class="ai-agent-source ${source!=='Live'?'is-stale':''}">${source}</span>`:'';
+    const resets=id==='codex'&&data.resets!==null&&data.resets!==undefined
+      ?`<span title="Resets reported by this Codex account">${AiView.number(data.resets)} resets</span>`:'';
+    const body=windows.length
+      ?`<div class="ai-agent-windows">${windows.map(w=>windowCell(id,w,now)).join('')}</div><div class="ai-account-footer"><span>${view.limitDisplay==='used'?'Used':'Remaining'}</span>${resets}</div>`
+      :activity;
+    const signIn=id==='claude'&&status==='signin'
+      ?`<div class="ai-agent-foot"><button type="button" class="ai-connect" data-ai-connect ${connecting?'disabled':''}>Connect Claude <span aria-hidden="true">↗</span></button><small title="Run this in Terminal"><code>claude auth login</code></small></div>`
+      :id==='codex'&&status==='signin'?'<small class="ai-account-note">In Terminal: <code>codex login</code></small>':'';
+    return `<div class="ai-agent-head">${mark(id)}<span class="ai-agent-name">${labels[id]}</span>${badge}</div>
+      <div class="ai-agent-plan ${windows.length?'':'is-reason'}">${esc(windows.length?limits?.plan:reason)}</div>${body}${signIn}`;
   }
-
-  function agentMark(id) {
-    const mark = ProviderMarks.markFor(id);
-    return `<span class="ai-agent-mark" aria-hidden="true"><svg viewBox="${mark.viewBox}"><path d="${mark.path}"/></svg></span>`;
+  function heading(title,name,side=''){return `<div class="ai-card-head"><span>${icon(name)}${title}</span>${side}</div>`;}
+  function usageCard(rows){const t=AiView.totals(rows),input=t.input+t.cached+t.write;return heading('Token usage','usage',`<span class="ai-soft">${view.period==='today'?'Today':view.period+'d'}</span>`)+`<div class="ai-total">${rows.length?count(t.total):'—'}<small>tokens</small></div><div class="ai-token-split"><span>In ${count(t.input)}</span><span>Out ${count(t.output)}</span></div><div class="ai-cache">${input?'Cache '+Math.round(t.cached/input*100)+'%':'Local history'}<span>${count(t.responses)} responses</span></div>`;}
+  function elapsed(start,now){const s=Math.floor(Math.max(0,now-start)/1000);return(s>=3600?Math.floor(s/3600)+':':'')+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+  function liveCard(sessions,now){const working=sessions.filter(s=>AiState.kindOf(s,now)==='working').length;return heading('Sessions','live',`<span class="ai-live-count">${working} working</span>`)+`<div id="ai-list" class="ai-live-list">${sessions.length?sessions.slice(0,2).map((s,i)=>`<div class="ai-live-row" data-ai-key="session.${esc(s.provider+'.'+(s.sessionId||s.pid||i))}" title="${esc(s.inferred?'Inferred from recent logs; the process may have closed.':'Reported by a running process')}"><span class="ai-session-mark" aria-hidden="true">${ProviderMarks.markHtml(s.provider)}<i class="ai-dot is-${AiState.kindOf(s,now)}"></i></span><div><b>${esc(s.name||s.folder||labels[s.provider])}</b><small>${labels[s.provider]||'Agent'} · ${esc(AiState.describe(s,now))}${s.inferred?' · log':''}</small></div>${s.startedAt?`<time data-session-start="${s.startedAt}">${elapsed(s.startedAt,now)}</time>`:''}</div>`).join(''):'<p class="ai-empty">No recent sessions.</p>'}</div>`;}
+  function ranking(rows,key,title){const groups=new Map();for(const row of rows){const name=row[key]||'Unknown';groups.set(name,(groups.get(name)||0)+AiView.number(row.total));}const list=[...groups].sort((a,b)=>b[1]-a[1]).slice(0,3),max=list[0]?.[1]||1;return heading(title,key==='model'?'models':'projects',`<span class="ai-soft">tokens</span>`)+(list.length?list.map(([name,value])=>`<div class="ai-ranking" data-ai-key="${esc(name)}"><div><span title="${esc(name)}">${esc(name)}</span><b>${count(value)}</b></div><progress max="${max}" value="${value}" aria-label="${esc(name)} ${value} tokens"></progress></div>`).join(''):'<p class="ai-empty">No activity in this period.</p>');}
+  function trendCard(rows,now){trendDays=AiView.buckets(rows,view.period==='30'?30:7,now);const peak=Math.max(1,...trendDays.map(d=>d.total));return heading('Daily tokens','trend',`<span class="ai-soft">${trendDays.length} days</span>`)+`<div class="ai-trend" data-ai-chart="trend" role="group" aria-label="Daily token history">${trendDays.map(d=>`<button type="button" data-ai-key="${d.day}" data-day="${d.day}" aria-label="${d.day}: ${d.total.toLocaleString('en')} tokens" tabindex="${d.day===(selectedDay||AiView.dayKey(now))?0:-1}"><i data-height="${d.total?Math.max(3,d.total/peak*54):2}" class="${d.day===AiView.dayKey(now)?'is-today':''}">${AiView.providers.filter(id=>d[id]>0).map(id=>`<span data-provider="${id}" data-share="${d[id]/d.total*100}"></span>`).join('')}</i><small>${trendDays.length===7?new Date(d.date).getDate():''}</small></button>`).join('')}</div><div class="ai-chart-readout" id="ai-trend-readout" role="status"></div>`;}
+  function activityCard(rows,now){activityDays=AiView.buckets(rows,28,now);const peak=Math.max(1,...activityDays.map(d=>d.total));return heading('Activity','activity','<span class="ai-soft">28 days</span>')+`<div class="ai-activity-body"><div class="ai-heatmap" data-ai-chart="activity" role="group" aria-label="Activity over 28 days">${activityDays.map(d=>`<button type="button" class="ai-level-${d.total?Math.max(1,Math.ceil(d.total/peak*4)):0}" data-ai-key="${d.day}" data-day="${d.day}" aria-label="${d.day}: ${d.total.toLocaleString('en')} tokens" tabindex="${d.day===(selectedActivity||AiView.dayKey(now))?0:-1}"></button>`).join('')}</div><div id="ai-activity-readout" class="ai-chart-readout" role="status"></div></div>`;}
+  function paintInspection(){for(const [name,days,chosen] of [['trend',trendDays,hoverDay||selectedDay],['activity',activityDays,hoverActivity||selectedActivity]]){const target=root.querySelector('#ai-'+name+'-readout');if(!target)continue;const d=days.find(d=>d.day===chosen)||days.at(-1);if(!d)continue;const label=new Date(d.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}),text=label+' · '+count(d.total)+' tokens · Codex '+count(d.codex)+' / Claude '+count(d.claude);if(target.textContent!==text)target.textContent=text;root.querySelector('[data-ai-chart="'+name+'"]')?.querySelectorAll('[data-day]').forEach(b=>{const active=b.dataset.day===d.day;b.classList.toggle('is-inspected',active);b.tabIndex=active?0:-1;});}}
+  function paint(){
+    const now=Date.now(),shown=AiView.shownProviders(data,view.provider),today=AiView.dayKey(now),start=AiView.days(view.period==='today'?1:Number(view.period),now)[0].day;
+    const allRows=(data.buckets||[]).filter(r=>shown.includes(r.provider)),rows=allRows.filter(r=>r.day>=start&&r.day<=today),sessions=AiState.sortSessions((data.sessions||[]).filter(s=>shown.includes(s.provider)),now);
+    root.querySelectorAll('[data-ai-provider]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.aiProvider===view.provider)));root.querySelector('#ai-period').value=view.period;
+    meta.textContent=messageUntil>now?message:data.scanFailed?'History unavailable · Restart Islet to retry':data.scanning?'Reading local history…':data.updatedAt?'Updated '+new Date(data.updatedAt).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}):'Looking for local agents…';
+    const working=sessions.filter(s=>AiState.kindOf(s,now)==='working').length,waiting=sessions.filter(s=>AiState.kindOf(s,now)==='waiting').length;root.querySelector('#ai-live-summary').textContent=working?working+' working'+(waiting?' · '+waiting+' waiting':''):waiting?waiting+' waiting':'Local only';
+    const unavailable=allRows.length?[]:['tokens','trend','models','projects','activity',...(sessions.length?[]:['live'])];
+    currentTiles=AiView.tiles({...view,hidden:[...view.hidden,...unavailable]},shown);emptyState=!shown.length||!currentTiles.length;let html;
+    if(!shown.length)html=`<div class="ai-empty-state" data-ai-key="empty"><span>${icon('live')}</span><strong>${data.scanning||data.accountStatus==='loading'?'Looking for your agents':'No local activity yet'}</strong><p>Run Codex or Claude Code to see sessions and usage here.</p></div>`;
+    else if(!currentTiles.length)html=`<div class="ai-empty-state" data-ai-key="empty"><strong>${view.hidden.length===Object.keys(AiView.cards).length?'Your cards are hidden':'No local history to show yet'}</strong><p>Choose the cards you want in Customize.</p><button type="button" data-ai-show-all>Show all cards</button></div>`;
+    else html=currentTiles.map(tile=>{const content=tile.card==='limits'?providerCard(tile.provider,now,rows,sessions):tile.card==='tokens'?usageCard(rows):tile.card==='live'?liveCard(sessions,now):tile.card==='trend'?trendCard(allRows,now):tile.card==='models'||tile.card==='projects'?ranking(rows,tile.card==='models'?'model':'project',AiView.cards[tile.card]):activityCard(allRows,now);return `<article class="ai-card ${tile.wide?'ai-wide':''} ${tile.provider?'ai-agent':''}" data-ai-key="${tile.key}" data-card="${tile.card}" ${tile.provider?'data-agent="'+tile.provider+'"':''}>${content}</article>`;}).join('');
+    const scrollTop=scrollElement.scrollTop;AiDom.render(container,html);container.dataset.agent=view.provider;root.dataset.agent=view.provider;
+    container.querySelectorAll('[data-fill]').forEach(n=>{n.style.width=n.dataset.fill+'%';});container.querySelectorAll('[data-height]').forEach(n=>{n.style.height=n.dataset.height+'px';});container.querySelectorAll('[data-share]').forEach(n=>{n.style.height=n.dataset.share+'%';});container.querySelectorAll('[data-pace]').forEach(n=>{n.style.left=n.dataset.pace+'%';});
+    scrollElement.scrollTop=scrollTop;paintEditor();paintInspection();notifyLayout();
   }
-
-  /** One window: its name, what is left, a bar, and when it comes back. */
-  function windowCell(id, w, now, stale) {
-    const expired = w.resetsAt && w.resetsAt <= now;
-    const left = expired ? null : Math.round(100 - w.used);
-    const label = windowLabel(w.minutes, w.scope);
-    const level = left !== null && left <= 20 ? ' is-low' : '';
-    return `<div class="ai-win${level}${expired || stale ? ' is-stale' : ''}">`
-      + `<span class="ai-win-label">${esc(label)}</span>`
-      + `<strong class="ai-win-value">${left === null ? '—' : left + '<i>%</i>'}</strong>`
-      + `<span class="ai-win-bar" role="progressbar" aria-label="${labels[id]} remaining · ${esc(label)}"`
-      + ` aria-valuemin="0" aria-valuemax="100" aria-valuenow="${left === null ? 0 : left}">`
-      + `<i data-fill="${left === null ? 0 : left}"></i></span>`
-      + `<small title="${w.resetsAt ? esc(new Date(w.resetsAt).toLocaleString('en-US')) : ''}">${resetText(w, now)}</small></div>`;
+  function update(next){
+    receivedDashboard=true;
+    if(next?.claudeAccountStatus!==data.claudeAccountStatus&&next?.claudeAccountStatus!=='signin')messageUntil=0;
+    data={...defaults,...next,limits:next?.limits||{}};paint();return data.sessions||[];
   }
-
-  /**
-   * An agent with no publishable quota keeps both window slots, so the two
-   * agents stay the same shape, and fills them with what this machine does
-   * know. An empty slot that is clearly an empty slot beats a missing row.
-   */
-  function activityCells(id, rows) {
-    const mine = (rows || []).filter((r) => r.provider === id);
-    const sums = mine.reduce((a, r) => ({ total: a.total + (r.total || 0), responses: a.responses + (r.responses || 0) }),
-      { total: 0, responses: 0 });
-    const window = period === 'today' ? 'Today' : 'Last ' + period + ' days';
-    return `<div class="ai-win is-measured"><span class="ai-win-label">Tokens · ${window}</span>`
-      + `<strong class="ai-win-value">${mine.length ? count(sums.total) : '—'}</strong>`
-      + `<small>Counted on this machine</small></div>`
-      + `<div class="ai-win is-measured"><span class="ai-win-label">Responses · ${window}</span>`
-      + `<strong class="ai-win-value">${mine.length ? count(sums.responses) : '—'}</strong>`
-      + `<small>Not a plan allowance</small></div>`;
-  }
-
-  function agentBlock(id, now, rows) {
-    const limits = data.limits[id];
-    const status = id === 'claude' ? data.claudeAccountStatus : data.accountStatus;
-    if (!limits) {
-      const reason = id === 'claude'
-        ? { loading: 'Reading account limits…', missing: 'Claude Code CLI not found', signin: 'Not signed in',
-          'no-limits': 'This plan publishes no limits', outdated: 'Update Claude Code to read limits',
-          unavailable: 'Limits could not be read' }[status] || 'No account reading yet'
-        : { loading: 'Reading account limits…', missing: 'Codex CLI not found', signin: 'Not signed in',
-          unavailable: 'Quota temporarily unavailable' }[status] || 'No quota data yet';
-      const signin = id === 'claude' && status === 'signin'
-        ? '<div class="ai-agent-foot"><small>In Terminal: <code>claude auth login</code></small>'
-          + '<button type="button" class="ai-connect" data-ai-connect>Connect <span aria-hidden="true">↗</span></button></div>'
-        : '';
-      return `<div class="ai-agent" data-agent="${id}">`
-        + `<div class="ai-agent-head">${agentMark(id)}<span class="ai-agent-name">${labels[id]}</span>`
-        + `<span class="ai-agent-plan is-reason">${esc(reason)}</span></div>`
-        + `<div class="ai-agent-windows">${activityCells(id, rows)}</div>${signin}</div>`;
-    }
-    const stale = now - limits.observedAt > 600000 || limits.source !== 'account';
-    return `<div class="ai-agent" data-agent="${id}">`
-      + `<div class="ai-agent-head">${agentMark(id)}<span class="ai-agent-name">${labels[id]}</span>`
-      + `<span class="ai-agent-plan">${esc(limits.plan)}</span>`
-      + `<span class="ai-agent-source${stale ? ' is-stale' : ''}">${stale ? 'Log snapshot' : 'Live'}</span></div>`
-      + `<div class="ai-agent-windows">${limits.windows.map((w) => windowCell(id, w, now, stale)).join('')}</div></div>`;
-  }
-
-  function limitCard(now, rows) {
-    const providers = provider === 'all' ? ['codex', 'claude'] : [provider];
-    const resets = data.resets !== null && data.resets !== undefined && provider !== 'claude'
-      ? `<div class="ai-reset-credit">Codex resets available <b>${data.resets.toLocaleString()}</b></div>` : '';
-    return card('limits', `<div class="ai-card-head"><span>Remaining quota</span><span class="ai-soft">Per account</span></div>`
-      + providers.map((id) => agentBlock(id, now, rows)).join('') + resets, true);
-  }
-
-  function ranking(rows, key, title) {
-    const groups = new Map(); for (const r of rows) groups.set(r[key], (groups.get(r[key]) || 0) + r.total);
-    const list = [...groups].sort((a, b) => b[1] - a[1]).slice(0, 4), max = list[0]?.[1] || 1;
-    return card(key === 'model' ? 'models' : 'projects', `<div class="ai-card-head">${title}<span class="ai-soft">token</span></div>` + (list.length ? list.map(([name, n]) => `<div class="ai-ranking"><div><span title="${esc(name)}">${esc(name)}</span><b>${count(n)}</b></div><progress max="${max}" value="${n}" aria-label="${esc(name)} ${n} token"></progress></div>`).join('') : '<p class="ai-empty">No activity in this period.</p>'));
-  }
-  function paint() {
-    const now = Date.now(), today = new Date(); today.setHours(0, 0, 0, 0);
-    const start = new Date(today); start.setDate(start.getDate() - (period === 'today' ? 0 : Number(period) - 1));
-    const matches = (r) => provider === 'all' || r.provider === provider;
-    const allRows = (data.buckets || []).filter(matches), rows = allRows.filter((r) => r.day >= dayKey(start) && r.day <= dayKey(now));
-    const sessions = AiState.sortSessions((data.sessions || []).filter(matches), now);
-    root.querySelectorAll('[data-ai-provider]').forEach((e) => e.setAttribute('aria-pressed', String(e.dataset.aiProvider === provider)));
-    root.querySelector('#ai-period').value = period;
-    meta.textContent = data.scanFailed ? 'Cannot read activity. Restart the app to retry.' : data.scanning ? 'Reading history · Totals are incomplete' : data.updatedAt ? 'Updated ' + new Date(data.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + ' · ' + sessions.length + ' recent sessions' : 'Looking for Codex & Claude Code…';
-    const totals = rows.reduce((a, r) => { for (const key of ['total', 'cached', 'input', 'output', 'write', 'responses']) a[key] += r[key] || 0; return a; }, { total: 0, cached: 0, input: 0, output: 0, write: 0, responses: 0 });
-    const share = totals.input + totals.cached + totals.write;
-    const tokenCard = card('tokens', `<div class="ai-card-head">Usage<span class="ai-soft">${period === 'today' ? 'Today' : period + 'd'}</span></div><div class="ai-total">${rows.length ? count(totals.total) : '—'}<small>token</small></div><div class="ai-token-split"><span>In ${count(totals.input)}</span><span>Out ${count(totals.output)}</span></div><div class="ai-cache">Cache ${share ? Math.round(totals.cached / share * 100) + '%' : '—'}<span>${count(totals.responses)} responses</span></div>`);
-    const working = sessions.filter((s) => AiState.kindOf(s, now) === 'working').length;
-    const liveCard = card('live', `<div class="ai-card-head">Recent sessions<span class="ai-live-count">${working} working</span></div><div id="ai-list" class="ai-live-list">${sessions.length ? sessions.slice(0, 5).map((s) => `<div class="ai-live-row" title="${esc(s.inferred ? 'Inferred from recent logs; the process may have closed.' : 'Reported by a running process')}"><span class="ai-dot is-${AiState.kindOf(s, now)}"></span><div><b>${esc(s.name)}</b><small>${labels[s.provider] || 'Claude'} · ${esc(AiState.describe(s, now))}${s.inferred ? ' · log' : ''}</small></div></div>`).join('') : '<p class="ai-empty">No recent sessions.</p>'}</div>`);
-    const days = Array.from({ length: period === '30' ? 30 : 7 }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() - ((period === '30' ? 30 : 7) - 1 - i)); return { day: dayKey(d), label: d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }), short: d.getDate(), total: 0 }; });
-    for (const r of allRows) { const d = days.find((d) => d.day === r.day); if (d) d.total += r.total; }
-    const max = Math.max(1, ...days.map((d) => d.total));
-    const trend = card('trend', `<div class="ai-card-head">Daily tokens<span class="ai-soft">${days.length} days</span></div><div class="ai-trend" role="img" aria-label="${esc(days.map((d) => d.label + ': ' + d.total).join(', '))}">${days.map((d) => `<div title="${d.label} · ${d.total.toLocaleString()} token"><i data-height="${Math.max(3, d.total / max * 54)}" class="${d.day === dayKey(now) ? 'is-today' : ''}"></i><small>${days.length === 7 ? d.short : ''}</small></div>`).join('')}</div>` , true);
-    const activityDays = Array.from({ length: 28 }, (_, i) => { const d = new Date(today); d.setDate(d.getDate() - 27 + i); const key = dayKey(d); return { key, value: allRows.filter((r) => r.day === key).reduce((sum, r) => sum + r.total, 0) }; });
-    const activityMax = Math.max(1, ...activityDays.map((d) => d.value));
-    const activity = card('activity', `<div class="ai-card-head">Activity<span class="ai-soft">28 days</span></div><div class="ai-heatmap">${activityDays.map((d) => `<i class="ai-level-${d.value ? Math.max(1, Math.ceil(d.value / activityMax * 4)) : 0}" title="${d.key} · ${count(d.value)} token"></i>`).join('')}</div>`, true);
-    // Preserve scroll and keyboard focus: controls remain mounted across polls.
-    container.dataset.agent = provider;
-    container.innerHTML = limitCard(now, rows) + tokenCard + liveCard + trend + ranking(rows, 'model', 'Models') + ranking(rows, 'project', 'Projects') + activity;
-    for (const fill of container.querySelectorAll('[data-fill]')) fill.style.width = fill.dataset.fill + '%';
-    container.querySelectorAll('[data-height]').forEach((bar) => { bar.style.height = bar.dataset.height + 'px'; });
-    if (hidden.length === Object.keys(cards).length) container.innerHTML = '<p class="ai-empty">Choose cards from the ⋯ menu.</p>';
-  }
-  function update(next) { data = next || data; paint(); return data.sessions || []; }
-  function updateSessions(list) { if (!data.updatedAt) { data.sessions = list.map((s) => ({ ...s, provider: 'claude' })); paint(); } }
-  paint();
-  setInterval(paint, 30000);
-  return { update, updateSessions };
+  function updateSessions(list){if(!receivedDashboard){data.sessions=list.map(s=>({...s,provider:s.provider||'claude'}));paint();}}
+  function closedReading(id,now=Date.now()){if(view.readout!=='quota')return null;const w=AiView.quota(data,id,view.limitDisplay,now).filter(w=>w.value!==null&&!w.stale).sort((a,b)=>b.used-a.used)[0];return w?{text:w.value+'%',label:windowLabel(w)+' · '+w.value+'% '+view.limitDisplay}:null;}
+  let ticks=0;setInterval(()=>{if(!panel.classList.contains('is-active')||!document.body.classList.contains('state-open'))return;const now=Date.now();root.querySelectorAll('[data-session-start]').forEach(t=>{const text=elapsed(Number(t.dataset.sessionStart),now);if(t.textContent!==text)t.textContent=text;});if(++ticks%15===0)paint();},1000);
+  paint();return{update,updateSessions,preferredHeight,closedReading,closeEditor};
 })();

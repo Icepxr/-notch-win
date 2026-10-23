@@ -63,5 +63,13 @@ function stub(answer = reading, failure = null) {
   dashboard.setClaude([{ sessionId: 'live', status: 'busy', pid: 123 }]);
   assert.equal(dashboard.snapshot().sessions[0].inferred, false);
   dashboard.stop();
+  let finishCheck;
+  const checking = new AiDashboard({ readClaudeLimits: () => new Promise(resolve => { finishCheck = resolve; }) });
+  const published = []; checking.on('change', snapshot => published.push(snapshot.checking.claude));
+  const pendingCheck = checking.refreshClaudeAccount();
+  assert.equal(checking.snapshot().checking.claude, true, 'an in-flight CLI check is represented explicitly');
+  finishCheck(result); await pendingCheck;
+  assert.equal(checking.snapshot().checking.claude, false);
+  assert.equal(published.at(-1), false, 'the finished check publishes its settled state'); checking.stop();
   console.log('Claude: read-only protocol, CLI errors, quota windows, stale/account guards and dashboard integration passed');
 })().catch(e => { console.error(e); process.exitCode = 1; });

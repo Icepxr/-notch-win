@@ -1,0 +1,38 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later
+   Copyright (C) 2026 Vorssaint
+   NotchTimerView / NotchTimerRuler: a centered orange scale and quiet readouts. */
+.timer-ruler { padding: 0; background: transparent; border-radius: 8px; isolation: isolate; }
+.timer-ruler::before { display: none; }
+.timer-ruler-viewport { position: absolute; inset: 0; overflow: hidden; mask-image: linear-gradient(to right,transparent,#000 12%,#000 88%,transparent); }
+.timer-ruler-track { position: absolute; left: 50%; top: 0; height: 82px; width: 2506px; transition: transform 160ms ease-out; will-change: auto; }
+.timer-ruler.is-adjusting .timer-ruler-track { transition: none; }
+.timer-ruler-tick { position: absolute; top: 26px; width: 4px; height: 38px; margin-left: -2px; border-radius: 2px; background: #ffa34860; color: #be9569; }
+.timer-ruler-tick.is-past { background: #ffa348; color: #ffad5c; }
+.timer-ruler .timer-ruler-tick { min-width: 0; }
+.timer-ruler-tick b { position: absolute; left: 50%; top: -26px; transform: translateX(-50%); font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; line-height: 18px; white-space: nowrap; }
+.timer-ruler-pointer { position: absolute; left: calc(50% - 6px); bottom: 2px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 10px solid #ffa348; }
+.timer-ruler input { position: absolute; z-index: 2; inset: 0; opacity: 0; width: 100%; height: 100%; margin: 0; padding: 0; cursor: ew-resize; touch-action: none; }
+.timer-ruler:has(input:focus-visible) { outline: 1px solid #ffb566; outline-offset: 3px; }
+.timer-duration #timer-minutes-label { text-align: center; color: #b9a38b; font-size: 10px; }
+.timer-cycle-settings { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); align-items: center; gap: 4px; min-height: 38px; }
+.timer-cycle-settings label { display: flex; flex-direction: column; gap: 1px; min-width: 0; border-radius: 7px; padding: 3px 2px; }
+.timer-cycle-settings label:hover,.timer-cycle-settings label:focus-within { background: #ffffff09; }
+.timer-cycle-settings label > span { font-size: 9px; color: #aaa3a0; white-space: nowrap; }
+.timer-cycle-settings select { font: inherit; font-size: 11px; font-weight: 500; color: #ffb269; border: 0; background: transparent; padding: 1px 0; max-width: 100%; min-width: 0; height: 21px; cursor: pointer; }
+.timer-cycle-settings option { color: #f4f1ef; background: #222020; }
+.timer-cycle-settings select:focus-visible { outline: 1px solid #ffb566; border-radius: 4px; }
+.timer-session-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 3px 7px; min-width: 0; }
+.timer-session-heading strong { color: #ffb269; font-size: 12px; font-weight: 500; }
+.timer-session-heading span { color: #aaa3a0; font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.timer-face #timer-clock { display: inline-flex; justify-content: flex-end; line-height: 1.12; padding: 5px 0; margin: -5px 0; overflow: hidden; font-variant-numeric: tabular-nums; }
+.timer-digit,.timer-colon { display: inline-block; }
+[data-panel="timer"].has-session #timer-phase { display: none; }
+[data-panel="timer"].has-session #timer-action { display: grid; place-items: center; background: #ffa34822; transition: background 160ms ease,transform 160ms ease; }
+[data-panel="timer"].has-session #timer-action:hover { background: #ffa34836; transform: scale(1.035); }
+[data-panel="timer"].has-session #timer-action:active { transform: scale(.96); }
+#timer-action svg { width: 24px; height: 24px; fill: #ffb269; stroke: none; }
+[data-panel="timer"].is-complete #timer-action svg { fill: none; stroke: #ffb269; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+[data-panel="timer"].is-complete:not([data-mode="pomodoro"]) #timer-description { color: #d1ad85; }
+#timer-action:disabled,#timer-reset:disabled { opacity: .5; cursor: default; }
+#timer-status { flex: 0 0 auto; margin: 0; color: #f3b58c; font-size: 10px; line-height: 1.4; }
+@media (prefers-reduced-motion: reduce) { .timer-ruler-track,[data-panel="timer"].has-session #timer-action { transition: none !important; }[data-panel="timer"].has-session #timer-action:hover,[data-panel="timer"].has-session #timer-action:active { transform: none; } }

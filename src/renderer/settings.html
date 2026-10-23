@@ -6,6 +6,7 @@
         content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:;" />
   <title>Islet Settings</title>
   <link rel="stylesheet" href="settings.css" />
+  <link rel="stylesheet" href="settings-source.css" />
 </head>
 <body>
   <div class="titlebar">
@@ -32,7 +33,6 @@
     <section class="appearance-studio" aria-labelledby="studio-title">
       <div class="studio-heading"><div><h2 id="studio-title">Make it yours.</h2><p>A little space, with your own character.</p></div><span class="live-badge">Live preview</span></div>
       <div class="preview-stage" id="appearance-preview" data-expanded="true" aria-hidden="true">
-        <div class="preview-glow"></div>
         <div class="preview-notch">
           <div class="preview-rest"><span class="preview-spark">✦</span><i></i><span class="preview-bars"><i></i><i></i><i></i></span></div>
           <div class="preview-content"><span class="preview-art"><svg viewBox="0 0 24 24"><path d="M9 17V6l11-2v11M9 9l11-2"/><ellipse cx="6" cy="17" rx="3" ry="2"/><ellipse cx="17" cy="15" rx="3" ry="2"/></svg></span><div><strong>A little more you</strong><small>Your desktop, in harmony.</small></div><div class="preview-timeline"><i></i></div><span class="preview-transport">‹ &nbsp; Ⅱ &nbsp; ›</span></div>
@@ -43,17 +43,15 @@
     </section>
 
     <section class="group" aria-labelledby="group-size">
-      <div class="group-heading"><h2 class="group-label" id="group-size">Size &amp; proportions</h2><button id="reset-appearance" class="text-button" type="button">Reset appearance</button></div>
+      <div class="group-heading"><h2 class="group-label" id="group-size">Size &amp; proportions</h2><button id="reset-appearance" class="text-button" type="button">Reset size</button></div>
       <div class="slider-row"><div class="slider-label"><label for="closed-width">Resting width</label><output for="closed-width" id="closed-width-value">184 px</output></div><input id="closed-width" type="range" min="160" max="280" step="4" value="184" data-appearance="closedWidth" /><div class="range-ends"><span>Discreet</span><span>Roomy</span></div></div>
       <div class="slider-row"><div class="slider-label"><label for="expanded-width">Expanded width</label><output for="expanded-width" id="expanded-width-value">520 px</output></div><input id="expanded-width" type="range" min="480" max="640" step="8" value="520" data-appearance="expandedWidth" /><div class="range-ends"><span>Compact</span><span>Spacious</span></div></div>
       <div class="slider-row"><div class="slider-label"><label for="notch-scale">Overall size</label><output for="notch-scale" id="notch-scale-value">100%</output></div><input id="notch-scale" type="range" min="85" max="125" step="5" value="100" data-appearance="notchScale" aria-describedby="size-detail" /><p class="control-detail" id="size-detail">Scales text and controls together. Fits smaller displays automatically.</p></div>
     </section>
 
     <section class="group" aria-labelledby="group-color">
-      <h2 class="group-label" id="group-color">Color palette</h2>
-      <div id="color-presets" class="color-presets" role="group" aria-label="Color presets"></div>
-      <div class="custom-colors"><label class="color-control" for="surface-tint"><input id="surface-tint" type="color" value="#080809" data-appearance="surfaceTint" /><span>Surface tint<small id="surface-tint-value">#080809</small></span></label><label class="color-control" for="accent-color"><input id="accent-color" type="color" value="#aac4ef" data-appearance="accentColor" /><span>Accent<small id="accent-color-value">#AAC4EF</small></span></label></div>
-      <p class="control-detail color-detail">Choose any hue. Surface and accent brightness adapt to keep text readable.</p>
+      <h2 class="group-label" id="group-color">Notch theme</h2>
+      <div class="row theme-policy"><span class="black-swatch" aria-hidden="true"></span><div class="row-text"><span class="row-title">Black</span><span class="row-detail">A fixed black background in every module and state.</span></div><span class="theme-fixed">Always on</span></div>
       <div class="row">
         <div class="row-text">
           <span class="row-title">When several things are happening</span>
@@ -69,8 +67,8 @@
       </div>
       <label class="row">
         <div class="row-text">
-          <span class="row-title">Follow the music</span>
-          <span class="row-detail">Takes its colour from the album cover while something is playing, and hands it back when the music stops.</span>
+          <span class="row-title">Artwork color on music meters</span>
+          <span class="row-detail">Only the playback timeline and music equalizer follow the cover. The notch stays black.</span>
         </div>
         <input type="checkbox" class="switch" role="switch" data-preference="musicColors" />
       </label>
@@ -90,17 +88,6 @@
         </div>
       </div>
 
-      <div class="row">
-        <div class="row-text">
-          <span class="row-title">Glass</span>
-          <span class="row-detail" id="glass-detail">Layered translucency while the notch is open.</span>
-        </div>
-        <div class="segmented" role="radiogroup" aria-label="Glass" data-preference="glass">
-          <button type="button" role="radio" data-value="high" aria-checked="true">Liquid</button>
-          <button type="button" role="radio" data-value="medium" aria-checked="false">Frosted</button>
-          <button type="button" role="radio" data-value="off" aria-checked="false">Solid</button>
-        </div>
-      </div>
     </section>
 
     <section class="group" aria-labelledby="group-behavior">
@@ -184,6 +171,8 @@
     <span id="status" role="status" aria-live="polite">Changes save as you make them.</span>
   </footer>
 
+  <script src="notch-modules.js"></script>
+  <script src="settings-navigation.js"></script>
   <script src="notch-appearance.js"></script>
   <script src="settings.js"></script>
 </body>

@@ -9,6 +9,10 @@
   <link rel="stylesheet" href="panels.css" />
   <link rel="stylesheet" href="notch.css" />
   <link rel="stylesheet" href="islet.css" />
+  <link rel="stylesheet" href="notch-source.css" />
+  <link rel="stylesheet" href="ai-source.css" />
+  <link rel="stylesheet" href="timer-source.css" />
+  <link rel="stylesheet" href="music-source.css" />
 </head>
 <body class="state-closed" data-tab="send">
   <div id="card">
@@ -17,7 +21,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17V5m-4 4 4-4 4 4M5 15v4h14v-4" /></svg>
       <span id="closed-art" class="art"><img alt="" /><span class="art-fallback">♪</span></span>
       <span class="notch-sensor"></span>
-      <span id="closed-count" class="closed-count"><span class="ready-dot"></span></span>
+      <span id="closed-count" class="closed-count" hidden></span>
       <span id="closed-timer" class="closed-timer"></span>
       <span id="closed-agent" class="closed-agent" hidden><span class="agent-mark" aria-hidden="true"></span><span id="closed-agent-time" class="agent-time"></span></span>
       <span class="equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
@@ -153,6 +157,7 @@
                   <div id="np-sub" class="np-sub"></div>
                   <select id="np-source" class="np-source" aria-label="Playback source" hidden></select>
                 </div>
+                <span class="player-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
                 <div class="np-buttons">
                   <button id="np-prev" type="button" title="Previous track">
                     <svg viewBox="0 0 16 16" aria-hidden="true" class="filled">
@@ -214,16 +219,25 @@
   </div>
 
   <script src="notch-appearance.js"></script>
+  <script src="notch-modules.js"></script>
   <script src="notch-geometry.js"></script>
   <script src="notch-motion.js"></script>
   <script src="artwork-palette.js"></script>
   <script src="provider-marks.js"></script>
   <script src="notch-activity.js"></script>
   <script src="media-state.js"></script>
+  <script src="media-playback.js"></script>
   <script src="ai-state.js"></script>
   <script src="panel-clipboard.js"></script>
+  <script src="scroll-edges.js"></script>
   <script src="panel-system.js"></script>
+  <script src="notes-tools.js"></script>
+  <script src="panel-notes.js"></script>
+  <script src="timer-tools.js"></script>
+  <script src="timer-ruler.js"></script>
   <script src="panel-utilities.js"></script>
+  <script src="ai-view.js"></script>
+  <script src="ai-dom.js"></script>
   <script src="panel-ai.js"></script>
   <script src="renderer.js"></script>
 </body>

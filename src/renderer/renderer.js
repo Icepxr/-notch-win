@@ -115,8 +115,11 @@ function geometryFor(name) {
   if (name === 'peek') return activeNotice ? SIZES.peekNotice : mediaVisible && !timerState.hasSession ? SIZES.peekMedia : SIZES.peek;
   if (name === 'open') {
     if (exploring) return SIZES.openGallery;
-    return activeTab === 'ai' ? SIZES.openAi : activeTab === 'media' ? SIZES.openMusic
-      : activeTab === 'send' || activeTab === 'notes' ? SIZES.openShelf : activeTab === 'timer' ? SIZES.openTools : SIZES.open;
+    if (activeTab === 'system') return SystemPanel.detailOpen() ? SIZES.openSystemDetail : SIZES.openSystem;
+    if (activeTab === 'timer') return { ...SIZES.openTools, height: UtilityPanels.preferredHeight() };
+    if (activeTab === 'ai') return { ...SIZES.openAi, height: Math.min(SIZES.openAi.height,AiPanel.preferredHeight()) };
+    return activeTab === 'media' ? SIZES.openMusic
+      : activeTab === 'send' || activeTab === 'notes' ? SIZES.openShelf : SIZES.open;
   }
   return SIZES.closed;
 }
@@ -255,11 +258,15 @@ async function updateGeometry() {
   applyVisualState();
   card.style.width = target.width + 'px';
   card.style.height = target.height + 'px';
+  card.style.setProperty('--notch-shoulder', Math.min(14, target.height * .19) + 'px');
   const radius = preferences.silhouette === 'capsule' ? Math.min(28, target.height / 2) : Math.min(28, target.height * .34);
-  card.style.borderBottomLeftRadius = card.style.borderBottomRightRadius = radius + 'px';
+  // Persist the entire contour below the animation. Updating only the lower
+  // corners let media-preview CSS square the capsule's top when fill was removed.
+  card.style.borderRadius = preferences.silhouette === 'capsule' ? radius + 'px' : '0 0 ' + radius + 'px ' + radius + 'px';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const morph = card.animate(motion.sizes.map((size) => ({
     width: size.width + 'px', height: size.height + 'px',
+    '--notch-shoulder': Math.min(14, size.height * .19) + 'px',
     borderRadius: preferences.silhouette === 'capsule' ? Math.min(28, size.height / 2) + 'px'
       : '0 0 ' + Math.min(28, size.height * .34) + 'px ' + Math.min(28, size.height * .34) + 'px',
   })), { duration: reduced ? 1 : motion.duration, easing: 'linear', fill: 'both' });
@@ -270,10 +277,13 @@ async function updateGeometry() {
   currentMorph = null;
   document.body.classList.remove('is-shrinking');
   document.body.classList.remove('is-morphing');
+  updateHitRegion(); // A silhouette-only change need not trigger ResizeObserver.
 }
 
 function setState(next) {
   if (next === state) return;
+  if (next !== 'open') ClipboardPanel.closePreview();
+  if (next !== 'open') AiPanel.closeEditor();
   state = next;
   updateGeometry();
   if (next !== 'open') hidePin();
@@ -289,49 +299,54 @@ function openNotch(tab) {
   notch.focus();
 }
 
-// The colours the notch is wearing right now: the user's palette, or the one
-// the current cover is lending it. Seeds go through NotchAppearance.colors()
-// either way, which is what holds the readability floor.
-let musicPalette = null;
+// The shell is always black. Artwork tint belongs only to music meters.
+let musicTint = null;
 
 function applyColors() {
-  const followMusic = preferences.musicColors !== false;
-  // The notch stays the black the user chose. Only the accent follows the
-  // music, so the colour lands on the linework, the artwork's aura and the
-  // playback readout rather than washing the whole surface. Feeding just the
-  // accent through NotchAppearance.colors() keeps it legible against that
-  // same black, which is the contrast guarantee doing its job.
-  const seed = followMusic && musicPalette
-    ? { ...preferences, accentColor: musicPalette.accentColor }
-    : preferences;
-  const colors = NotchAppearance.colors(seed);
-  document.documentElement.style.setProperty('--mood', colors.accent);
+  const colors = NotchAppearance.colors();
   for (const [token, color] of Object.entries({ '--panel': colors.surface, '--surface-rest': colors.rest,
     '--surface-open': colors.surface, '--surface-sheen': colors.sheen, '--accent': colors.accent })) {
     document.documentElement.style.setProperty(token, color);
   }
-  document.body.classList.toggle('is-dressed-by-music', Boolean(followMusic && musicPalette));
+  applyMusicTint();
 }
 
-/** Take the colour of a cover, or give it back when the music stops. */
-function setMusicPalette(value) {
+function applyMusicTint() {
+  const tint = preferences.musicColors !== false ? musicTint?.accentColor : null;
+  for (const element of [document.querySelector('.np'), document.querySelector('.equalizer')]) {
+    element.style.setProperty('--music-accent', tint || '#ffffff');
+    element.classList.toggle('music-tinted', Boolean(tint));
+  }
+}
+
+function setMusicTint(value) {
   const next = value || null;
-  if (next?.accentColor === musicPalette?.accentColor && next?.surfaceTint === musicPalette?.surfaceTint) return;
-  musicPalette = next;
-  applyColors();
+  if (next?.accentColor === musicTint?.accentColor) return;
+  musicTint = next;
+  applyMusicTint();
+}
+
+function applyModulePreferences() {
+  const modulePrefs = NotchModules.normalize(preferences);
+  const arranged = [...modulePrefs.moduleOrder, 'settings'];
+  const actual = [...els.tabs.querySelectorAll('.tab')].map(tab => tab.dataset.tab);
+  if (actual.join() !== arranged.join()) for (const id of arranged) els.tabs.append(els.tabs.querySelector('[data-tab="' + id + '"]'));
+  filterGallery();
 }
 
 function applyPreferences(value) {
   const previousWidth = SIZES.open.width;
-  preferences = { ...preferences, ...value };
+  preferences = { ...preferences, ...value, ...NotchAppearance.normalize({ ...preferences, ...value }), glass: 'off' };
   SIZES = NotchGeometry.sizesFor(preferences);
   for (const [name, size] of Object.entries(SIZES)) {
     document.documentElement.style.setProperty('--' + name + '-width', size.width + 'px');
     document.documentElement.style.setProperty('--' + name + '-height', size.height + 'px');
   }
   applyColors();
+  applyModulePreferences();
+  NotesPanel.applyPreferences(preferences);
   document.body.dataset.silhouette = preferences.silhouette;
-  document.body.dataset.glass = preferences.glass || 'high';
+  document.body.dataset.glass = 'off';
   updateGeometry();
   if (previousWidth !== SIZES.open.width) requestAnimationFrame(() => { fitMarquee(els.npTitle); fitMarquee(els.peekTitle); });
 }
@@ -358,8 +373,7 @@ function setExploring(value, resize = true) {
     els.panelTitle.textContent = 'Explore';
     els.footerHint.textContent = 'A little space for everything.';
     els.exploreSearch.value = '';
-    for (const tab of els.tabs.querySelectorAll('.tab')) tab.hidden = false;
-    updateGalleryRail();
+    filterGallery();
     els.exploreSearch.focus();
   } else if (els.tabs.contains(document.activeElement) || document.activeElement === els.exploreSearch) {
     els.explore.focus();
@@ -372,10 +386,14 @@ els.explore.addEventListener('click', () => {
   else setExploring(true);
 });
 els.exploreSearch.addEventListener('input', () => {
-  const query = els.exploreSearch.value.toLocaleLowerCase().trim();
-  for (const tab of els.tabs.querySelectorAll('.tab')) tab.hidden = ![tab.textContent, tab.getAttribute('aria-label')].join(' ').toLocaleLowerCase().includes(query);
-  els.tabs.scrollTop = 0; updateGalleryRail();
+  filterGallery();
 });
+function filterGallery() {
+  const query = els.exploreSearch.value.toLocaleLowerCase().trim();
+  const hidden = NotchModules.normalize(preferences).hiddenModules;
+  for (const tab of els.tabs.querySelectorAll('.tab')) tab.hidden = hidden.includes(tab.dataset.tab) || ![tab.textContent, tab.getAttribute('aria-label')].join(' ').toLocaleLowerCase().includes(query);
+  els.tabs.scrollTop = 0; updateGalleryRail();
+}
 
 // Brief activities are rendered in the notch itself and never steal focus.
 const activityQueue = new NotchActivity.Queue({ change: (item) => {
@@ -457,7 +475,8 @@ noticeLayer.addEventListener('focusout', (event) => { if (!noticeLayer.contains(
 
 function cyclePage(direction) {
   if (state !== 'open' || exploring || dragDepth || transferActive) return;
-  const next = PAGE_ORDER[(PAGE_ORDER.indexOf(activeTab) + direction + PAGE_ORDER.length) % PAGE_ORDER.length];
+  const order = NotchModules.visible(preferences), at = order.indexOf(activeTab);
+  const next = at < 0 ? order[direction > 0 ? 0 : order.length - 1] : order[(at + direction + order.length) % order.length];
   document.body.dataset.pageDirection = direction > 0 ? 'next' : 'previous';
   setTab(next);
 }
@@ -540,6 +559,9 @@ function updateHitRegion() {
 }
 new ResizeObserver(updateHitRegion).observe(card);
 window.addEventListener('resize', updateHitRegion);
+document.addEventListener('notch:layout', (event) => {
+  if (!exploring && event.target.matches('.panel.is-active')) updateGeometry();
+});
 
 function scheduleCollapse(delay = 420) {
   clearTimeout(collapseTimer);
@@ -574,45 +596,25 @@ function renderShelf(items) {
   refreshIdle();
   els.shelfCount.textContent = count ? 'File shelf · ' + count : 'File shelf';
   els.peekShelf.textContent = count ? count + ' files ready' : 'Ready to share';
-  els.closedCount.replaceChildren();
-  if (count) els.closedCount.textContent = count;
-  else {
-    const dot = document.createElement('span');
-    dot.className = 'ready-dot';
-    els.closedCount.append(dot);
-  }
+  els.closedCount.textContent = count ? count : '';
+  els.closedCount.hidden = count === 0;
   els.shelf.classList.toggle('is-empty', count === 0);
   els.clear.hidden = count === 0;
 
   if (!count) {
-    // Three outlines at the real tile size, rather than one large empty box.
-    // An empty rectangle says "nothing here"; tiles say "files go here, this
-    // is how they will look", and they fill the space with rhythm instead of
-    // air — which is what made this panel read as stiff.
+    // NotchFilesView uses one quiet tray inside a dashed drop surface.
     const hint = document.createElement('div');
     hint.className = 'drop-empty';
-    const ghosts = document.createElement('div');
-    ghosts.className = 'drop-ghosts';
-    ghosts.setAttribute('aria-hidden', 'true');
-    for (let i = 0; i < 5; i += 1) {
-      const tile = document.createElement('span');
-      tile.className = 'ghost-tile';
-      tile.style.setProperty('--ghost-index', String(i));
-      if (i === 2) {
-        const symbol = document.createElement('span');
-        symbol.className = 'drop-symbol';
-        symbol.append(icon('<path d="M12 17V5m-4 4 4-4 4 4M5 15v5h14v-5"/>'));
-        tile.append(symbol);
-      }
-      ghosts.append(tile);
-    }
+    const symbol = document.createElement('span');
+    symbol.className = 'drop-symbol'; symbol.setAttribute('aria-hidden', 'true');
+    symbol.append(icon('<path d="M12 3v11m-4-4 4 4 4-4M4 12l-2 7h20l-2-7M2 19v3h20v-3"/>'));
     const title = document.createElement('span');
     title.className = 'drop-title';
     title.textContent = 'Drop files here';
     const caption = document.createElement('span');
     caption.className = 'drop-caption';
     caption.textContent = 'Send to your iPad or another nearby device.';
-    hint.append(ghosts, title, caption);
+    hint.append(symbol, title, caption);
     els.shelf.append(hint);
     updateDeviceHint();
     return;
@@ -905,11 +907,20 @@ els.closedTrigger.addEventListener('click', () => {
 
 // Several things live at once: the right button steps between them. The left
 // button keeps opening the panel, which is the gesture people already know.
-els.closedTrigger.addEventListener('contextmenu', (event) => {
-  // Always swallowed over the notch: a stray OS menu here would be worse
-  // than a gesture that sometimes has nothing to step to.
+card.addEventListener('contextmenu', (event) => {
+  if (event.target.closest('input, textarea')) return;
   event.preventDefault();
-  cycleFocus();
+  notch.contextMenu(pinned);
+});
+card.addEventListener('keydown', (event) => {
+  if (event.key === 'F10' && event.shiftKey) { event.preventDefault(); notch.contextMenu(pinned); }
+  if (event.key === ',' && event.ctrlKey) { event.preventDefault(); notch.openSettings(); }
+});
+notch.onMenuAction((action) => {
+  if (action === 'pin') setPinned(!pinned);
+  if (action === 'next-activity') cycleFocus();
+  if (action === 'explore') { openNotch(); setExploring(true); }
+  if (action === 'collapse') { setPinned(false); activityQueue.clear(); collapseNotch(); }
 });
 
 
@@ -951,7 +962,7 @@ document.addEventListener('keydown', (event) => {
   }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && activeTab === 'clipboard' && state === 'open') {
     event.preventDefault();
-    document.querySelector('[data-panel="clipboard"] .clip-search').focus();
+    ClipboardPanel.focusSearch();
   }
   if (event.key === 'Escape') {
     if (exploring) { setTab(activeTab); return; }
@@ -1071,39 +1082,30 @@ function setArt(host, dataUri) {
   const img = host.querySelector('img');
   if (dataUri) {
     if (host === els.npArt) img.onload = () => {
-      // 8x8 is enough for the glass bloom's average, but far too coarse to
-      // find the one vivid region a palette should follow; 32x32 is.
-      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 32;
+      // Source NotchMusicService averages the cover into one sRGB pixel.
+      const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1;
       try {
-        const context = canvas.getContext('2d', { willReadFrequently: true });
-        context.drawImage(img, 0, 0, 32, 32);
-        const pixels = context.getImageData(0, 0, 32, 32).data;
-        const sum = [0, 0, 0];
-        for (let i = 0; i < pixels.length; i += 4) for (let channel = 0; channel < 3; channel++) sum[channel] += pixels[i + channel];
-        const tint = NotchMotion.artworkTint(sum.map((value) => value / (1024 * 255)));
-        document.body.style.setProperty('--artwork-rgb', tint ? tint.join(', ') : '0, 0, 0');
-        setMusicPalette(ArtworkPalette.paletteFrom(pixels));
+        const context = canvas.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = 'medium';
+        context.drawImage(img, 0, 0, 1, 1);
+        setMusicTint(ArtworkPalette.paletteFrom(context.getImageData(0, 0, 1, 1).data));
       } catch {
-        document.body.style.setProperty('--artwork-rgb', '0, 0, 0');
-        setMusicPalette(null);
+        setMusicTint(null);
       }
     };
     img.onerror = () => {
       host.classList.remove('has-art');
       if (host !== els.npArt) return;
-      document.body.style.setProperty('--artwork-rgb', '0, 0, 0');
-      setMusicPalette(null);
+      setMusicTint(null);
     };
-    if (img.getAttribute('src') !== dataUri) img.src = dataUri;
+    if (img.getAttribute('src') !== dataUri) { if (host === els.npArt) setMusicTint(null); img.src = dataUri; }
     host.classList.add('has-art');
-    if (host === els.npArt) document.body.style.setProperty('--artwork-url', 'url("' + dataUri + '")');
   } else {
     img.removeAttribute('src');
     host.classList.remove('has-art');
     if (host === els.npArt) {
-      document.body.style.setProperty('--artwork-rgb', '0, 0, 0');
-      document.body.style.removeProperty('--artwork-url');
-      setMusicPalette(null);
+      setMusicTint(null);
     }
   }
 }
@@ -1226,23 +1228,20 @@ function tickNowPlaying() {
 
 async function mediaCommand(action, value) {
   if (!media.active) return;
-  const before = media;
-  if (action === 'toggle') {
-    const now = Date.now();
-    media = { ...media, playing: !media.playing, position: MediaState.positionAt(media, now),
-      anchorAt: now, pausedSince: media.playing ? now : 0 };
-    renderNowPlaying();
-  }
+  if (action === 'toggle') { playback.toggle(); return; }
+  if (['source', 'next', 'prev'].includes(action)) playback.cancel();
   let queued = false;
   try { queued = await notch.mediaCommand(action, value); } catch { /* report below */ }
   if (!queued) {
-    if (action === 'toggle' && media.title === before.title && media.app === before.app) { media = before; renderNowPlaying(); }
     if (action === 'seek') seekPending = null;
     els.mediaFeedback.textContent = 'Cannot control this player. Try again.';
   } else {
     els.mediaFeedback.textContent = '';
   }
 }
+
+const playback = new MediaPlayback.Controller({ send: (action, value, context) => notch.mediaCommand(action, value, context),
+  change: () => { media = playback.view(); renderNowPlaying(); }, error: text => { els.mediaFeedback.textContent = text; } });
 
 els.npPrev.addEventListener('click', () => mediaCommand('prev'));
 els.npToggle.addEventListener('click', () => mediaCommand('toggle'));
@@ -1261,6 +1260,7 @@ els.npSeek.addEventListener('change', () => {
 els.npSeek.addEventListener('pointercancel', () => { seeking = false; tickNowPlaying(); });
 els.npSource.addEventListener('change', () => mediaCommand('source', els.npSource.value));
 notch.onMediaResult((result) => {
+  if (playback.result(result)) return;
   if (result.via !== 'none') return;
   seekPending = null;
   els.mediaFeedback.textContent = result.action === 'seek' ? 'This player declined the seek request.' : 'This player declined the playback command.';
@@ -1268,10 +1268,9 @@ notch.onMediaResult((result) => {
 
 notch.onNowPlaying((message) => {
   const previous = media;
-  media = MediaState.nextState(media, message, Date.now());
+  playback.receive(message);
   const newTrack = previous.title !== media.title || previous.artist !== media.artist || previous.app !== media.app;
   if (newTrack) { seekPending = null; els.mediaFeedback.textContent = ''; }
-  renderNowPlaying();
   if (preferences.musicPreview && !timerState.hasSession && media.active && media.playing && (newTrack || !previous.playing) && state === 'closed'
     && !dragDepth && !transferActive && !hoverSuppressed) {
     postActivity({ id: 'track:' + media.app + ':' + media.title, kind: 'music', title: media.title || 'Now playing', detail: media.artist || media.appLabel,
@@ -1317,9 +1316,13 @@ function paintClosedAgent(now = Date.now()) {
   }
   els.closedAgent.dataset.agent = provider;
   els.closedAgent.title = (provider === 'codex' ? 'Codex' : 'Claude') + ' · ' + running.name;
-  els.closedAgentTime.textContent = running.startedAt
-    ? UtilityPanels.clock(Math.max(0, (now - running.startedAt) / 1000), true) : '';
+  const reading = AiPanel.closedReading(provider,now);
+  els.closedAgent.dataset.readout = reading ? 'quota' : 'elapsed';
+  if (reading) els.closedAgent.title += ' · ' + reading.label;
+  els.closedAgentTime.textContent = reading?.text || (running.startedAt
+    ? UtilityPanels.clock(Math.max(0, (now - running.startedAt) / 1000), true) : '');
 }
+document.addEventListener('ai:view-change', () => paintClosedAgent());
 
 let aiDashboardReady = false;
 notch.onAiDashboard((value) => {
@@ -1353,13 +1356,14 @@ function tickClock() {
   const now = new Date();
   els.clock.textContent = timerState.hasSession ? UtilityPanels.clock(timerState.reading, timerState.countsUp)
     : String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
-  if (timerState.hasSession) els.peekShelf.textContent = timerState.completed ? 'Time is up' : UtilityPanels.phaseName[timerState.phase];
+  if (timerState.hasSession) els.peekShelf.textContent = timerState.cycleFinished ? 'Cycle complete' : timerState.completed ? 'Time is up' : UtilityPanels.phaseName[timerState.phase];
 }
 
 function renderTimer(value) {
   const wasActive = timerState.hasSession;
   const wasComplete = timerState.completed;
   timerState = value || { hasSession: false };
+  if (wasComplete && !timerState.completed) activityQueue.remove('timer-complete');
   document.body.classList.toggle('has-timer', !!timerState.hasSession);
   refreshIdle();
   els.closedTimer.textContent = timerState.hasSession ? UtilityPanels.clock(timerState.reading, timerState.countsUp) : '';
@@ -1375,8 +1379,10 @@ function renderTimer(value) {
   }
   if (state === 'peek' && wasActive !== timerState.hasSession) updateGeometry();
   if (timerState.completed && !wasComplete) {
-    els.closedTrigger.setAttribute('aria-label', 'Time is up. Open timer');
-    postActivity({ id: 'timer:' + Date.now(), kind: 'timer', title: 'Time is up', detail: UtilityPanels.phaseName[timerState.phase] + ' completed', tab: 'timer', priority: 100, duration: 3200 });
+    const title = timerState.cycleFinished ? 'Cycle complete' : 'Time is up';
+    els.closedTrigger.setAttribute('aria-label', title + '. Open timer');
+    postActivity({ id: 'timer-complete', replace: true, kind: 'timer', title,
+      detail: timerState.cycleFinished ? timerState.configuration.sessions + ' focus sessions completed' : UtilityPanels.phaseName[timerState.phase] + ' completed', tab: 'timer', priority: 100, duration: 3200 });
   }
 }
 notch.onTimer(renderTimer);
@@ -1392,14 +1398,20 @@ function mountModulePanels() {
       let ok = false;
       try { ok = await notch.clipPick(id); } catch { /* keep feedback in the current panel */ }
       flashFooter(ok ? 'Copied. Ready to paste.' : 'This item cannot be copied.');
+      return ok;
     },
     remove: (id) => notch.clipRemove(id),
-    clear: () => notch.clipClear(),
+    clear: () => notch.clipClear(true),
+    pin: (id) => notch.clipPin(id),
     setPaused: (paused) => notch.clipPause(paused),
   });
 
   SystemPanel.mount(document.querySelector('.panel[data-panel="system"]'));
-  UtilityPanels.mount({ timerCommand: notch.timerCommand, saveNote: notch.saveNote, cacheNote: notch.cacheNote });
+  UtilityPanels.mount({ timerCommand: notch.timerCommand, saveNote: notch.saveNote, cacheNote: notch.cacheNote,
+    copyNote: notch.copyNote, updatePreferences: notch.updatePreferences });
+  ScrollEdges.observe(document.querySelector('.clip-list'));
+  ScrollEdges.observe(document.querySelector('.ai-scroll'));
+  ScrollEdges.observe(els.shelf, 'horizontal');
 }
 
 // --- tabs -------------------------------------------------------------------
@@ -1420,6 +1432,8 @@ function setTab(name) {
   if (!panel) return;
   setExploring(false, false);
   activeTab = name;
+  if (name !== 'clipboard') ClipboardPanel.closePreview();
+  if (name !== 'ai') AiPanel.closeEditor();
   clearTimeout(feedbackTimer);
   els.footerHint.classList.remove('is-confirmed');
   document.body.dataset.tab = name;
@@ -1488,9 +1502,10 @@ function finishHeaderSwipe(event) {
 header.addEventListener('pointerup', finishHeaderSwipe); header.addEventListener('pointercancel', finishHeaderSwipe);
 header.addEventListener('lostpointercapture', () => { headerDrag = null; delete header.dataset.dragging; header.style.removeProperty('--page-pull'); });
 const galleryRail = document.createElement('div'); galleryRail.id = 'gallery-rail'; galleryRail.setAttribute('aria-label', 'Module rows');
+document.querySelector('.notch-header').append(document.getElementById('page-dots'));
 els.tabs.after(galleryRail);
 function updateGalleryRail() {
-  const positions = Math.max(1, Math.ceil(els.tabs.querySelectorAll('.tab:not([hidden])').length / 3) - 1);
+  const positions = Math.max(1, Math.ceil(els.tabs.querySelectorAll('.tab:not([hidden])').length / 4) - 1);
   galleryRail.replaceChildren();
   for (let i = 0; i < positions; i++) {
     const button = document.createElement('button'); button.type = 'button'; button.setAttribute('aria-label', 'Module row ' + (i + 1));
@@ -1506,7 +1521,7 @@ els.tabs.addEventListener('keydown', (event) => {
   if (index < 0 || !['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) return;
   event.preventDefault();
   const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1
-    : (index + (event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowDown' ? 3 : -3) + tabs.length) % tabs.length;
+    : (index + (event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowDown' ? 4 : -4) + tabs.length) % tabs.length;
   tabs[next].focus();
 });
 
@@ -1540,8 +1555,7 @@ function focusSendTab() {
   const initial = await notch.init();
   renderShelf(initial.shelf);
   renderDevices(initial.devices);
-  media = initial.nowPlaying || MediaState.EMPTY;
-  renderNowPlaying();
+  playback.reset(initial.nowPlaying || MediaState.EMPTY);
   aiDashboardReady = !!initial.aiDashboard;
   aiSessions = initial.aiDashboard ? AiPanel.update(initial.aiDashboard) : initial.aiSessions || [];
   renderAiSessions();

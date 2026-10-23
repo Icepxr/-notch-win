@@ -1,0 +1,10 @@
+'use strict';
+const assert = require('node:assert/strict');
+const M = require('../src/renderer/notch-modules');
+assert.deepEqual(M.visible(), M.ids);
+assert.deepEqual(M.normalize({ moduleOrder: ['ai','ai','unsupported','send'] }).moduleOrder, ['ai','send','media','clipboard','system','timer','notes']);
+assert.deepEqual(M.normalize({ hiddenModules: ['notes','notes','__proto__'] }).hiddenModules, ['notes']);
+assert.equal(M.visible({ hiddenModules: M.ids }).length, 1, 'the last module stays reachable');
+assert.equal(M.visible({ hiddenModules: M.ids, moduleOrder: ['timer'] })[0], 'timer');
+assert.deepEqual(M.normalize({ moduleOrder: 'bad', hiddenModules: {} }), M.normalize());
+console.log('Module preferences: canonical order, deduplication, unknown IDs and last-visible protection passed');

@@ -8,24 +8,55 @@
 
 ## ใช้งาน
 
+The current UI is ported from the Vorssaint source structure for the features
+already implemented in Islet. Settings now has a sidebar, search and **Dynamic
+Island → Layout / Content / Activity / Behavior**. Content can reorder or hide
+existing modules; at least one stays visible. Right-click the notch (or press
+**Shift+F10**) for Pin, Settings, Collapse and Quit. **Ctrl+Comma** opens Settings.
+The player uses the source's compact reading column and the gallery shows two
+complete rows. See [the source mapping](docs/vorssaint-source-port.md).
+
+Clipboard now supports **Pin**, a **Pinned** filter and **Clear recent** that
+keeps pins. Hover a row for a lifted preview, or use its Preview button/**F2**;
+Escape closes the preview first. Notes adds **Ctrl+F** local find, next/previous
+matches, Copy all and a saved 10–22px text size. Scrolling lists fade only the
+edge with more content beyond it.
+
+AI Agents now uses independent provider cards, a fixed toolbar and compact
+reading order. **Customize cards** can rearrange/hide cards, switch quota
+between Used/Remaining, and choose elapsed time or quota on the resting notch.
+Charts support pointer and keyboard date inspection; updates retain focus and
+scroll. Missing or expired quota stays unknown, with elapsed time as the compact
+fallback. See [the AI source mapping](docs/vorssaint-source-port.md#ai-agents-redesign--2026-10-23).
+
 The notch now uses a closer Vorssaint-inspired layout, with content-sized pages,
-56px music artwork and a two-row module gallery with shortcut labels.
+76px music artwork, a fuller player and a two-row module gallery with shortcut labels.
 
 - Swipe horizontally on the header to switch modules, or use **Alt+Left/Right**.
-- Use the small previous/next controls at the bottom; click the page counter to
+- Music fills the panel with larger artwork, 16/14px title/artist text and a
+  wider timeline. Play/Pause changes its icon immediately while Windows confirms
+  playback; stale polls and older command replies cannot undo the latest click.
+- Use the small previous/next controls in the top row; click the page counter to
   choose a module. **Alt+1–7** opens a module; **Alt+8** opens Settings.
 - Drag files onto the shelf to park them, or onto a device to send. **Add files**
   and **Ctrl+O** open the native file picker.
 - Track changes, completed timers, transfers and AI turns can appear as brief
   activities in the notch. Click an activity to open its module; dismiss it with
   the cross. Hover or keyboard focus pauses expiry. An open page stays open.
-- **Settings → Size & proportions** adjusts resting width (160–280px), expanded
+- Timer has a centered ruler: drag, scroll, or use Arrow/Home/End keys to choose
+  1–180 minutes. Timer and Focus remember separate durations. Focus adds saved
+  short/long breaks, long-break interval and session count, with explicit next
+  phases and real cycle progress. The active clock keeps running in the main
+  process when the notch closes or its renderer reloads.
+- **Settings → Dynamic Island → Layout** adjusts resting width (160–280px), expanded
   width (480–640px), and overall size (85–125%). The preview responds as you drag.
-  Pick Obsidian, Midnight, Iris or Moss, or choose surface/accent hues yourself.
-  **Reset appearance** restores just the size and color defaults.
+  **Reset size** restores the default dimensions. The notch stays opaque black
+  in every module and state; older color and glass preferences migrate to black.
+  **Settings → Music → Artwork color on music meters** lets the timeline and
+  equalizer follow the cover. Text and the notch background keep neutral colors.
 - Changing Windows volume, mute, supported display brightness or Caps Lock shows
-  brief system feedback. Repeated presses update the same meter. Click for the
-  relevant Windows Settings page; disable it under **Behaviour → System feedback**.
+  brief system feedback. Repeated presses update the same readout. Disable it
+  under **Dynamic Island → Activity → System feedback**.
   Brightness uses Windows WMI reporting; DDC/CI-only external monitor controls
   are not observed.
 

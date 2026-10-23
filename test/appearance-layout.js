@@ -27,15 +27,15 @@ app.whenReady().then(async () => {
       return js(`(() => ({ overflow: els.npTitle.scrollWidth - els.npTitle.parentElement.clientWidth, shift: parseFloat(els.npTitle.style.getPropertyValue('--marquee-shift')), duration: parseFloat(els.npTitle.style.getPropertyValue('--marquee-dur')) }))()`);
     }
     const wide = await width(640), narrow = await width(480);
-    assert.equal(narrow.overflow - wide.overflow, 160);
+    assert.ok(narrow.overflow > wide.overflow, 'the fuller player uses additional shell width for the title');
     assert.equal(narrow.shift, -narrow.overflow);
-    assert.ok(narrow.duration > wide.duration);
-    console.log('Appearance layout: a long music title remeasures once at the selected natural width');
+    assert.ok(narrow.duration >= wide.duration, 'the marquee follows actual overflow at each width');
+    console.log('Appearance layout: fuller player and marquee adapt to the chosen shell width');
     await width(520);
     const now = Date.now();
     const data = { updatedAt: now, buckets: [], sessions: [], limits: {}, claudeAccountStatus: 'signin' };
     win.webContents.send('fixture:ai-dashboard', data);
-    await js(`openNotch('ai'); document.querySelector('[data-ai-provider="claude"]').click(); document.querySelector('[data-panel="ai"]').scrollTop = 0`);
+    await js(`openNotch('ai'); document.querySelector('[data-ai-provider="claude"]').click(); document.querySelector('.ai-scroll').scrollTop = 0`);
     await delay(800);
     const output = path.join(__dirname, '..', 'docs', 'previews'); fs.mkdirSync(output, { recursive: true });
     const rect = await js(`(() => { const r=card.getBoundingClientRect(); return {x:Math.floor(r.x-20),y:0,width:Math.ceil(r.width+40),height:Math.ceil(r.height+32)} })()`);

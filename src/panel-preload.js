@@ -9,6 +9,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('panel', {
   init: () => ipcRenderer.invoke('panel:init'),
   update: (patch) => ipcRenderer.invoke('panel:update', patch),
+  openModule: (tab) => ipcRenderer.invoke('panel:open-module', tab),
   onState: (cb) => ipcRenderer.on('panel:state', (_e, value) => cb(value)),
   revealData: () => ipcRenderer.send('panel:reveal-data'),
   close: () => ipcRenderer.send('panel:close'),

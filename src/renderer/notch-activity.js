@@ -39,6 +39,7 @@
       do { next = this.pending.shift(); } while (next?.expiresAt && next.expiresAt <= this.now());
       if (next) this.show(next); else this.change(null);
     }
+    remove(id) { this.pending = this.pending.filter(item => item.id !== id); if (this.current?.id === id) this.dismiss(); }
     clear() { this.pending = []; this.paused = false; this.dismiss(); }
   }
   class Swipe {

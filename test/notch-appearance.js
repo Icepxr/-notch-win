@@ -11,10 +11,14 @@ assert.equal(Appearance.normalize({ expandedWidth: -10 }).expandedWidth, 480);
 assert.equal(Appearance.normalize({ closedWidth: 300 }).closedWidth, 280);
 assert.equal(Appearance.normalize({ notchScale: 999 }).notchScale, 125);
 assert.equal(Appearance.normalize({ expandedWidth: 521 }).expandedWidth, 520);
-assert.equal(Appearance.normalize({ accentColor: '#FF00AA' }).accentColor, '#ff00aa');
+assert.equal(Appearance.normalize({ accentColor: '#FF00AA' }).accentColor, '#ffffff');
+assert.equal(Appearance.normalize({ surfaceTint: '#ffffff' }).surfaceTint, '#000000');
+assert.deepEqual(Appearance.normalize(null), Appearance.defaults);
 for (const r of [0, 64, 128, 192, 255]) for (const g of [0, 64, 128, 192, 255]) for (const b of [0, 64, 128, 192, 255]) {
   const tint = '#' + [r,g,b].map(v => v.toString(16).padStart(2, '0')).join('');
   const colors = Appearance.colors({ surfaceTint: tint, accentColor: tint });
+  assert.equal(colors.surface, '#000000'); assert.equal(colors.rest, '#000000'); assert.equal(colors.sheen, '#000000');
+  assert.equal(colors.accent, '#ffffff');
   assert.ok(Appearance.contrast(colors.accent, colors.raised) >= 4.5, tint + ' accent stays readable');
   assert.ok(Appearance.contrast('#b2b2b8', colors.raised) >= 4.5, tint + ' secondary text stays readable');
 }
@@ -31,4 +35,4 @@ const fit = placement(small, 'capsule', prefs);
 assert.ok(fit.zoomFactor < 1.25 && fit.bounds.width <= 640 && fit.bounds.y + fit.bounds.height <= 440);
 assert.equal(Geometry.sizesFor(prefs).openMusic.width, 640);
 assert.equal(Geometry.sizesFor(prefs).openAi.height, 510);
-console.log('Appearance: ranges, stored defaults, 125 color combinations, scaled hit regions and small-display fitting passed');
+console.log('Appearance: fixed black theme, legacy color migration, 125 ignored color combinations, ranges and display fitting passed');

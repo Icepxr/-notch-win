@@ -1,4 +1,7 @@
 'use strict';
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Pin ordering/clear recent adapted from Vorssaint ClipboardHistoryService.
+// Copyright (C) 2026 Vorssaint
 
 // Clipboard history.
 //
@@ -17,6 +20,7 @@ const crypto = require('node:crypto');
 const { EventEmitter } = require('node:events');
 
 const DEFAULT_LIMIT = 60;
+const PIN_LIMIT = 20;
 const DEFAULT_INTERVAL = 700;
 const MAX_PERSISTED_CHARS = 20000; // longer text stays in memory only
 const PREVIEW_CHARS = 140;
@@ -87,15 +91,19 @@ function makeEntry({ text, imageDataUrl, imageSize }, now = Date.now()) {
 function insert(entries, entry, limit = DEFAULT_LIMIT) {
   if (!entry) return entries;
   if (entries.length && entries[0].hash === entry.hash) return entries; // unchanged
-  const rest = entries.filter((e) => e.hash !== entry.hash);
-  return [entry, ...rest].slice(0, limit);
+  const previous = entries.find((e) => e.hash === entry.hash);
+  const next = previous ? { ...entry, id: previous.id, pinned: previous.pinned === true } : entry;
+  // Vorssaint keeps pinned items in place; only recent items are promoted.
+  const pinned = entries.filter((e) => e.pinned).map((e) => e.hash === next.hash ? next : e);
+  const recent = entries.filter((e) => !e.pinned && e.hash !== next.hash);
+  return [...pinned, ...(next.pinned ? recent : [next, ...recent]).slice(0, limit)];
 }
 
 /** Only the parts of an entry worth writing to disk. */
 function serialize(entries) {
   return entries
     .filter((e) => e.persist && e.kind !== 'image')
-    .map(({ id, kind, hash, preview, text, chars, at }) => ({ id, kind, hash, preview, text, chars, at }));
+    .map(({ id, kind, hash, preview, text, chars, at, pinned }) => ({ id, kind, hash, preview, text, chars, at, pinned: pinned === true }));
 }
 
 class ClipboardWatcher extends EventEmitter {
@@ -120,11 +128,10 @@ class ClipboardWatcher extends EventEmitter {
     try {
       const raw = JSON.parse(fs.readFileSync(this.storePath, 'utf8'));
       if (Array.isArray(raw)) {
-        this.entries = raw
-          .filter((e) => e && e.hash && typeof e.text === 'string')
-          .map((e) => ({ ...e, persist: true }))
-          .slice(0, this.limit);
-        this.lastHash = this.entries.length ? this.entries[0].hash : null;
+        const entries = raw.filter((e) => e && e.hash && typeof e.text === 'string' && e.text.length <= MAX_PERSISTED_CHARS)
+          .map((e) => ({ ...e, pinned: e.pinned === true, persist: true }));
+        this.entries = [...entries.filter((e) => e.pinned).slice(0, PIN_LIMIT), ...entries.filter((e) => !e.pinned).slice(0, this.limit)];
+        this.lastHash = [...this.entries].sort((a, b) => b.at - a.at)[0]?.hash || null;
       }
     } catch {
       this.entries = [];
@@ -136,9 +143,12 @@ class ClipboardWatcher extends EventEmitter {
   save() {
     try {
       fs.mkdirSync(path.dirname(this.storePath), { recursive: true });
-      fs.writeFileSync(this.storePath, JSON.stringify(serialize(this.entries), null, 2));
+      fs.writeFileSync(this.storePath + '.tmp', JSON.stringify(serialize(this.entries), null, 2));
+      fs.renameSync(this.storePath + '.tmp', this.storePath);
+      return true;
     } catch (err) {
       this.emit('log', 'could not save clipboard history: ' + err.message);
+      return false;
     }
   }
 
@@ -230,18 +240,33 @@ class ClipboardWatcher extends EventEmitter {
     this._emit();
   }
 
-  clear() {
+  togglePin(id) {
+    const entry = this.entries.find((e) => e.id === id);
+    if (!entry) return { ok: false, reason: 'missing' };
+    if (!entry.persist || entry.kind === 'image') return { ok: false, reason: 'temporary' };
+    if (!entry.pinned && this.entries.filter((e) => e.pinned).length >= PIN_LIMIT) return { ok: false, reason: 'limit' };
+    const previous = this.entries;
+    const updated = { ...entry, pinned: !entry.pinned };
+    const rest = previous.filter((e) => e.id !== id);
+    const pinned = rest.filter((e) => e.pinned), recent = rest.filter((e) => !e.pinned);
+    this.entries = updated.pinned ? [updated, ...pinned, ...recent] : [...pinned, updated, ...recent].slice(0, pinned.length + this.limit);
+    if (!this.save()) { this.entries = previous; return { ok: false, reason: 'save' }; }
+    this._emit();
+    return { ok: true, pinned: updated.pinned };
+  }
+
+  clear(keepPinned = false) {
     if (!this.entries.length) return;
-    this.entries = [];
-    this.lastHash = null;
+    this.entries = keepPinned ? this.entries.filter((e) => e.pinned) : [];
+    if (!keepPinned) this.lastHash = null;
     this.save();
     this._emit();
   }
 
   /** What the renderer needs; the full text stays in the main process. */
   view() {
-    return this.entries.map(({ id, kind, preview, chars, at, dataUrl }) => ({
-      id, kind, preview, chars, at, dataUrl,
+    return this.entries.map(({ id, kind, preview, chars, at, dataUrl, pinned, persist }) => ({
+      id, kind, preview, chars, at, dataUrl, pinned: pinned === true, canPin: persist === true && kind !== 'image',
     }));
   }
 
@@ -260,4 +285,5 @@ module.exports = {
   serialize,
   MAX_PERSISTED_CHARS,
   DEFAULT_LIMIT,
+  PIN_LIMIT,
 };
