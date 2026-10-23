@@ -55,6 +55,7 @@ public partial class AgentDashboard : UserControl, IDisposable
     {
         var now = snapshot.Updated;
         object Mark(string provider) => FindResource(provider == "Codex" ? "AgentOpenAiMark" : "AgentClaudeMark");
+        string Exact(long value) => value.ToString("N0", CultureInfo.InvariantCulture);
         Providers.ItemsSource = snapshot.Providers.Select(provider => new
         {
             provider.Name, Mark = Mark(provider.Name),
@@ -62,7 +63,7 @@ public partial class AgentDashboard : UserControl, IDisposable
             Windows = provider.Account.Windows.Select(window => new
             {
                 window.Name, Value = window.Expired(now) ? "—" : window.Remaining.ToString("0", CultureInfo.InvariantCulture) + "%",
-                Observed = window.Source + " · " + window.Observed.LocalDateTime.ToString("g"),
+                Observed = window.Source + " · " + window.Observed.LocalDateTime.ToString("g") + " · " + window.Used.ToString("0.#") + "% used" + (window.Reset is { } reset ? " · Resets " + reset.LocalDateTime.ToString("g") : ""),
                 Remaining = window.Remaining, BarVisibility = window.Expired(now) ? Visibility.Collapsed : Visibility.Visible,
                 Reset = ResetText(window, now), AccessibleValue = window.Name + ": " + (window.Expired(now) ? "Reset due; refresh required" : window.Remaining.ToString("0") + " percent remaining")
             }).ToArray(),
@@ -70,14 +71,47 @@ public partial class AgentDashboard : UserControl, IDisposable
             LoginVisibility = provider.Account.Status.Contains("sign", StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed,
             provider.Account.Status,
             Tokens = provider.Records.Count == 0 ? "—" : Compact(provider.Tokens),
+            ExactTokens = Exact(provider.Tokens) + " observed tokens · includes cached input once",
+            Input = provider.Records.Count == 0 ? "—" : Compact(provider.Input),
+            Output = provider.Records.Count == 0 ? "—" : Compact(provider.Output),
+            Cached = provider.Records.Count == 0 ? "—" : Compact(provider.Cached),
+            ExactInput = Exact(provider.Input) + " input tokens, including cache reads and writes where reported",
+            ExactOutput = Exact(provider.Output) + " output tokens",
+            ExactCached = Exact(provider.Cached) + " cached input tokens · a subset of input, not extra tokens",
             Responses = provider.Records.Count == 0 ? "—" : provider.Records.Count.ToString("N0", CultureInfo.InvariantCulture),
-            Note = provider.Partial ? "Recent file tails · partial local coverage" : provider.Records.Count == 0 ? "No local usage records in this period" : Compact(provider.Cached) + " cached input tokens"
+            Note = provider.Partial ? "Partial local coverage · recent file tails" : provider.Records.Count == 0 ? "No local usage records in this period" : "Observed local records · " + provider.Sessions.Count + " recent sessions"
         }).ToArray();
-        var sessions = snapshot.Providers.SelectMany(p => p.Sessions).OrderBy(s => s.State == "Working" ? 0 : 1).ThenByDescending(s => s.Updated).Take(8).ToArray();
+        Breakdowns.ItemsSource = snapshot.Providers.Select(provider =>
+        {
+            var models = AgentBreakdown.Models(provider);
+            var activity = AgentBreakdown.Activity(provider, _days, now);
+            long peak = Math.Max(1, activity.Max(b => b.Tokens));
+            return new
+            {
+                provider.Name, Mark = Mark(provider.Name),
+                Period = _days == 1 ? "Today · 2-hour intervals" : "Last " + _days + " days · daily",
+                BucketCount = activity.Count,
+                Buckets = activity.Select(b => new
+                {
+                    Height = b.Responses == 0 ? 2 : Math.Max(4, 32d * b.Tokens / peak),
+                    Opacity = b.Responses == 0 ? 0.3 : 1,
+                    Detail = b.Start > now.LocalDateTime ? "Upcoming interval" : b.Start.ToString(_days == 1 ? "HH:mm" : "MMM d") + " – " + b.End.ToString(_days == 1 ? "HH:mm" : "MMM d") + " · " + (b.Responses == 0 ? "No observed records" : Exact(b.Tokens) + " tokens · " + b.Responses + " responses")
+                }).ToArray(),
+                CacheNote = provider.Input > 0 ? (100d * provider.Cached / provider.Input).ToString("0.#", CultureInfo.InvariantCulture) + "% of observed input served from cache" : "No input records in this period",
+                ModelSummary = models.Count == 0 ? "No model records yet" : models.Count > 3 ? "Top 3 of " + models.Count + " models · tokens" : "Models · observed tokens",
+                Models = models.Take(3).Select(m => new
+                {
+                    m.Name, Tokens = Compact(m.Total),
+                    Detail = m.Name + " · " + Exact(m.Input) + " input + " + Exact(m.Output) + " output · " + Exact(m.Cached) + " cached input · " + m.Responses + " responses"
+                }).ToArray()
+            };
+        }).ToArray();
+        var allSessions = snapshot.Providers.SelectMany(p => p.Sessions).OrderBy(s => s.State == "Working" ? 0 : 1).ThenByDescending(s => s.Updated).ToArray();
+        var sessions = allSessions.Take(12).ToArray();
         Sessions.ItemsSource = sessions.Select(session => new { session.Name, session.State, Mark = Mark(session.Provider), Detail = session.Project + " · " + session.Updated.LocalDateTime.ToString("HH:mm") }).ToArray();
         EmptyActivity.Visibility = sessions.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        int working = sessions.Count(s => s.State == "Working");
-        ActivityCount.Text = working > 0 ? working + " working" : sessions.Length + " sessions";
+        int working = allSessions.Count(s => s.State == "Working");
+        ActivityCount.Text = (working > 0 ? working + " working" : allSessions.Length + " sessions") + (allSessions.Length > 12 ? " · 12 shown" : "");
         if (!_checking) ReadStatus.Text = "Updated " + now.LocalDateTime.ToString("HH:mm:ss") + " · " + (_days == 1 ? "Today" : _days + " days");
     }
     internal static string ResetText(AgentWindow window, DateTimeOffset now)
@@ -97,6 +131,13 @@ public partial class AgentDashboard : UserControl, IDisposable
         finally { _checking = false; UpdateRefresh(); if (ReferenceEquals(lifetime, _visible)) await ReadAsync(); }
     }
     private void UpdateRefresh() => RefreshLimits.IsEnabled = !_checking && DateTimeOffset.Now - _lastAccountRequest >= TimeSpan.FromSeconds(30);
+    private void Details_Click(object sender, RoutedEventArgs e)
+    {
+        bool show = UsageDetails.Visibility != Visibility.Visible;
+        UsageDetails.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        DetailsButton.Content = show ? "Less detail" : "More detail";
+        DetailsButton.ToolTip = show ? "Hide model and activity breakdowns" : "Show model and activity breakdowns";
+    }
     private void CopyLogin_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: string provider }) return;

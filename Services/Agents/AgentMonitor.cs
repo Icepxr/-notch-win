@@ -58,7 +58,7 @@ internal sealed class AgentMonitor(Func<CancellationToken> permission, string? h
             }
             var reading = _accounts.GetValueOrDefault(provider);
             if (reading == null || logged?.Checked > reading.Checked) reading = logged ?? reading;
-            providers.Add(new(provider, records.OrderByDescending(r => r.At).ToArray(), sessions.OrderBy(s => s.State == "Working" ? 0 : s.State == "Waiting" ? 1 : 2).ThenByDescending(s => s.Updated).Take(6).ToArray(),
+            providers.Add(new(provider, records.OrderByDescending(r => r.At).ToArray(), sessions.OrderBy(s => s.State == "Working" ? 0 : s.State == "Waiting" ? 1 : 2).ThenByDescending(s => s.Updated).Take(16).ToArray(),
                 reading ?? new("Refresh limits to check your account", [], now), partial));
         }
         foreach (string key in _cache.Keys.Where(key => !seen.Contains(key)).ToArray()) _cache.Remove(key);

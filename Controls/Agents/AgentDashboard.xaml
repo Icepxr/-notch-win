@@ -47,7 +47,10 @@
   <Grid Margin="0,0,0,10">
    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
    <TextBlock Text="AI Agent" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
-   <Button x:Name="RefreshLimits" Grid.Column="1" Content="Refresh limits" Click="Refresh_Click" ToolTip="Check account limits using your installed CLIs. No AI message is sent." AutomationProperties.Name="Refresh agent account limits"/>
+   <StackPanel Grid.Column="1" Orientation="Horizontal">
+    <Button x:Name="DetailsButton" Content="Less detail" Click="Details_Click" Margin="0,0,6,0" ToolTip="Hide model and activity breakdowns" AutomationProperties.Name="Toggle agent usage details"/>
+    <Button x:Name="RefreshLimits" Content="Refresh limits" Click="Refresh_Click" ToolTip="Check account limits using your installed CLIs. No AI message is sent." AutomationProperties.Name="Refresh agent account limits"/>
+   </StackPanel>
   </Grid>
   <Grid Grid.Row="1" Margin="0,0,0,12">
    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
@@ -68,8 +71,8 @@
         <Grid Margin="0,0,0,8">
          <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
          <Image Source="{Binding Mark}" Width="26" Height="26" HorizontalAlignment="Left"/>
-         <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
-         <TextBlock Grid.Column="2" Text="{Binding Badge}" Foreground="{StaticResource AgentMuted}" FontSize="10" VerticalAlignment="Center"/>
+         <TextBlock Grid.Column="1" Text="{Binding Name}" ToolTip="{Binding Name}" TextTrimming="CharacterEllipsis" FontWeight="SemiBold" FontSize="14" VerticalAlignment="Center"/>
+         <TextBlock Grid.Column="2" Text="{Binding Badge}" Foreground="{StaticResource AgentMuted}" FontSize="10" Margin="5,0,0,0" VerticalAlignment="Center"/>
         </Grid>
         <ItemsControl ItemsSource="{Binding Windows}"><ItemsControl.ItemTemplate><DataTemplate>
          <StackPanel Margin="0,0,0,8" ToolTip="{Binding Observed}">
@@ -88,14 +91,51 @@
         </StackPanel>
         <Border BorderBrush="#303030" BorderThickness="0,1,0,0" Padding="0,10,0,0"><Grid>
          <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-         <StackPanel><TextBlock Text="Observed tokens" Foreground="{StaticResource AgentMuted}" FontSize="11"/><TextBlock Text="{Binding Tokens}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0"/></StackPanel>
+         <StackPanel ToolTip="{Binding ExactTokens}"><TextBlock Text="Observed tokens" Foreground="{StaticResource AgentMuted}" FontSize="11"/><TextBlock Text="{Binding Tokens}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0"/></StackPanel>
          <StackPanel Grid.Column="1" HorizontalAlignment="Right"><TextBlock Text="Responses" Foreground="{StaticResource AgentMuted}" FontSize="11"/><TextBlock Text="{Binding Responses}" FontSize="18" FontWeight="SemiBold" Margin="0,2,0,0" HorizontalAlignment="Right"/></StackPanel>
         </Grid></Border>
+        <Grid Margin="0,10,0,0">
+         <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+         <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+         <TextBlock Text="Input" Foreground="{StaticResource AgentMuted}" FontSize="12"/><TextBlock Grid.Column="1" Text="{Binding Input}" ToolTip="{Binding ExactInput}" FontSize="12"/>
+         <TextBlock Grid.Row="1" Text="Output" Foreground="{StaticResource AgentMuted}" FontSize="12" Margin="0,5,0,0"/><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Output}" ToolTip="{Binding ExactOutput}" FontSize="12" Margin="0,5,0,0"/>
+         <TextBlock Grid.Row="2" Text="Cached input" Foreground="{StaticResource AgentMuted}" FontSize="12" Margin="0,5,0,0"/><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Cached}" ToolTip="{Binding ExactCached}" FontSize="12" Margin="0,5,0,0"/>
+        </Grid>
         <TextBlock Text="{Binding Note}" Foreground="{StaticResource AgentMuted}" FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap"/>
        </StackPanel>
       </Border>
      </DataTemplate></ItemsControl.ItemTemplate>
     </ItemsControl>
+    <StackPanel x:Name="UsageDetails">
+     <Grid Margin="0,18,10,10"><TextBlock Text="Usage breakdown" FontWeight="SemiBold"/><TextBlock Text="Observed records" HorizontalAlignment="Right" Foreground="{StaticResource AgentMuted}" FontSize="12"/></Grid>
+     <ItemsControl x:Name="Breakdowns">
+      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate><DataTemplate>
+       <Border Style="{StaticResource AgentCard}" Margin="0,0,10,0">
+        <StackPanel>
+         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="12"/>
+         <TextBlock Text="{Binding Period}" Foreground="{StaticResource AgentMuted}" FontSize="11" Margin="0,5,0,8" TextWrapping="Wrap"/>
+         <ItemsControl ItemsSource="{Binding Buckets}" Height="34" AutomationProperties.Name="Observed local token activity; use the bars for exact interval details">
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding BucketCount}"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate><DataTemplate><Border Background="Transparent" ToolTip="{Binding Detail}" AutomationProperties.Name="{Binding Detail}"><Border Height="{Binding Height}" VerticalAlignment="Bottom" Background="#D8DEE5" Opacity="{Binding Opacity}" Margin="1,0" CornerRadius="2"/></Border></DataTemplate></ItemsControl.ItemTemplate>
+         </ItemsControl>
+         <TextBlock Text="{Binding CacheNote}" Foreground="{StaticResource AgentMuted}" FontSize="11" Margin="0,8,0,10" TextWrapping="Wrap"/>
+         <Border BorderBrush="#303030" BorderThickness="0,1,0,0" Padding="0,10,0,0">
+          <StackPanel>
+           <TextBlock Text="{Binding ModelSummary}" Foreground="{StaticResource AgentMuted}" FontSize="11" Margin="0,0,0,4" TextWrapping="Wrap"/>
+           <ItemsControl ItemsSource="{Binding Models}"><ItemsControl.ItemTemplate><DataTemplate>
+            <Grid Margin="0,5,0,0" ToolTip="{Binding Detail}"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+             <TextBlock Text="{Binding Name}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/><TextBlock Grid.Column="1" Text="{Binding Tokens}" FontSize="12"/>
+            </Grid>
+           </DataTemplate></ItemsControl.ItemTemplate></ItemsControl>
+          </StackPanel>
+         </Border>
+        </StackPanel>
+       </Border>
+      </DataTemplate></ItemsControl.ItemTemplate>
+     </ItemsControl>
+     <TextBlock Text="Gaps mean no observed records. Cache is included in input." Foreground="{StaticResource AgentMuted}" FontSize="11" Margin="0,8,10,0" TextWrapping="Wrap"/>
+    </StackPanel>
     <Grid Margin="0,18,10,10"><TextBlock Text="Activity" FontWeight="SemiBold"/><TextBlock x:Name="ActivityCount" Foreground="{StaticResource AgentMuted}" FontSize="12" HorizontalAlignment="Right"/></Grid>
     <TextBlock x:Name="EmptyActivity" Text="Open Claude Code or Codex on this PC to see local activity." Foreground="{StaticResource AgentMuted}" TextWrapping="Wrap" Margin="0,0,10,12"/>
     <ItemsControl x:Name="Sessions"><ItemsControl.ItemTemplate><DataTemplate>

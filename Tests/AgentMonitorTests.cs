@@ -53,6 +53,72 @@ public sealed class AgentMonitorTests
         Assert.Equal(2, claude.Windows.Count); Assert.Equal(69.5, claude.Windows[0].Remaining);
     }
     [Fact]
+    public void ClaudeEmptyUsageDoesNotIncorrectlyClaimTheUserIsSignedOut()
+    {
+        var available = AgentAccounts.ParseClaude(Node(new { rate_limits_available = true, rate_limits = (object?)null }), Now);
+        Assert.Empty(available.Windows); Assert.Contains("network", available.Status); Assert.DoesNotContain("sign", available.Status);
+        var unavailable = AgentAccounts.ParseClaude(Node(new { rate_limits_available = false }), Now);
+        Assert.Contains("Subscription", unavailable.Status);
+        Assert.Empty(AgentAccounts.ParseClaude(Node(new { rate_limits_available = false, rate_limits = new { five_hour = new { utilization = 30 } } }), Now).Windows);
+        var valid = AgentAccounts.ParseClaude(Node(new { rate_limits_available = true, rate_limits = new { five_hour = new { utilization = 0, resets_at = Now.AddHours(1) }, seven_day = new { utilization = 42.5, resets_at = Now.AddDays(3) } } }), Now);
+        Assert.Equal(new[] { "5 hours", "Weekly" }, valid.Windows.Select(w => w.Name));
+        Assert.Equal(100, valid.Windows[0].Remaining); Assert.Equal(57.5, valid.Windows[1].Remaining);
+    }
+    [Fact]
+    public void UsageEnvironmentDoesNotInjectTheFlagThatSuppressesClaudeLimitsAndPreservesUserOptOut()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "vnotch-env-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            var start = new System.Diagnostics.ProcessStartInfo();
+            foreach (string key in new[] { "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "HTTPS_PROXY", "UNRELATED_SECRET" }) start.Environment.Remove(key);
+            File.WriteAllText(path, "{}"); AgentAccounts.ConfigureClaudeEnvironment(start, path);
+            Assert.False(start.Environment.ContainsKey("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"));
+            Assert.Equal("1", start.Environment["DISABLE_TELEMETRY"]);
+            File.WriteAllText(path, Json(new { env = new { CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1", HTTPS_PROXY = "http://fixture.invalid:8080", UNRELATED_SECRET = "must-not-load" } }));
+            AgentAccounts.ConfigureClaudeEnvironment(start, path);
+            Assert.Equal("1", start.Environment["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"]);
+            Assert.Equal("http://fixture.invalid:8080", start.Environment["HTTPS_PROXY"]);
+            Assert.False(start.Environment.ContainsKey("UNRELATED_SECRET"));
+            start.Environment["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "custom-explicit-value";
+            AgentAccounts.ConfigureClaudeEnvironment(start, path);
+            Assert.Equal("custom-explicit-value", start.Environment["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"]);
+        }
+        finally { File.Delete(path); }
+    }
+    [Fact]
+    public void ConsoleSelectionRejectsDesktopClaudeEvenWhenItsFilenameMatches()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "vnotch-pe-" + Guid.NewGuid().ToString("N") + ".exe");
+        try
+        {
+            var bytes = new byte[256];
+            BitConverter.GetBytes((ushort)0x5a4d).CopyTo(bytes, 0); BitConverter.GetBytes(64).CopyTo(bytes, 60);
+            BitConverter.GetBytes(0x00004550).CopyTo(bytes, 64); BitConverter.GetBytes((ushort)0x20b).CopyTo(bytes, 88);
+            BitConverter.GetBytes((ushort)2).CopyTo(bytes, 156); File.WriteAllBytes(path, bytes);
+            Assert.False(AgentAccounts.IsConsoleExecutable(path));
+            BitConverter.GetBytes((ushort)3).CopyTo(bytes, 156); File.WriteAllBytes(path, bytes);
+            Assert.True(AgentAccounts.IsConsoleExecutable(path));
+            File.WriteAllText(path, "invalid"); Assert.False(AgentAccounts.IsConsoleExecutable(path));
+        }
+        finally { File.Delete(path); }
+    }
+    [Fact]
+    public void BreakdownKeepsCachedTokensInsideInputAndSeparatesModelsAndLocalCalendarBuckets()
+    {
+        var local = new DateTimeOffset(DateTime.Today.AddHours(12));
+        var provider = new AgentProvider("Claude Code", [new("1", local, "alpha", 100, 20, 80), new("2", local.AddHours(-1), "beta", 50, 10, 30),
+            new("3", local.AddDays(-1), "alpha", 1000, 200, 900), new("4", local, "", 10, 0, 0)], [], new("", [], local), false);
+        var models = AgentBreakdown.Models(provider);
+        Assert.Equal("alpha", models[0].Name); Assert.Equal(1320, models[0].Total); Assert.Equal(980, models[0].Cached);
+        Assert.Contains(models, m => m.Name == "Unspecified model");
+        var today = AgentBreakdown.Activity(provider, 1, local);
+        Assert.Equal(12, today.Count); Assert.Equal(190, today.Sum(b => b.Tokens)); Assert.Equal(3, today.Sum(b => b.Responses));
+        var week = AgentBreakdown.Activity(provider, 7, local);
+        Assert.Equal(7, week.Count); Assert.Equal(1200, week[^2].Tokens); Assert.Equal(190, week[^1].Tokens);
+        Assert.Equal(30, AgentBreakdown.Activity(provider, 30, local).Count);
+    }
+    [Fact]
     public async Task PrivacyDenialDoesNotStartACommand()
     {
         int acquired = 0;

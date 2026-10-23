@@ -5,8 +5,8 @@ else { $DotNetExe = (Get-Command $DotNetExe -ErrorAction Stop).Source }
 Push-Location $PSScriptRoot
 try {
  foreach ($suite in @(
-  @{Project='Tests/Agents.Core/Agent.Core.Tests.csproj';Name='agent-core';Minimum=10},
-  @{Project='Tests/Agents.UI/Agent.UI.Tests.csproj';Name='agent-ui';Minimum=5}
+  @{Project='Tests/Agents.Core/Agent.Core.Tests.csproj';Name='agent-core';Minimum=14},
+  @{Project='Tests/Agents.UI/Agent.UI.Tests.csproj';Name='agent-ui';Minimum=8}
  )) {
   $directory=Join-Path $PSScriptRoot ('artifacts/agent-tests/'+$suite.Name)
   New-Item -ItemType Directory -Path $directory -Force | Out-Null

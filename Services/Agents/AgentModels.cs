@@ -20,6 +20,8 @@ internal sealed record AgentProvider(string Name, IReadOnlyList<AgentRecord> Rec
 {
     internal long Tokens => Records.Sum(r => r.Total);
     internal long Cached => Records.Sum(r => r.Cached);
+    internal long Input => Records.Sum(r => r.Input);
+    internal long Output => Records.Sum(r => r.Output);
 }
 internal sealed record AgentSnapshot(IReadOnlyList<AgentProvider> Providers, DateTimeOffset Updated);
 internal interface IAgentMonitor : IDisposable

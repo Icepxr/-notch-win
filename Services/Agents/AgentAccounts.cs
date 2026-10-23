@@ -28,7 +28,16 @@ internal static class AgentAccounts
                 catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or NotSupportedException) { }
             }
         }
-        string? executable = candidates.FirstOrDefault(File.Exists);
+        // Desktop Claude.exe has the same name as the CLI, but is a GUI application.
+        // Also discover the Desktop-bundled CLI when no Claude session is running.
+        if (provider != "Codex")
+        {
+            string data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Claude-Data");
+            foreach (string profile in Directories(data, 16))
+                foreach (string version in Directories(Path.Combine(profile, "claude-code"), 10))
+                    candidates.AddRange(Directories(version, 4).Select(dir => Path.Combine(dir, name)));
+        }
+        string? executable = candidates.Distinct(StringComparer.OrdinalIgnoreCase).FirstOrDefault(path => File.Exists(path) && (provider == "Codex" || IsConsoleExecutable(path)));
         if (executable != null) return new(executable, []);
         if (provider != "Codex")
         {
@@ -37,6 +46,46 @@ internal static class AgentAccounts
             if (node != null && File.Exists(script)) return new(node, [script]);
         }
         return null;
+    }
+    private static IEnumerable<string> Directories(string root, int count)
+    {
+        try { return Directory.Exists(root) ? Directory.GetDirectories(root).OrderByDescending(Directory.GetLastWriteTimeUtc).Take(count).ToArray() : []; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return []; }
+    }
+    internal static bool IsConsoleExecutable(string path)
+    {
+        try
+        {
+            using var file = File.OpenRead(path); using var reader = new BinaryReader(file);
+            if (file.Length < 64 || reader.ReadUInt16() != 0x5a4d) return false;
+            file.Position = 60; long offset = reader.ReadUInt32();
+            if (offset < 64 || offset > file.Length - 94) return false;
+            file.Position = offset; if (reader.ReadUInt32() != 0x00004550) return false;
+            file.Position = offset + 24; ushort format = reader.ReadUInt16();
+            if (format is not (0x10b or 0x20b)) return false;
+            file.Position = offset + 92; return reader.ReadUInt16() == 3; // IMAGE_SUBSYSTEM_WINDOWS_CUI
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+    }
+    internal static void ConfigureClaudeEnvironment(ProcessStartInfo start, string settingsPath)
+    {
+        start.Environment.Remove("CLAUDECODE");
+        start.Environment["DISABLE_AUTOUPDATER"] = "1";
+        start.Environment["DISABLE_TELEMETRY"] = "1";
+        start.Environment["DISABLE_ERROR_REPORTING"] = "1";
+        // Do not inject DISABLE_NONESSENTIAL_TRAFFIC: it also suppresses get_usage.
+        // Preserve explicit user traffic opt-outs, proxies and CA settings, without
+        // loading hooks, tools, credentials or arbitrary settings-file environment.
+        try
+        {
+            if (!File.Exists(settingsPath) || new FileInfo(settingsPath).Length > 1024 * 1024) return;
+            using var document = JsonDocument.Parse(File.ReadAllText(settingsPath), new JsonDocumentOptions { MaxDepth = 32 });
+            var env = document.RootElement.Get("env");
+            foreach (string name in new[] { "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "HTTPS_PROXY", "HTTP_PROXY", "NO_PROXY", "NODE_EXTRA_CA_CERTS" })
+                if (!start.Environment.ContainsKey(name) && env.Get(name).ValueKind == JsonValueKind.String && env.Get(name).GetString() is { Length: <= 8192 } value)
+                    start.Environment[name] = value;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { }
     }
     internal static AgentAccount ParseCodex(JsonElement result, DateTimeOffset now)
     {
@@ -47,8 +96,11 @@ internal static class AgentAccounts
     }
     internal static AgentAccount ParseClaude(JsonElement result, DateTimeOffset now)
     {
+        if (result.Get("rate_limits_available").ValueKind == JsonValueKind.False)
+            return new("Subscription limits unavailable for this CLI account", [], now);
         var windows = AgentJson.ClaudeWindows(result.Get("rate_limits"), now);
-        return new(windows.Count > 0 ? "Live account" : "No account limits available · check Claude sign-in", windows, now);
+        string status = windows.Count > 0 ? "Live account" : "Claude returned no limits · retry or check network settings";
+        return new(status, windows, now);
     }
     internal static async Task<AgentAccount> ReadAsync(string provider, Func<CancellationToken> permission, CancellationToken cancellation)
     {
@@ -68,11 +120,8 @@ internal static class AgentAccounts
                     "--tools", "", "--strict-mcp-config", "--mcp-config", "{\"mcpServers\":{}}", "--setting-sources", "", "--settings", "{\"disableAllHooks\":true}" }) start.ArgumentList.Add(arg);
             if (!codex)
             {
-                start.Environment.Remove("CLAUDECODE");
-                start.Environment["DISABLE_AUTOUPDATER"] = "1";
-                start.Environment["DISABLE_TELEMETRY"] = "1";
-                start.Environment["DISABLE_ERROR_REPORTING"] = "1";
-                start.Environment["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1";
+                string config = Environment.GetEnvironmentVariable("CLAUDE_CONFIG_DIR") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude");
+                ConfigureClaudeEnvironment(start, Path.Combine(config, "settings.json"));
             }
             using var process = new Process { StartInfo = start };
             try
@@ -112,7 +161,12 @@ internal static class AgentAccounts
                             if (response.Get("subtype").Text() != "success") return new("Usage unavailable · check sign-in or update Claude Code", [], now);
                             if (response.Get("request_id").Text() == "initialize")
                                 await Send(new { type = "control_request", request_id = "usage", request = new { subtype = "get_usage", skip_behaviors = true } });
-                            if (response.Get("request_id").Text() == "usage") return ParseClaude(response.Get("response"), DateTimeOffset.Now);
+                            if (response.Get("request_id").Text() == "usage")
+                            {
+                                var account = ParseClaude(response.Get("response"), DateTimeOffset.Now);
+                                return account.Windows.Count == 0 && start.Environment.TryGetValue("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", out string? optOut) && !string.IsNullOrEmpty(optOut)
+                                    ? account with { Status = "Usage checks disabled by your Claude traffic setting" } : account;
+                            }
                         }
                     }
                 }
