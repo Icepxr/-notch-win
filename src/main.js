@@ -76,6 +76,8 @@ let lastClaudeSignIn = 0;
 // window at a time, however often the button is pressed.
 let claudeSignInWindow = null;
 let shelfPruneTimer = null;
+// True while the notch is out of the way of a fullscreen app.
+let hiddenForFullscreen = false;
 
 function userFile(name) {
   return path.join(app.getPath('userData'), name);
@@ -125,6 +127,8 @@ const BOOLEAN_PREFERENCES = [
   // Asking the installed CLIs for plan limits is the only part of AI
   // monitoring that reaches the network, so it has its own switch.
   'aiQuota',
+  // Step aside while a game or a film has the screen.
+  'hideInFullscreen',
 ];
 
 function clientPreferences() {
@@ -165,6 +169,11 @@ function applyPreferencePatch(patch) {
   }
   const ok = saveSettings();
   if (!ok) settings = previous;
+  // Turning the fullscreen courtesy off while it is in effect has to bring
+  // the notch back, or the switch appears to do nothing until the game ends.
+  if (hiddenForFullscreen && settings.hideInFullscreen === false) {
+    applyFullscreen({ active: false, monitor: null });
+  }
   reflowNotch();
   const result = { ok, preferences: clientPreferences(), displayState: displayController?.snapshot() };
   send('notch:preferences', result);
@@ -405,6 +414,13 @@ function setDisplayPreference(patch) {
 }
 
 function toggleNotch() {
+  // Asking for the notch outranks standing aside for a fullscreen app: the
+  // user pressed the shortcut, so they want it now.
+  if (hiddenForFullscreen) {
+    hiddenForFullscreen = false;
+    win?.showInactive();
+    displayController?.apply();
+  }
   // Explicit activation should appear on the cursor display immediately.
   if (settings.displayMode === 'cursor') displayController?.settingsChanged();
   send('notch:toggle');
@@ -445,10 +461,52 @@ function startShelf() {
   shelfPruneTimer.unref?.();
 }
 
+/**
+ * Whether a fullscreen app has taken over the screen the notch lives on.
+ *
+ * The bridge reports the monitor in physical pixels while Electron works in
+ * device-independent ones, so this converts rather than assuming they agree -
+ * on a 150% display they differ by half again.
+ */
+function coversNotchDisplay(monitor) {
+  if (!monitor || !win || win.isDestroyed()) return false;
+  const display = screen.getDisplayMatching(win.getBounds());
+  const physical = screen.dipToScreenRect(null, display.bounds);
+  // A pixel or two of tolerance: rounding between two coordinate systems
+  // should not be what decides whether the notch disappears.
+  const near = (a, b) => Math.abs(a - b) <= 2;
+  return near(physical.x, monitor.left) && near(physical.y, monitor.top)
+    && near(physical.x + physical.width, monitor.right)
+    && near(physical.y + physical.height, monitor.bottom);
+}
+
+/**
+ * Get out of the way of a fullscreen app, and come back afterwards. An
+ * always-on-top black bar across the top of a film or a game is the one place
+ * where the right thing for the notch to do is nothing at all.
+ */
+function applyFullscreen({ active, monitor }) {
+  const hide = active && settings.hideInFullscreen !== false && coversNotchDisplay(monitor);
+  if (hide === hiddenForFullscreen) return;
+  hiddenForFullscreen = hide;
+  console.log('[fullscreen]', hide ? 'standing aside' : 'back');
+  if (!win || win.isDestroyed()) return;
+  if (hide) {
+    // Settle back to rest first, so coming back does not restore a half-open
+    // panel over whatever the user went on to do.
+    send('notch:dismiss');
+    win.hide();
+  } else {
+    win.showInactive();
+    displayController?.apply();
+  }
+}
+
 function startMedia() {
   systemActions = new SystemActions({ scriptPath: bridgeScript('system-actions.ps1') });
   systemActions.on('ready', () => console.log('[system-actions] ready'));
   systemActions.on('action', (action) => { if (settings.systemFeedback !== false) send('notch:system-action', action); });
+  systemActions.on('fullscreen', applyFullscreen);
   systemActions.on('unavailable', () => console.log('[system-actions] System feedback unavailable'));
   systemActions.start();
   media = new MediaBridge({ scriptPath: bridgeScript('nowplaying.ps1') });

@@ -97,7 +97,10 @@ button:active:not(:disabled) { transform: scale(.96); }
 #card {
   width: var(--closed-width, 184px);
   height: var(--closed-height, 28px);
-  border-radius: 0 0 16px 16px;
+  /* The contour is a function of height, published by notch-geometry. The
+     renderer also writes it inline during a morph; this is what paints before
+     the first morph runs. */
+  border-radius: 0 0 var(--notch-radius) var(--notch-radius);
   overflow: visible;
   background: var(--panel);
   box-shadow: 0 8px 18px -8px #0009;
@@ -106,7 +109,6 @@ button:active:not(:disabled) { transform: scale(.96); }
 body.state-peek #card {
   width: var(--peek-width, 300px);
   height: var(--peek-height, 46px);
-  border-radius: 0 0 20px 20px;
   box-shadow: 0 10px 22px -9px #000b;
 }
 body.state-peek.has-media #card {
@@ -116,29 +118,30 @@ body.state-peek.has-media #card {
 body.state-open #card {
   width: var(--open-width, 520px);
   height: var(--open-height, 390px);
-  border-radius: 0 0 28px 28px;
   box-shadow: 0 14px 28px -8px #000b;
 }
 
-/* Concave shoulders join the surface to the screen bezel. */
+/* Concave shoulders join the surface to the screen bezel. Their size follows
+   --notch-shoulder, which notch-geometry derives from the current height; the
+   geometry here is only the part that does not change with it. */
 #card::before, #card::after {
   content: '';
   position: absolute;
   top: 0;
-  width: 12px;
-  height: 12px;
+  width: var(--notch-shoulder);
+  height: var(--notch-shoulder);
   pointer-events: none;
   border: 0;
   box-shadow: none;
   border-radius: 0;
 }
 #card::before {
-  left: -12px;
-  background: radial-gradient(circle at 0 100%, transparent 12px, var(--panel) 12.5px);
+  left: calc(0px - var(--notch-shoulder));
+  background: radial-gradient(circle at 0 100%, transparent var(--notch-shoulder), var(--panel) calc(var(--notch-shoulder) + .5px));
 }
 #card::after {
-  inset: 0 -12px auto auto;
-  background: radial-gradient(circle at 100% 100%, transparent 12px, var(--panel) 12.5px);
+  inset: 0 calc(0px - var(--notch-shoulder)) auto auto;
+  background: radial-gradient(circle at 100% 100%, transparent var(--notch-shoulder), var(--panel) calc(var(--notch-shoulder) + .5px));
 }
 body.ai-waiting.state-closed #card::after { box-shadow: none; }
 .shell-content { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; }

@@ -23,6 +23,32 @@
     openGallery: { width: 520, height: 330 },
     peekNotice: { width: 360, height: 64 },
   };
+  // The silhouette is a function of height, not a table of fixed numbers: the
+  // same notch is 28px tall at rest and 390px open, and a corner that looks
+  // right at one height is wrong at the other. Keeping the rule here - rather
+  // than as evaluated constants in a stylesheet - is what stops the painted
+  // shape, the hit region and the Settings preview drifting apart.
+  const silhouette = { shoulderMax: 14, shoulderRatio: 0.19, radiusMax: 28, radiusRatio: 0.34 };
+
+  /** The concave shoulder where the notch meets the screen edge. */
+  function shoulderFor(height) {
+    return Math.min(silhouette.shoulderMax, Math.max(0, height) * silhouette.shoulderRatio);
+  }
+
+  /** The bottom corner radius. A capsule is round-ended; a notch is not. */
+  function radiusFor(height, shape) {
+    const value = Math.max(0, height);
+    return shape === 'capsule'
+      ? Math.min(silhouette.radiusMax, value / 2)
+      : Math.min(silhouette.radiusMax, value * silhouette.radiusRatio);
+  }
+
+  /** The same rule as a CSS border-radius: a capsule is round all the way. */
+  function borderRadiusFor(height, shape) {
+    const radius = radiusFor(height, shape);
+    return shape === 'capsule' ? radius + 'px' : '0 0 ' + radius + 'px ' + radius + 'px';
+  }
+
   function windowSize(size) {
     return { width: size.width + gutter * 2, height: size.height + shadow };
   }
@@ -51,5 +77,6 @@
     const centreX = localX < radius ? radius : localX > region.width - radius ? region.width - radius : localX;
     return (localX - centreX) ** 2 + (localY - (region.height - radius)) ** 2 <= radius ** 2;
   }
-  return { sizes, sizesFor, gutter, shadow, windowSize, hostSize, hostFor, contains };
+  return { sizes, sizesFor, gutter, shadow, windowSize, hostSize, hostFor, contains,
+    silhouette, shoulderFor, radiusFor, borderRadiusFor };
 }));

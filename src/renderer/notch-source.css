@@ -3,7 +3,11 @@
    Source port: NotchView, NotchMusicView, NotchSectionsView, NotchLayout.
    Windows has no camera cutout: do not manufacture an empty camera band. */
 :root { --source-inset: 28px; --source-row-gap: 10px; --source-card-radius: 16px; --source-player-width: 344px; }
-@property --notch-shoulder { syntax: '<length>'; inherits: true; initial-value: 5.32px; }
+/* The real value is published by notch-geometry's shoulderFor(height) before
+   first paint and on every morph frame. initial-value cannot hold a formula,
+   so it holds nothing rather than a number evaluated by hand that would be
+   wrong at every height but one. */
+@property --notch-shoulder { syntax: '<length>'; inherits: true; initial-value: 0px; }
 #card::before,#card::after { width: var(--notch-shoulder); height: var(--notch-shoulder); }
 #card::before { left: calc(0px - var(--notch-shoulder)); background: radial-gradient(circle at 0 100%,transparent var(--notch-shoulder),var(--panel) calc(var(--notch-shoulder) + .5px)); }
 #card::after { right: calc(0px - var(--notch-shoulder)); left: auto; background: radial-gradient(circle at 100% 100%,transparent var(--notch-shoulder),var(--panel) calc(var(--notch-shoulder) + .5px)); }

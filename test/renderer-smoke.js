@@ -352,6 +352,21 @@ app.whenReady().then(async () => {
     check((await layout()).activeTab === 'media' && (await layout()).height === 260, 'module buttons switch to the fuller music player');
     await js(`card.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true, bubbles: true }))`); await settled();
     check((await layout()).activeTab === 'send', 'Alt+Arrow is an accessible alternative to module swipes');
+
+    // Alt+N used to walk a fixed list while everything else walked the user's
+    // own order, so reordering or hiding a module made the key - and the
+    // caption printed on the tile - open the wrong page.
+    await js(`applyPreferences({ ...preferences, moduleOrder: ['notes', 'media', 'send'], hiddenModules: ['clipboard'] })`); await settled();
+    await js(`card.dispatchEvent(new KeyboardEvent('keydown', { key: '1', altKey: true, bubbles: true }))`); await settled();
+    check((await layout()).activeTab === 'notes', 'Alt+1 opens whatever the user put first');
+    check(await js(`document.querySelector('.tab[data-tab="notes"] .module-caption').textContent === 'Alt 1'`),
+      'and the caption on the tile says the same number');
+    check(await js(`document.querySelector('.tab[data-tab="clipboard"] .module-caption').hidden`),
+      'a hidden module advertises no key at all');
+    check(await js(`document.querySelector('.tab[data-tab="send"] span').textContent === NotchModules.names.send`),
+      'the tab is named by the module registry, not by a third copy in the markup');
+    await js(`applyPreferences({ ...preferences, moduleOrder: [], hiddenModules: [] })`); await settled();
+    await js(`setTab('send')`); await settled();
     await js(`document.querySelector('.notch-header').dispatchEvent(new WheelEvent('wheel', { deltaX: 65, deltaY: 0, bubbles: true, cancelable: true }))`); await settled();
     check((await layout()).activeTab === 'media', 'a horizontal trackpad gesture on the header switches modules');
     await js(`setTab('send'); document.querySelector('.notch-header').dispatchEvent(new PointerEvent('pointerdown', { pointerId: 8, button: 0, clientX: 250, clientY: 20, bubbles: true })); document.querySelector('.notch-header').dispatchEvent(new PointerEvent('pointerup', { pointerId: 8, clientX: 150, clientY: 20, bubbles: true }));`); await settled();

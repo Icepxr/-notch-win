@@ -20,6 +20,13 @@ function icon(paths, viewBox = '0 0 24 24') {
 }
 
 const card = document.getElementById('card');
+
+// Publish the resting silhouette before anything is painted, from the same
+// rule the morph uses. Stylesheets then have no reason to carry a frozen copy
+// of a number that only happens to be right at one height.
+document.documentElement.style.setProperty('--notch-shoulder', NotchGeometry.shoulderFor(SIZES.closed.height) + 'px');
+document.documentElement.style.setProperty('--notch-radius', NotchGeometry.radiusFor(SIZES.closed.height, 'notch') + 'px');
+
 const els = {
   clock: document.getElementById('peek-clock'),
   peekShelf: document.getElementById('peek-shelf'),
@@ -115,8 +122,15 @@ let choosingFiles = false;
 let choosingLyrics = false;
 const lyricsByTrack = new Map();
 const onlineLyrics = { enabled: false, key: '', version: 0, status: 'off', lines: [] };
-const PAGE_NAMES = { send: 'Files', media: 'Music', clipboard: 'Clipboard', system: 'System', ai: 'AI Agents', timer: 'Timer', notes: 'Notes' };
-const PAGE_ORDER = Object.keys(PAGE_NAMES);
+// Module names and ids live in NotchModules; this file used to keep its own
+// copy, which is how 'send' came to be called three different things. The
+// order shown to the user is theirs, not the declaration order, so anything
+// that counts pages has to ask rather than assume.
+const PAGE_NAMES = NotchModules.names;
+/** The pages the user can actually reach, in the order they arranged them. */
+function pageOrder() { return NotchModules.visible(preferences); }
+/** Those pages plus Settings, which is always last. */
+function pagesWithSettings() { return [...pageOrder(), 'settings']; }
 const pageSwipe = new NotchActivity.Swipe();
 
 for (const [name, size] of Object.entries(SIZES)) {
@@ -274,17 +288,16 @@ async function updateGeometry() {
   applyVisualState();
   card.style.width = target.width + 'px';
   card.style.height = target.height + 'px';
-  card.style.setProperty('--notch-shoulder', Math.min(14, target.height * .19) + 'px');
-  const radius = preferences.silhouette === 'capsule' ? Math.min(28, target.height / 2) : Math.min(28, target.height * .34);
+  card.style.setProperty('--notch-shoulder', NotchGeometry.shoulderFor(target.height) + 'px');
+  card.style.setProperty('--notch-radius', NotchGeometry.radiusFor(target.height, preferences.silhouette) + 'px');
   // Persist the entire contour below the animation. Updating only the lower
   // corners let media-preview CSS square the capsule's top when fill was removed.
-  card.style.borderRadius = preferences.silhouette === 'capsule' ? radius + 'px' : '0 0 ' + radius + 'px ' + radius + 'px';
+  card.style.borderRadius = NotchGeometry.borderRadiusFor(target.height, preferences.silhouette);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const morph = card.animate(motion.sizes.map((size) => ({
     width: size.width + 'px', height: size.height + 'px',
-    '--notch-shoulder': Math.min(14, size.height * .19) + 'px',
-    borderRadius: preferences.silhouette === 'capsule' ? Math.min(28, size.height / 2) + 'px'
-      : '0 0 ' + Math.min(28, size.height * .34) + 'px ' + Math.min(28, size.height * .34) + 'px',
+    '--notch-shoulder': NotchGeometry.shoulderFor(size.height) + 'px',
+    borderRadius: NotchGeometry.borderRadiusFor(size.height, preferences.silhouette),
   })), { duration: reduced ? 1 : motion.duration, easing: 'linear', fill: 'both' });
   currentMorph = morph;
   await morph.finished.catch(() => {});
@@ -342,11 +355,44 @@ function setMusicTint(value) {
   applyMusicTint();
 }
 
+/**
+ * Make the markup agree with the module registry. The tabs carry their own
+ * icons and captions, but the name is not theirs to decide: three files used
+ * to spell it three ways, and the Settings list disagreed with the notch.
+ */
+function nameModules() {
+  for (const [id, name] of Object.entries(NotchModules.names)) {
+    const tab = els.tabs.querySelector('[data-tab="' + id + '"]');
+    if (!tab) continue;
+    const label = tab.querySelector('span');
+    if (label) label.textContent = name;
+    tab.title = name;
+    tab.setAttribute('aria-label', name);
+  }
+}
+
+/**
+ * Print, on each tile, the key that actually opens it. The position moves
+ * when the user reorders or hides a module, so this cannot be done once at
+ * startup - that is how the caption came to disagree with the keyboard.
+ */
+function paintShortcuts() {
+  const pages = pagesWithSettings();
+  for (const tab of els.tabs.querySelectorAll('.tab')) {
+    const caption = tab.querySelector('.module-caption');
+    if (!caption) continue;
+    const place = pages.indexOf(tab.dataset.tab);
+    caption.hidden = place < 0;
+    if (place >= 0) caption.textContent = 'Alt ' + (place + 1);
+  }
+}
+
 function applyModulePreferences() {
   const modulePrefs = NotchModules.normalize(preferences);
   const arranged = [...modulePrefs.moduleOrder, 'settings'];
   const actual = [...els.tabs.querySelectorAll('.tab')].map(tab => tab.dataset.tab);
   if (actual.join() !== arranged.join()) for (const id of arranged) els.tabs.append(els.tabs.querySelector('[data-tab="' + id + '"]'));
+  paintShortcuts();
   filterGallery();
 }
 
@@ -1072,8 +1118,9 @@ document.addEventListener('keydown', (event) => {
   if (state === 'open' && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'o' && !event.target.closest('input, textarea')) { event.preventDefault(); chooseFiles(); return; }
   if (state === 'open' && event.altKey && !event.ctrlKey && !event.metaKey && (!event.target.closest('input, textarea, select') || event.target === els.exploreSearch)) {
     if (['ArrowLeft', 'ArrowRight'].includes(event.key)) { event.preventDefault(); cyclePage(event.key === 'ArrowRight' ? 1 : -1); return; }
+    const pages = pagesWithSettings();
     const index = Number(event.key) - 1;
-    if (index >= 0 && index < 8) { event.preventDefault(); setTab(index === 7 ? 'settings' : PAGE_ORDER[index]); return; }
+    if (index >= 0 && index < pages.length) { event.preventDefault(); setTab(pages[index]); return; }
   }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && activeTab === 'clipboard' && state === 'open') {
     event.preventDefault();
@@ -1676,8 +1723,6 @@ function setTab(name) {
 els.tabs.setAttribute('role', 'menu');
 for (const tab of els.tabs.querySelectorAll('.tab')) {
   const name = tab.dataset.tab;
-  const shortcut = tab.querySelector('.module-caption');
-  if (shortcut) shortcut.textContent = 'Alt ' + (name === 'settings' ? 8 : PAGE_ORDER.indexOf(name) + 1);
   tab.setAttribute('role', 'menuitemradio');
   tab.id = 'tab-' + name;
   tab.setAttribute('aria-controls', 'panel-' + name);
@@ -1694,7 +1739,8 @@ document.getElementById('module-next').addEventListener('click', () => cyclePage
 document.getElementById('module-index').addEventListener('click', () => setExploring(true));
 function updateModulePager() {
   const index = document.getElementById('module-index'); if (!index) return;
-  index.textContent = (PAGE_ORDER.indexOf(activeTab) + 1) + ' / ' + PAGE_ORDER.length;
+  const pages = pageOrder();
+  index.textContent = (pages.indexOf(activeTab) + 1) + ' / ' + pages.length;
   index.setAttribute('aria-label', PAGE_NAMES[activeTab] + '. Choose a module');
   for (const button of modulePager.querySelectorAll('button')) button.disabled = transferActive || dragDepth > 0;
   document.getElementById('choose-files').disabled = transferActive || choosingFiles;
@@ -1767,6 +1813,7 @@ function focusSendTab() {
   setInterval(() => { if (!els.closedAgent.hidden) paintClosedAgent(); }, 1000);
 
   mountModulePanels();
+  nameModules();
   setTab('send');
 
   const initial = await notch.init();

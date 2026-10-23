@@ -43,9 +43,70 @@ public class IsletHardwareSnapshot {
     public int? Brightness;
     public long BrightnessSerial;
     public bool CapsLock;
+    // Whether the window in front covers a whole monitor, and which monitor
+    // that is in physical pixels. Islet compares the rectangle rather than a
+    // monitor name, because the two sides number their displays differently.
+    public bool Fullscreen;
+    public int MonitorLeft;
+    public int MonitorTop;
+    public int MonitorRight;
+    public int MonitorBottom;
 }
+[StructLayout(LayoutKind.Sequential)]
+public struct IsletRect { public int Left, Top, Right, Bottom; }
+
+[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+public struct IsletMonitorInfo {
+    public int Size;
+    public IsletRect Monitor;
+    public IsletRect Work;
+    public uint Flags;
+    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string Device;
+}
+
 public class IsletHardware : IDisposable {
     [DllImport("user32.dll")] static extern short GetKeyState(int key);
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr window, out IsletRect rect);
+    [DllImport("user32.dll")] static extern IntPtr MonitorFromWindow(IntPtr window, uint flags);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool GetMonitorInfoW(IntPtr monitor, ref IsletMonitorInfo info);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassNameW(IntPtr window, System.Text.StringBuilder name, int max);
+
+    // The desktop and the shell are always 'full screen'. Treating them as a
+    // fullscreen app would hide the notch whenever nothing else is in front,
+    // which is exactly when it should be visible.
+    static readonly string[] ShellClasses = { "Progman", "WorkerW", "Shell_TrayWnd", "Shell_SecondaryTrayWnd", "DV2ControlHost" };
+
+    void ReadForeground(IsletHardwareSnapshot result) {
+        try {
+            IntPtr window = GetForegroundWindow();
+            if (window == IntPtr.Zero) return;
+
+            var className = new System.Text.StringBuilder(256);
+            if (GetClassNameW(window, className, className.Capacity) > 0) {
+                string name = className.ToString();
+                foreach (string shell in ShellClasses) if (name == shell) return;
+            }
+
+            IsletRect bounds;
+            if (!GetWindowRect(window, out bounds)) return;
+
+            IntPtr monitor = MonitorFromWindow(window, 2 /* MONITOR_DEFAULTTONEAREST */);
+            if (monitor == IntPtr.Zero) return;
+
+            var info = new IsletMonitorInfo();
+            info.Size = Marshal.SizeOf(typeof(IsletMonitorInfo));
+            if (!GetMonitorInfoW(monitor, ref info)) return;
+
+            result.MonitorLeft = info.Monitor.Left;
+            result.MonitorTop = info.Monitor.Top;
+            result.MonitorRight = info.Monitor.Right;
+            result.MonitorBottom = info.Monitor.Bottom;
+            result.Fullscreen = bounds.Left <= info.Monitor.Left && bounds.Top <= info.Monitor.Top
+                && bounds.Right >= info.Monitor.Right && bounds.Bottom >= info.Monitor.Bottom;
+        } catch {}
+    }
+
     IsletEnumerator enumerator;
     IsletEndpoint endpoint;
     string endpointId;
@@ -102,6 +163,7 @@ public class IsletHardware : IDisposable {
         } catch { nextDeviceCheck = DateTime.MinValue; }
         lock (brightnessLock) { result.Brightness = brightness; result.BrightnessSerial = brightnessSerial; }
         result.CapsLock = (GetKeyState(0x14) & 1) != 0;
+        ReadForeground(result);
         return result;
     }
     public void Dispose() {
@@ -122,7 +184,9 @@ try {
         $sample = $hardware.Read()
         @{ type = 'system-actions'; volume = $sample.Volume; muted = $sample.Muted;
            brightness = $sample.Brightness; brightnessSerial = $sample.BrightnessSerial;
-           capsLock = $sample.CapsLock } | ConvertTo-Json -Compress | ForEach-Object { [Console]::WriteLine($_) }
+           capsLock = $sample.CapsLock; fullscreen = $sample.Fullscreen;
+           monitor = @{ left = $sample.MonitorLeft; top = $sample.MonitorTop;
+                        right = $sample.MonitorRight; bottom = $sample.MonitorBottom } } | ConvertTo-Json -Compress | ForEach-Object { [Console]::WriteLine($_) }
         if ($Once) { break }
         Start-Sleep -Milliseconds ([Math]::Max(80, $PollMs))
     } while (-not $shutdown.IsCompleted)

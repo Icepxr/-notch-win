@@ -8,7 +8,29 @@ function normalize(sample) {
   const level = value => Number.isFinite(value) && value >= 0 && value <= 100 ? Math.round(value) : null;
   return { volume: level(sample.volume), muted: typeof sample.muted === 'boolean' ? sample.muted : null,
     brightness: level(sample.brightness), brightnessSerial: Number.isSafeInteger(sample.brightnessSerial) && sample.brightnessSerial >= 0 ? sample.brightnessSerial : 0,
-    capsLock: typeof sample.capsLock === 'boolean' ? sample.capsLock : null };
+    capsLock: typeof sample.capsLock === 'boolean' ? sample.capsLock : null,
+    fullscreen: sample.fullscreen === true, monitor: rect(sample.monitor) };
+}
+/** The monitor the foreground window is on, in physical pixels, or null. */
+function rect(value) {
+  if (!value) return null;
+  const sides = ['left', 'top', 'right', 'bottom'].map((side) => Number(value[side]));
+  if (!sides.every(Number.isFinite)) return null;
+  const [left, top, right, bottom] = sides;
+  if (right <= left || bottom <= top) return null;
+  return { left, top, right, bottom };
+}
+/** Whether two samples disagree about a fullscreen app being in front. */
+function fullscreenChanged(previous, current) {
+  if (!current) return false;
+  if (!previous) return current.fullscreen;
+  if (previous.fullscreen !== current.fullscreen) return true;
+  if (!current.fullscreen) return false;
+  const a = previous.monitor, b = current.monitor;
+  if (!a || !b) return a !== b;
+  // Still fullscreen, but on a different screen: the notch may need to hide
+  // on one display and come back on another.
+  return a.left !== b.left || a.top !== b.top || a.right !== b.right || a.bottom !== b.bottom;
 }
 function changes(previous, current) {
   if (!previous || !current) return [];
@@ -48,6 +70,9 @@ class SystemActions extends EventEmitter {
         if (!receivedSample) this.emit('ready');
         lastSample = Date.now(); receivedSample = true; this.failures = 0;
         for (const action of changes(this.previous, sample)) this.emit('action', action);
+        if (fullscreenChanged(this.previous, sample)) {
+          this.emit('fullscreen', { active: sample.fullscreen, monitor: sample.monitor });
+        }
         this.previous = sample;
       }
     });
@@ -70,4 +95,4 @@ class SystemActions extends EventEmitter {
     this.child?.stdin.end(); this.child?.kill(); this.child = null;
   }
 }
-module.exports = { SystemActions, normalize, changes };
+module.exports = { SystemActions, normalize, changes, fullscreenChanged };

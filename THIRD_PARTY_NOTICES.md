@@ -10,6 +10,13 @@ revision `b843d2340bacd94bab1b4ea6439fb29b91555f17`:
 - `Services/MediaSessionSelectionPolicy.cs`
 - `Services/MediaMetadataRecoveryPolicy.cs`
 
+The fullscreen courtesy in `src/media/system-actions.ps1`, `src/system-actions.js`
+and `src/main.js` follows the same idea as V-Notch's `Services/FullscreenDetector.cs`:
+step out of the way while an app owns the whole screen. The implementation is
+our own — a foreground-window and monitor-rectangle check inside the existing
+hardware-readout bridge, compared against Electron's display geometry — rather
+than a port of its WPF window-layer handling.
+
 The upstream source is licensed under Apache-2.0; the complete license is
 retained in [licenses/V-Notch-Apache-2.0.txt](licenses/V-Notch-Apache-2.0.txt).
 Islet rewrites the policies for sampled SMTC observations in PowerShell:
