@@ -132,6 +132,14 @@ public partial class MainWindow
 
     private void NotchWrapper_MouseMove(object sender, MouseEventArgs e)
     {
+        if (e.LeftButton == MouseButtonState.Pressed && ContinueDockDrag())
+        {
+            e.Handled = true;
+            return;
+        }
+
+        UpdateDockPickUpAffordance();
+
         if (_isDraggingNotchDebug && e.LeftButton == MouseButtonState.Pressed)
         {
             Win32Interop.GetCursorPos(out var pt);
@@ -160,6 +168,12 @@ public partial class MainWindow
 
     private void NotchWrapper_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
+        if (EndDockDrag())
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (_isDraggingNotchDebug)
         {
             _isDraggingNotchDebug = false;

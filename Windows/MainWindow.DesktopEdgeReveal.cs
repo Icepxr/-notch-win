@@ -30,7 +30,7 @@ public partial class MainWindow
         if (!_settings.StayBehindWindows || !_isNotchVisible || _isHiddenByFullscreen)
             return;
 
-        bool atRevealEdge = _notchManager.HoverService.IsPointInTopEdgeRevealZone(point);
+        bool atRevealEdge = _notchManager.HoverService.IsPointInEdgeRevealZone(point);
         bool inNotchHoverZone = _notchManager.HoverService.IsPointInHoverZone(point);
         bool ownedWindowInteractionActive = HasActiveOwnedWindowInteraction();
         _desktopPointerInHoverZone = inNotchHoverZone;

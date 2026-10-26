@@ -544,7 +544,9 @@
    </Grid.RowDefinitions>
 
    <!-- Row 0: Top Header (NavTabs Clearance + Flagship Search Capsule & Toolbar) -->
-   <Grid Grid.Row="0" Margin="12,0,12,0">
+   <!-- Local customization: a side-docked column has no room for the search
+        beside the navigation, so the clearance becomes a row above it. -->
+   <Grid x:Name="TrayHeaderRow" Grid.Row="0" Margin="12,0,12,0">
     <Grid.ColumnDefinitions>
      <ColumnDefinition Width="{Binding NavigationWidth, RelativeSource={RelativeSource AncestorType={x:Type local:ClipboardTray}}}"/>
      <ColumnDefinition Width="*"/>
@@ -666,14 +668,16 @@
     <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem">
      <EventSetter Event="Loaded" Handler="CardContainer_Loaded"/>
      <EventSetter Event="Unloaded" Handler="CardContainer_Unloaded"/>
-     <Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="6,0"/><Setter Property="VerticalContentAlignment" Value="Stretch"/>
+     <Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="0"/><Setter Property="VerticalContentAlignment" Value="Stretch"/>
      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
      <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem"><ContentPresenter/></ControlTemplate></Setter.Value></Setter>
     </Style></ListBox.ItemContainerStyle>
     <ListBox.ItemTemplate><DataTemplate DataType="{x:Type vm:ClipboardCardViewModel}">
-     <!-- Flagship Card Container (Exact 210 Width Required by Interaction Tests) -->
-     <Border Width="210" CornerRadius="{StaticResource TrayRadiusLarge}" Background="Transparent" BorderThickness="0" ClipToBounds="True" Cursor="Hand" SnapsToDevicePixels="False" UseLayoutRounding="True"
+     <!-- Flagship Card Container. 210 wide across the top, which the interaction
+          tests pin; down a side edge the card takes the column's width. -->
+     <Border Width="{Binding CardWidth, RelativeSource={RelativeSource AncestorType=local:ClipboardTray}}"
+             Margin="{Binding CardSpacing, RelativeSource={RelativeSource AncestorType=local:ClipboardTray}}" CornerRadius="{StaticResource TrayRadiusLarge}" Background="Transparent" BorderThickness="0" ClipToBounds="True" Cursor="Hand" SnapsToDevicePixels="False" UseLayoutRounding="True"
       ContextMenuOpening="Card_ContextMenu" Loaded="Card_Loaded" Unloaded="Card_Unloaded" DataContextChanged="Card_DataContextChanged" SizeChanged="Card_SizeChanged" PreviewMouseLeftButtonDown="Card_Down" PreviewMouseLeftButtonUp="Card_Up" PreviewMouseMove="Card_Move" MouseLeave="Card_MouseLeave" IsVisibleChanged="Card_VisibilityChanged">
       <Border.ContextMenu><ContextMenu/></Border.ContextMenu>
       <Grid x:Name="CardPresentation">

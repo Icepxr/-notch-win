@@ -465,6 +465,10 @@ public partial class MainWindow : Window
         {
             _hoverThumbnailDelayTimer.Stop();
 
+            // The modifier can go down after this timer started, so the check
+            // has to happen here too, not only where it was queued.
+            if (IsDockMoveInProgress) return;
+
             if (_settings.EnableHoverExpand && !_isExpanded && !_isAnimating)
             {
                 ExpandNotch();
@@ -538,6 +542,7 @@ public partial class MainWindow : Window
 
         ApplySettings();
         ConfigureOverlayWindow();
+        ApplyDockOrientation();
         PositionAtTop();
         StartZOrderWatchdog();
         UpdateFullscreenAutoHideState(OverlayWindowController.GetForegroundWindowHandle(), force: true);
@@ -980,26 +985,39 @@ public partial class MainWindow : Window
         _fullscreenSlideVisible = shouldBeVisible;
         _isFullscreenSlideAnimating = true;
 
-        double slideDistance = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight + 10 : _collapsedHeight + 10;
+        // The shell retracts through the edge it hangs from, so the distance is
+        // measured on the axis that leaves the screen and signed towards it.
+        var retraction = VNotch.Services.NotchDock.Retraction(DockEdge);
+        bool slidesSideways = retraction.X != 0;
+        double extent = slidesSideways
+            ? (NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : _collapsedWidth)
+            : (NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _collapsedHeight);
+        double slideDistance = (extent + 10) * (slidesSideways ? retraction.X : retraction.Y);
+        var slideAxis = slidesSideways ? TranslateTransform.XProperty : TranslateTransform.YProperty;
 
-        double currentY = NotchContainerTranslate.Y;
+        double currentOffset = slidesSideways ? NotchContainerTranslate.X : NotchContainerTranslate.Y;
         double currentOpacity = NotchContainer.Opacity;
         bool wasCollapsed = NotchContainer.Visibility != Visibility.Visible;
+        NotchContainerTranslate.BeginAnimation(TranslateTransform.XProperty, null);
         NotchContainerTranslate.BeginAnimation(TranslateTransform.YProperty, null);
         NotchContainer.BeginAnimation(UIElement.OpacityProperty, null);
-        NotchContainerTranslate.Y = currentY;
+        NotchContainerTranslate.X = slidesSideways ? currentOffset : 0;
+        NotchContainerTranslate.Y = slidesSideways ? 0 : currentOffset;
         NotchContainer.Opacity = currentOpacity;
 
         if (shouldBeVisible)
         {
             NotchContainer.Visibility = Visibility.Visible;
-            if (wasCollapsed || currentY > 0 || currentY < -slideDistance)
+            // Anywhere outside the span between hidden and shown is a stale
+            // offset from an interrupted slide, so start the entrance over.
+            if (wasCollapsed || currentOffset / slideDistance is < 0 or > 1)
             {
-                NotchContainerTranslate.Y = -slideDistance;
+                if (slidesSideways) NotchContainerTranslate.X = slideDistance;
+                else NotchContainerTranslate.Y = slideDistance;
                 NotchContainer.Opacity = 0;
             }
             AnimateNotchFade(toOpacity: 1, durationMs: 300, easeOut: true);
-            AnimateNotchSlide(toY: 0, durationMs: 350, easeOut: true, onComplete: () =>
+            AnimateNotchSlide(slideAxis, to: 0, durationMs: 350, easeOut: true, onComplete: () =>
             {
                 _isFullscreenSlideAnimating = false;
             });
@@ -1007,13 +1025,14 @@ public partial class MainWindow : Window
         else
         {
             AnimateNotchFade(toOpacity: 0, durationMs: 220, easeOut: false);
-            AnimateNotchSlide(toY: -slideDistance, durationMs: 250, easeOut: false, onComplete: () =>
+            AnimateNotchSlide(slideAxis, to: slideDistance, durationMs: 250, easeOut: false, onComplete: () =>
             {
                 _isFullscreenSlideAnimating = false;
                 if (!_fullscreenSlideVisible)
                 {
                     NotchContainer.Visibility = Visibility.Collapsed;
-                    NotchContainerTranslate.BeginAnimation(TranslateTransform.YProperty, null);
+                    NotchContainerTranslate.BeginAnimation(slideAxis, null);
+                    NotchContainerTranslate.X = 0;
                     NotchContainerTranslate.Y = 0;
                     NotchContainer.BeginAnimation(UIElement.OpacityProperty, null);
                     NotchContainer.Opacity = 0;
@@ -1022,13 +1041,13 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AnimateNotchSlide(double toY, int durationMs, bool easeOut, Action? onComplete)
+    private void AnimateNotchSlide(DependencyProperty axis, double to, int durationMs, bool easeOut, Action? onComplete)
     {
         var easing = easeOut
             ? (IEasingFunction)new CubicEase { EasingMode = EasingMode.EaseOut }
             : new CubicEase { EasingMode = EasingMode.EaseIn };
 
-        var anim = new DoubleAnimation(toY, TimeSpan.FromMilliseconds(durationMs))
+        var anim = new DoubleAnimation(to, TimeSpan.FromMilliseconds(durationMs))
         {
             EasingFunction = easing
         };
@@ -1039,7 +1058,7 @@ public partial class MainWindow : Window
             anim.Completed += (s, e) => onComplete();
         }
 
-        NotchContainerTranslate.BeginAnimation(TranslateTransform.YProperty, anim);
+        NotchContainerTranslate.BeginAnimation(axis, anim);
     }
 
     private void AnimateNotchFade(double toOpacity, int durationMs, bool easeOut)
@@ -1172,7 +1191,21 @@ public partial class MainWindow : Window
     private void PositionAtTop()
     {
         double notchSurfaceWidth = Math.Max(ClipboardTrayWidth, Math.Max(Math.Max(_expandedWidth, _clockViewWidth), _audioViewWidth));
-        _overlayWindow.PositionAtTop(notchSurfaceWidth, MaxExpandedNotchHeight);
+        var edge = DockEdge;
+        // Down a side the pages are transposed, so the host needs along the
+        // edge what the widest page needed across, and only a column's depth
+        // away from it.
+        if (VNotch.Services.NotchDock.IsVertical(edge))
+        {
+            var screen = DockScreenDip;
+            _overlayWindow.PositionAtEdge(edge,
+                VNotch.Services.NotchDock.Length(notchSurfaceWidth, DockPillLength, screen),
+                DockColumnDepth);
+        }
+        else
+        {
+            _overlayWindow.PositionAtEdge(edge, notchSurfaceWidth, MaxExpandedNotchHeight);
+        }
 
         // Initialize the global hover/top-edge bounds at startup as well as after
         _notchManager.UpdatePosition();
@@ -1206,8 +1239,12 @@ public partial class MainWindow : Window
         double bottomRadius = Math.Max(0, Math.Min(corners.BottomLeft, corners.BottomRight));
         var rect = _overlayWindow.GetNotchScreenRect(width, height, bottomRadius);
 
-        double left = rect.Left;
-        double top = rect.Top + (islandMode ? DynamicIslandTopMargin : 0);
+        // An island floats clear of its own edge, whichever edge that is.
+        var float_ = islandMode
+            ? VNotch.Services.NotchDock.Retraction(DockEdge) * -DynamicIslandTopMargin
+            : default;
+        double left = rect.Left + float_.X;
+        double top = rect.Top + float_.Y;
 
         RuntimeLog.Debug("SPOTLIGHT-MORPH", () =>
             $"Source rect: {width:F1}x{height:F1}, expanded={_isExpanded}, " +
@@ -1546,6 +1583,8 @@ public partial class MainWindow : Window
         {
             PositionAtTop();
         }
+
+        DockSettingsChanged(oldSettings, newSettings);
 
         // Forward every settings snapshot. SpotlightController owns change detection,
         // including provider, model and credentials; filtering here leaves it stale.
@@ -2075,6 +2114,10 @@ public partial class MainWindow : Window
         AudioContent.AudioLoadingText.Text = Loc.Get("audio.loading");
         MenuToggleText.Text = Loc.Get(_isNotchVisible ? "tray.hide" : "tray.show");
         MenuResetText.Text = Loc.Get("tray.reset");
+        MenuDockTopText.Text = Loc.Get("tray.dock.top");
+        MenuDockLeftText.Text = Loc.Get("tray.dock.left");
+        MenuDockRightText.Text = Loc.Get("tray.dock.right");
+        RefreshDockMenuState();
         MenuSettingsText.Text = Loc.Get("tray.settings");
         MenuInvisibleText.Text = Loc.Get(_settings.InvisibleMode ? "settings.privacy.invisible.disable" : "settings.privacy.invisible.enable");
         MenuRestartText.Text = Loc.Get("tray.restart");
@@ -2097,6 +2140,9 @@ public partial class MainWindow : Window
 
     private const double DynamicIslandTopMargin = 8.0;
 
+    /// <summary>How far across the pill the compact row reaches: the artwork's own size.</summary>
+    private double CompactRowBreadth => CompactThumbnailBorder?.Height is > 0 and var h ? h : 22;
+
 #pragma warning disable S3776 // Synchronizes visual margins, transforms, and visibility for Dynamic Island layout mode
     private void ApplyDynamicIslandLayout(bool animateTransition = false)
     {
@@ -2106,12 +2152,8 @@ public partial class MainWindow : Window
         {
             if (NotchContainer != null)
             {
-                var current = NotchContainer.Margin;
-                double targetTop = islandMode ? DynamicIslandTopMargin : 0;
-                if (Math.Abs(current.Top - targetTop) > 0.01)
-                {
-                    NotchContainer.Margin = new Thickness(current.Left, targetTop, current.Right, current.Bottom);
-                }
+                var target = DockInset(islandMode ? DynamicIslandTopMargin : 0);
+                if (NotchContainer.Margin != target) NotchContainer.Margin = target;
             }
 
             UpdateEarVisibility();
@@ -2139,11 +2181,27 @@ public partial class MainWindow : Window
             StatusBarTranslate.Y = -ExpandedContentRestY;
         }
 
+        bool sideways = IsDockVertical;
+
         if (MusicCompactContent != null)
         {
-            double islandTop = Math.Max(0, (GetCollapsedHeight() - 22) / 2.0);
-            MusicCompactContent.VerticalAlignment = VerticalAlignment.Top;
-            MusicCompactContent.Margin = islandMode ? new Thickness(12, islandTop, 12, 0) : new Thickness(8, 4, 8, 4);
+            // Across the top the row is pushed down the pill's breadth to sit on
+            // its centre line, and kept clear of the two short ends. Down a side
+            // edge the row stands up, so breadth and length have swapped: the
+            // centring is alignment's job and the inset runs the other way.
+            MusicCompactContent.VerticalAlignment = sideways ? VerticalAlignment.Center : VerticalAlignment.Top;
+            MusicCompactContent.HorizontalAlignment = sideways ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+
+            double endInset = islandMode ? 12 : 4;
+            if (sideways)
+            {
+                MusicCompactContent.Margin = new Thickness(0, endInset, 0, endInset);
+            }
+            else
+            {
+                double islandTop = Math.Max(0, (GetCollapsedHeight() - CompactRowBreadth) / 2.0);
+                MusicCompactContent.Margin = islandMode ? new Thickness(12, islandTop, 12, 0) : new Thickness(8, 4, 8, 4);
+            }
         }
 
         if (CompactHoverInfo != null)
@@ -2158,20 +2216,27 @@ public partial class MainWindow : Window
 
         if (MusicViz != null)
         {
-            MusicViz.VerticalAlignment = islandMode ? VerticalAlignment.Center : VerticalAlignment.Top;
-            MusicViz.Margin = islandMode ? new Thickness(0, 0, -4, 0) : new Thickness(0, 2.5, -4, 0);
+            // The pull to the right hangs the bars off the pill's end. Standing
+            // the row up, that end is the bottom and the row above already
+            // spaces it, so it sits square in its own cell.
+            MusicViz.VerticalAlignment = sideways || islandMode ? VerticalAlignment.Center : VerticalAlignment.Top;
+            MusicViz.HorizontalAlignment = sideways ? HorizontalAlignment.Center : MusicViz.HorizontalAlignment;
+            MusicViz.Margin = sideways
+                ? new Thickness(0)
+                : islandMode ? new Thickness(0, 0, -4, 0) : new Thickness(0, 2.5, -4, 0);
         }
 
         if (_privacyIndicatorsVisible) UpdatePrivacyDotPosition();
 
         if (ClipboardCheckIcon != null)
         {
-            ClipboardCheckIcon.Margin = new Thickness(2, 4, -2, 0);
+            ClipboardCheckIcon.Margin = sideways ? new Thickness(0) : new Thickness(2, 4, -2, 0);
         }
 
         if (ClipboardCopiedText != null)
         {
-            ClipboardCopiedText.Margin = new Thickness(0, 4, 0, 0);
+            ClipboardCopiedText.Margin = sideways ? new Thickness(0) : new Thickness(0, 4, 0, 0);
+            ClipboardCopiedText.HorizontalAlignment = sideways ? HorizontalAlignment.Center : HorizontalAlignment.Left;
         }
 
         if (BluetoothNotification?.Children.Count > 0 && BluetoothNotification.Children[0] is FrameworkElement bluetoothContent)
@@ -2197,6 +2262,11 @@ public partial class MainWindow : Window
 
     private void NotchBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
+        if (!IsInteractiveControl(e.OriginalSource as DependencyObject) && BeginDockPickUp())
+        {
+            e.Handled = true;
+            return;
+        }
 
         if (_isDebugDraggable)
         {
@@ -2346,6 +2416,9 @@ public partial class MainWindow : Window
 
     private void QueueHoverExpand()
     {
+        // Holding the move modifier means the cursor is coming for the pill,
+        // not for what is inside it.
+        if (IsDockMoveInProgress) return;
 
         if (_settings.EnableHoverExpand && !_isExpanded && !_isAnimating)
         {

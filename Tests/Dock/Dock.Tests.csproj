@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+ <PropertyGroup><TargetFramework>net8.0-windows</TargetFramework><UseWPF>true</UseWPF><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><EnableDefaultCompileItems>false</EnableDefaultCompileItems><IsPackable>false</IsPackable></PropertyGroup>
+ <ItemGroup>
+  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/><PackageReference Include="xunit" Version="2.7.0"/><PackageReference Include="xunit.runner.visualstudio" Version="2.5.7"/>
+  <Compile Include="../../Models/NotchEdge.cs"/><Compile Include="../../Services/NotchDock.cs"/><Compile Include="../../Services/GridFlip.cs"/><Compile Include="../../Services/ColumnLayout.cs"/><Compile Include="../../Services/WindowReveal.cs"/><Compile Include="../../Services/DockGesture.cs"/>
+  <Compile Include="../NotchDockTests.cs" Link="NotchDockTests.cs"/><Compile Include="../GridFlipTests.cs" Link="GridFlipTests.cs"/><Compile Include="../TopEdgeRegressionTests.cs" Link="TopEdgeRegressionTests.cs"/>
+  <Compile Include="../LocalSend.UI/HiddenStaRunner.cs" Link="HiddenStaRunner.cs"/>
+ </ItemGroup>
+</Project>

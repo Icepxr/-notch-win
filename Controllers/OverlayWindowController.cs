@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using VNotch.Models;
 using VNotch.Services;
 using static VNotch.Services.Win32Interop;
 
@@ -8,7 +9,6 @@ namespace VNotch.Controllers;
 
 public sealed class OverlayWindowController : IDisposable
 {
-    private const double HorizontalPadding = 96;
     private readonly Window _window;
     private readonly NotchShellState _state;
     private readonly Func<bool> _isVisible;
@@ -78,30 +78,42 @@ public sealed class OverlayWindowController : IDisposable
     }
 
     public void PositionAtTop(double surfaceWidth, double expandedHeight)
+        => PositionAtEdge(NotchEdge.Top, surfaceWidth, expandedHeight);
+
+    /// <summary>
+    /// Place the fixed host against <paramref name="edge"/>. The surface always
+    /// measures the longest extent along that edge and the deepest away from
+    /// it, so a side dock asks for a tall window where the top asks for a wide
+    /// one and neither has to be resized mid-morph.
+    /// </summary>
+    public void PositionAtEdge(NotchEdge edge, double alongEdge, double awayFromEdge)
     {
         var screen = TargetScreen?.Invoke() ?? System.Windows.Forms.Screen.FromHandle(_state.Hwnd);
         double dpiScale = MonitorSelection.GetScale(screen);
-        double widthDip = surfaceWidth + HorizontalPadding;
-        double heightDip = expandedHeight + 80;
-        int screenLeft = screen.Bounds.Left;
-        int screenWidth = screen.Bounds.Width;
+        var bounds = screen.Bounds;
+        var host = NotchDock.HostBounds(edge,
+            new Rect(bounds.Left, bounds.Top, bounds.Width, bounds.Height),
+            alongEdge, awayFromEdge, dpiScale);
+        var dip = NotchDock.HostSize(edge, alongEdge, awayFromEdge);
 
-        var bounds = CalculateCenteredBounds(
-            screenLeft, screenWidth, widthDip, heightDip, dpiScale);
-
-        _state.FixedX = bounds.X;
-        _state.FixedY = screen.Bounds.Top;
-        _state.WindowWidth = bounds.Width;
-        _state.WindowHeight = bounds.Height;
+        _dockEdge = edge;
+        _state.FixedX = host.X;
+        _state.FixedY = host.Y;
+        _state.WindowWidth = host.Width;
+        _state.WindowHeight = host.Height;
         _state.HasFixedBounds = true;
-        _window.Width = widthDip;
-        _window.Height = heightDip;
+        _window.Width = dip.Width;
+        _window.Height = dip.Height;
 
         // Decouple geometry from desktop anchor to avoid placement rejections
         // when Explorer rebuilds WorkerW/Progman windows during sign-in.
         ApplyFixedBounds();
         ApplyPreferredZOrder();
     }
+
+    private NotchEdge _dockEdge = NotchEdge.Top;
+
+    public NotchEdge DockEdge => _dockEdge;
 
     public void ResizeHeight(double heightDip)
     {
@@ -119,7 +131,10 @@ public sealed class OverlayWindowController : IDisposable
 
     public void ResetToCenteredTop(double widthDip, double heightDip)
     {
-        PositionAtTop(Math.Max(600, widthDip - HorizontalPadding), Math.Max(200, heightDip - 80));
+        bool vertical = NotchDock.IsVertical(_dockEdge);
+        double alongEdge = vertical ? heightDip - NotchDock.AlongEdgePadding : widthDip - NotchDock.AlongEdgePadding;
+        double awayFromEdge = vertical ? widthDip - NotchDock.AwayFromEdgePadding : heightDip - NotchDock.AwayFromEdgePadding;
+        PositionAtEdge(_dockEdge, Math.Max(600, alongEdge), Math.Max(200, awayFromEdge));
     }
 
     public void ReassertBounds()
@@ -196,11 +211,10 @@ public sealed class OverlayWindowController : IDisposable
         double notchWidth, double notchHeight, double cornerRadius)
     {
         double dpiScale = GetDpiScale();
-        double windowLeft = _state.FixedX / dpiScale;
-        double windowTop = _state.FixedY / dpiScale;
-        double windowWidth = _state.WindowWidth / dpiScale;
-        return (windowLeft + (windowWidth - notchWidth) / 2.0,
-            windowTop, notchWidth, notchHeight, cornerRadius);
+        var host = new Rect(_state.FixedX / dpiScale, _state.FixedY / dpiScale,
+            _state.WindowWidth / dpiScale, _state.WindowHeight / dpiScale);
+        var notch = NotchDock.NotchRect(_dockEdge, host, new Size(notchWidth, notchHeight));
+        return (notch.Left, notch.Top, notchWidth, notchHeight, cornerRadius);
     }
 
     internal static (int X, int Width, int Height) CalculateCenteredBounds(

@@ -8,6 +8,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using VNotch.Controls;
+using VNotch.Services;
 using static VNotch.Services.AnimationPrimitives;
 
 namespace VNotch;
@@ -70,8 +71,12 @@ public partial class MainWindow
         if (isHovered)
         {
             thumbScale = islandMode ? 1.28 : 1.5;
-            notchWidth = _collapsedWidth + (islandMode ? 24 : 32);
-            notchHeight = _collapsedHeight + (islandMode ? 22 : 36);
+            // The bulge follows the pill's own axes. Down a side edge the pill
+            // grows longer where across the top it grows wider; adding the
+            // width to the width either way made it swell across the column.
+            var grow = NotchDock.Rotate(DockEdge, islandMode ? 24 : 32, islandMode ? 22 : 36);
+            notchWidth = _collapsedWidth + grow.Width;
+            notchHeight = _collapsedHeight + grow.Height;
         }
         else
         {
@@ -107,7 +112,9 @@ public partial class MainWindow
         CompactThumbnailScale.BeginAnimation(ScaleTransform.ScaleXProperty, thumbScaleAnimX);
         CompactThumbnailScale.BeginAnimation(ScaleTransform.ScaleYProperty, thumbScaleAnimY);
 
-        if (isHovered)
+        // Down a side edge the title has no room to run and the pill stands it
+        // down, so hovering must not put it back over the artwork.
+        if (isHovered && !IsDockVertical)
         {
             CompactHoverInfo.Visibility = Visibility.Visible;
 
@@ -441,7 +448,7 @@ public partial class MainWindow
     {
         return _settings.EnableDynamicIslandMode
             ? new CornerRadius(radius, radius, radius, radius)
-            : new CornerRadius(0, 0, radius, radius);
+            : NotchDock.Radius(DockEdge, radius);
     }
 
     private bool _isModeTransitioning;
@@ -467,10 +474,10 @@ public partial class MainWindow
         double height = w._mtNotchH + (w._mtIslandH - w._mtNotchH) * t;
         double topRadius = w._mtIslandR * t;
         double bottomRadius = w._mtNotchBottomR + (w._mtIslandR - w._mtNotchBottomR) * t;
-        double marginTop = DynamicIslandTopMargin * t;
+        double inset = DynamicIslandTopMargin * t;
         double earOpacity = 1.0 - t;
 
-        w.ApplyModeTransitionFrame(width, height, topRadius, bottomRadius, marginTop, earOpacity);
+        w.ApplyModeTransitionFrame(width, height, topRadius, bottomRadius, inset, earOpacity);
     }
 
     private void AnimateModeTransition(int fps)
@@ -518,22 +525,19 @@ public partial class MainWindow
         this.BeginAnimation(ModeTransitionTProperty, anim);
     }
 
-    private void ApplyModeTransitionFrame(double width, double height, double topRadius, double bottomRadius, double marginTop, double earOpacity)
+    private void ApplyModeTransitionFrame(double width, double height, double topRadius, double bottomRadius, double inset, double earOpacity)
     {
         NotchBorder.Width = width;
         NotchBorder.Height = height;
 
-        var cr = new CornerRadius(topRadius, topRadius, bottomRadius, bottomRadius);
+        var cr = NotchDock.Radius(DockEdge, topRadius, bottomRadius);
         SyncShellCornerRadius(cr);
         _glassMaterialPresenter.SyncCornerRadius(cr);
 
         if (NotchContainer != null)
         {
-            var m = NotchContainer.Margin;
-            if (Math.Abs(m.Top - marginTop) > 0.001)
-            {
-                NotchContainer.Margin = new Thickness(m.Left, marginTop, m.Right, m.Bottom);
-            }
+            var target = DockInset(inset);
+            if (NotchContainer.Margin != target) NotchContainer.Margin = target;
         }
 
         double effectiveEarOpacity = IsLiquidGlassEnabled ? 0.0 : earOpacity;
@@ -566,8 +570,7 @@ public partial class MainWindow
 
         if (NotchContainer != null)
         {
-            var m = NotchContainer.Margin;
-            NotchContainer.Margin = new Thickness(m.Left, toIsland ? DynamicIslandTopMargin : 0, m.Right, m.Bottom);
+            NotchContainer.Margin = DockInset(toIsland ? DynamicIslandTopMargin : 0);
         }
 
         UpdateEarVisibility();
@@ -576,26 +579,26 @@ public partial class MainWindow
         UpdateMediaBackgroundFootprint();
     }
 
-    private double GetCollapsedWidth()
-    {
-        double width = _settings.EnableDynamicIslandMode
-            ? _settings.DynamicIslandWidth
-            : _settings.Width;
+    private double GetCollapsedWidth() => CollapsedShellSize().Width;
 
-        return width;
-    }
+    private double GetCollapsedHeight() => CollapsedShellSize().Height;
 
-    private double GetCollapsedHeight()
+    /// <summary>
+    /// The collapsed pill. A side dock stands it on its end, so the configured
+    /// width runs down the screen instead of across it.
+    /// </summary>
+    private Size CollapsedShellSize()
     {
-        return _settings.EnableDynamicIslandMode
-            ? _settings.DynamicIslandHeight
-            : _settings.Height;
+        double width = _settings.EnableDynamicIslandMode ? _settings.DynamicIslandWidth : _settings.Width;
+        double height = _settings.EnableDynamicIslandMode ? _settings.DynamicIslandHeight : _settings.Height;
+        return NotchDock.Rotate(DockEdge, width, height);
     }
 
     private double GetCollapsedCornerRadius()
     {
+        // The capsule radius follows the short axis, whichever one that is now.
         return _settings.EnableDynamicIslandMode
-            ? Math.Max(0, _collapsedHeight / 2.0)
+            ? Math.Max(0, Math.Min(_collapsedWidth, _collapsedHeight) / 2.0)
             : _settings.CornerRadius;
     }
 

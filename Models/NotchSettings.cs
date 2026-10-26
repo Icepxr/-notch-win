@@ -32,6 +32,12 @@ public class NotchSettings
     public int MonitorIndex { get; set; } = 0;
     public string MonitorDeviceId { get; set; } = "";
 
+    // Local customization: edge docking. Top is the original placement, so an
+    // existing settings file without these keys keeps behaving as it did.
+    public NotchEdge DockEdge { get; set; } = NotchEdge.Top;
+
+    public bool EnableEdgeDocking { get; set; } = true;
+
     public bool HideCamera { get; set; } = false;
     public bool ClipboardAutoDeleteSensitive { get; set; }
     public bool ClipboardCaptureText { get; set; } = true;

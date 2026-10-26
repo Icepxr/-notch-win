@@ -3,13 +3,14 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
+using VNotch.Models;
 
 namespace VNotch.Services;
 
 public class HoverDetectionService : IDisposable
 {
     private const int OutsideWindowIntervalMs = 125;
-    private const int TopEdgeRevealThickness = 3;
+    private const int EdgeRevealThickness = 3;
 
     private readonly UiScheduledTimer _pollTimer;
     private readonly UiScheduledTimer _hoverDelayTimer;
@@ -18,6 +19,7 @@ public class HoverDetectionService : IDisposable
     private readonly int _hoverZoneMargin;
     private Rect _notchBounds;
     private Rect _hoverZone;
+    private NotchEdge _dockEdge = NotchEdge.Top;
     private bool _isHovering;
     private bool _disposed;
 
@@ -68,15 +70,20 @@ public class HoverDetectionService : IDisposable
     }
 
     public void UpdateNotchBounds(double left, double top, double width, double height)
-    {
-        _notchBounds = new Rect(left, top, width, height);
+        => UpdateNotchBounds(NotchEdge.Top, left, top, width, height);
 
-        _hoverZone = new Rect(
-            left - _hoverZoneMargin,
-            top,
-            width + _hoverZoneMargin * 2,
-            height + _hoverZoneMargin
-        );
+    /// <summary>
+    /// The reveal zone reaches out from whichever edge the notch is docked to,
+    /// never through it: a cursor already off-screen cannot be hovering.
+    /// </summary>
+    public void UpdateNotchBounds(NotchEdge edge, double left, double top, double width, double height)
+        => UpdateNotchBounds(edge, new Rect(left, top, width, height));
+
+    public void UpdateNotchBounds(NotchEdge edge, Rect notch)
+    {
+        _notchBounds = notch;
+        _dockEdge = edge;
+        _hoverZone = NotchDock.HoverZone(edge, notch, _hoverZoneMargin);
     }
 
     public void Start()
@@ -198,16 +205,16 @@ public class HoverDetectionService : IDisposable
         return _notchBounds.Contains(point);
     }
 
-    public bool IsPointInTopEdgeRevealZone(Point point)
+    /// <summary>
+    /// The sliver of screen edge that reveals a notch hiding behind other
+    /// windows. It follows the notch to whichever edge it is docked to.
+    /// </summary>
+    public bool IsPointInEdgeRevealZone(Point point)
     {
         if (_notchBounds.IsEmpty || _notchBounds.Width <= 0) return false;
 
-        double left = _notchBounds.Left - _hoverZoneMargin;
-        double right = _notchBounds.Right + _hoverZoneMargin;
-        double bottom = _notchBounds.Top + TopEdgeRevealThickness;
-
-        return point.X >= left && point.X <= right
-            && point.Y >= _notchBounds.Top && point.Y <= bottom;
+        return NotchDock.EdgeStrip(_dockEdge, _notchBounds, _hoverZoneMargin, EdgeRevealThickness)
+            .Contains(point);
     }
 
     public bool IsPointInHoverZone(Point point)

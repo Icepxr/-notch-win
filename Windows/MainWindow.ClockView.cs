@@ -90,10 +90,21 @@ public partial class MainWindow : IClockWidgetHost
 
     private void ApplyClockViewWindowSize() => EnsureClockWidgetPresenterLoaded().ApplyClockViewWindowSize();
 
-    private void RestoreExpandedWindowSize() => EnsureClockWidgetPresenterLoaded().RestoreExpandedWindowSize();
+    // Both of these grow the host downwards from the top edge, which is the
+    // axis the notch morphs along only while it hangs from the top. On a side
+    // edge that axis runs along the edge and the host is already sized for the
+    // longest page there is, so the host is left alone.
+    private void RestoreExpandedWindowSize()
+    {
+        if (IsDockVertical) return;
+        EnsureClockWidgetPresenterLoaded().RestoreExpandedWindowSize();
+    }
 
     private void ResizeHostWindowHeight(double notchHeightDip)
-        => EnsureClockWidgetPresenterLoaded().ResizeHostWindowHeight(notchHeightDip);
+    {
+        if (IsDockVertical) return;
+        EnsureClockWidgetPresenterLoaded().ResizeHostWindowHeight(notchHeightDip);
+    }
 
 #pragma warning disable S107 // WPF notch resize transition requires source, target, timing, and callback parameters
     private void AnimateClockViewNotchResize(double fromWidth, double fromHeight,

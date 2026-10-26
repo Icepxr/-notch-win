@@ -247,7 +247,7 @@ public partial class MediaPlaybackView : UserControl, IDisposable
             return;
 
         bool useCompactLayout = !IsMusicExpanded;
-        double fallbackWidth = useCompactLayout ? 208 : 340;
+        double fallbackWidth = useCompactLayout ? 208 : _columnWidth;
 
         double containerHeight = useCompactLayout ? 10 : 14;
         double barHeight = 4;
@@ -299,9 +299,79 @@ public partial class MediaPlaybackView : UserControl, IDisposable
         ProgressBarBg.CornerRadius = new CornerRadius(radius);
     }
 
-    private void MediaWidgetContainer_SizeChanged(object sender, SizeChangedEventArgs e)
+    /// <summary>
+    /// The widest the text, timeline and transport may run. The wide layout was
+    /// built around a fixed 340; a side-docked column decides its own, so the
+    /// bar reaches the full width and the buttons spread across it instead of
+    /// huddling at the left.
+    /// </summary>
+    public double ColumnWidth
     {
-        double fadeEndX = GetVisibleMediaTextWidth(340);
+        get => _columnWidth;
+        set
+        {
+            double wanted = value > 0 && double.IsFinite(value) ? value : DefaultColumnWidth;
+            if (Math.Abs(_columnWidth - wanted) < .5) return;
+            _columnWidth = wanted;
+            if (MediaTextColumn != null) MediaTextColumn.MaxWidth = wanted;
+            RefreshColumnLayout();
+        }
+    }
+
+    internal const double DefaultColumnWidth = 340;
+    private double _columnWidth = DefaultColumnWidth;
+
+    /// <summary>
+    /// Gather the text, the timeline and the transport onto the column's centre
+    /// line. Beside a cover they read as a left-aligned block; underneath one
+    /// they are the same column of content and line up with it.
+    /// </summary>
+    public bool CentreInColumn
+    {
+        get => _centreInColumn;
+        set
+        {
+            if (_centreInColumn == value) return;
+            _centreInColumn = value;
+
+            var alignment = value ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+            if (MediaInfoSection != null) MediaInfoSection.HorizontalAlignment = alignment;
+            if (MediaTextColumn != null) MediaTextColumn.HorizontalAlignment = alignment;
+
+            // Each line is drawn twice - a dark copy a pixel below for the
+            // shadow, then the real one - and the shadow copies have no names.
+            // Aligning only the named blocks left the shadows where they were,
+            // which reads as a second, ghostly title beside the real one.
+            var text = value ? TextAlignment.Center : TextAlignment.Left;
+            foreach (var layer in new[] { TitleMorphContainer, ArtistMorphContainer })
+                AlignText(layer, text);
+
+            RefreshColumnLayout();
+        }
+    }
+
+    private bool _centreInColumn;
+
+    /// <summary>Align every line under <paramref name="root"/>, named or not.</summary>
+    private static void AlignText(DependencyObject? root, TextAlignment alignment)
+    {
+        if (root == null) return;
+
+        if (root is TextBlock block)
+        {
+            block.TextAlignment = alignment;
+            return;
+        }
+
+        foreach (var child in LogicalTreeHelper.GetChildren(root))
+            if (child is DependencyObject node) AlignText(node, alignment);
+    }
+
+    private void MediaWidgetContainer_SizeChanged(object sender, SizeChangedEventArgs e) => RefreshColumnLayout();
+
+    private void RefreshColumnLayout()
+    {
+        double fadeEndX = GetVisibleMediaTextWidth(_columnWidth);
 
         if (TitleScrollContainer != null)
         {
@@ -311,6 +381,15 @@ public partial class MediaPlaybackView : UserControl, IDisposable
         if (ArtistScrollContainer != null)
         {
             ArtistScrollContainer.Width = fadeEndX;
+        }
+
+        // A title shorter than its column sits wherever its layer starts. Give
+        // the layers the column's width so a centred alignment has something to
+        // centre within; a longer title still overflows and marches as before.
+        foreach (var layer in new[] { TitleMorphContainer, ArtistMorphContainer })
+        {
+            if (layer == null) continue;
+            layer.Width = _centreInColumn ? fadeEndX : double.NaN;
         }
 
         RefreshMediaMarquee();
@@ -333,13 +412,13 @@ public partial class MediaPlaybackView : UserControl, IDisposable
         if (widgetWidth > 0)
         {
             double availableWidth = widgetWidth;
-            return Math.Max(0, Math.Min(340, availableWidth));
+            return Math.Max(0, Math.Min(_columnWidth, availableWidth));
         }
 
         double infoWidth = MediaInfoSection?.ActualWidth > 0 ? MediaInfoSection.ActualWidth : 0;
         if (infoWidth > 0)
         {
-            return Math.Max(0, Math.Min(340, infoWidth));
+            return Math.Max(0, Math.Min(_columnWidth, infoWidth));
         }
 
         return fallbackWidth;

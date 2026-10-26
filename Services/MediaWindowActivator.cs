@@ -602,10 +602,45 @@ internal static class MediaWindowActivator
     {
         if (hwnd == IntPtr.Zero) return false;
 
-        if (IsIconic(hwnd)) ShowWindow(hwnd, SW_RESTORE);
-        else ShowWindow(hwnd, SW_SHOW);
+        switch (WindowRevealPolicy.For(IsWindowVisible(hwnd), IsIconic(hwnd)))
+        {
+            case WindowReveal.Refuse:
+                return false;
+            case WindowReveal.Restore:
+                ShowWindow(hwnd, SW_RESTORE);
+                break;
+        }
 
-        return SetForegroundWindow(hwnd);
+        return BringToFront(hwnd);
+    }
+
+    /// <summary>
+    /// Windows only lets the process that owns the foreground hand it on. The
+    /// notch never takes focus - its window is WS_EX_NOACTIVATE - so asking
+    /// plainly is refused and the taskbar button flashes instead of the window
+    /// coming up. Attaching to whichever thread owns the foreground makes this
+    /// one of its own for the length of the call, which is what lifts that.
+    /// </summary>
+    private static bool BringToFront(IntPtr hwnd)
+    {
+        if (SetForegroundWindow(hwnd)) return true;
+
+        IntPtr foreground = GetForegroundWindow();
+        if (foreground == IntPtr.Zero || foreground == hwnd) return false;
+
+        uint ours = GetCurrentThreadId();
+        uint theirs = GetWindowThreadProcessId(foreground, out _);
+        if (theirs == 0 || theirs == ours) return false;
+
+        if (!AttachThreadInput(ours, theirs, true)) return false;
+        try
+        {
+            return SetForegroundWindow(hwnd);
+        }
+        finally
+        {
+            AttachThreadInput(ours, theirs, false);
+        }
     }
 
     public static bool IsBrowserProcess(string processName)

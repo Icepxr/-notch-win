@@ -17,6 +17,9 @@ try {
         New-Item -ItemType Directory -Path 'artifacts/localsend/Assets/Agents' -Force | Out-Null
         Get-ChildItem -LiteralPath 'Assets/Agents' -File | Copy-Item -Destination 'artifacts/localsend/Assets/Agents' -Force
     }
+    if (Test-Path -LiteralPath 'CUSTOM-DOCK.md') {
+        Copy-Item -LiteralPath 'CUSTOM-DOCK.md' -Destination 'artifacts/localsend/DOCK-README.md'
+    }
     Write-Output "Built separately: $PSScriptRoot/artifacts/localsend/V-Notch.exe"
 }
 finally { Pop-Location }

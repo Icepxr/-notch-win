@@ -42,38 +42,43 @@ public sealed class NotchManager : INotchManager
     public void UpdatePosition()
     {
         _currentScreen = GetTargetScreen();
-        var workingArea = _currentScreen.Bounds;
 
         AnimationConfig.Refresh(_currentScreen.DeviceName);
 
-        double scale = MonitorSelection.GetScale(_currentScreen);
-        double width = _settings.Width * scale;
-        double notchLeft = workingArea.Left + (workingArea.Width - width) / 2;
-        _hoverService.UpdateNotchBounds(notchLeft, workingArea.Top, width, _settings.Height * scale);
+        _hoverService.UpdateNotchBounds(DockEdge, ShellBounds());
 
         UpdateSafeArea();
 
         PositionUpdated?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>The edge in force, which is the top whenever edge docking is off.</summary>
+    private Models.NotchEdge DockEdge => NotchDock.Active(_settings.DockEdge, _settings.EnableEdgeDocking);
+
+    /// <summary>
+    /// The collapsed shell on screen, in physical pixels. A side dock turns the
+    /// pill on its end and stands it in the middle of that edge.
+    /// </summary>
+    private Rect ShellBounds()
+    {
+        var screen = _currentScreen!.Bounds;
+        double scale = MonitorSelection.GetScale(_currentScreen);
+        var edge = DockEdge;
+        var shell = NotchDock.Rotate(edge, _settings.Width * scale, _settings.Height * scale);
+
+        if (!NotchDock.IsVertical(edge))
+            return new Rect(screen.Left + (screen.Width - shell.Width) / 2, screen.Top, shell.Width, shell.Height);
+
+        double top = screen.Top + (screen.Height - shell.Height) / 2;
+        double left = edge == Models.NotchEdge.Left ? screen.Left : screen.Left + screen.Width - shell.Width;
+        return new Rect(left, top, shell.Width, shell.Height);
+    }
+
     private void UpdateSafeArea()
     {
         if (_currentScreen == null) return;
 
-        var workingArea = _currentScreen.Bounds;
-        double scale = MonitorSelection.GetScale(_currentScreen);
-        double notchWidth = _settings.Width * scale;
-        double notchHeight = _settings.Height * scale;
-
-        double margin = 4;
-        double notchLeft = workingArea.Left + (workingArea.Width - notchWidth) / 2;
-
-        _safeArea = new Rect(
-            notchLeft - margin,
-            workingArea.Top,
-            notchWidth + margin * 2,
-            notchHeight + margin
-        );
+        _safeArea = NotchDock.SafeArea(DockEdge, ShellBounds(), 4);
 
         SafeAreaChanged?.Invoke(this, _safeArea);
     }

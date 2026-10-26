@@ -389,6 +389,32 @@
                         </MenuItem.Header>
                     </MenuItem>
                     <Separator Style="{StaticResource TraySeparatorStyle}"/>
+                    <!-- Local customization: the same move Ctrl-drag performs, without a mouse. -->
+                    <MenuItem x:Name="MenuDockTop"
+                              Style="{StaticResource TrayMenuItemStyle}"
+                              IsCheckable="True"
+                              Click="DockTop_Click">
+                        <MenuItem.Header>
+                            <TextBlock x:Name="MenuDockTopText" Text="Dock at top" Style="{StaticResource TrayMenuItemText}"/>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem x:Name="MenuDockLeft"
+                              Style="{StaticResource TrayMenuItemStyle}"
+                              IsCheckable="True"
+                              Click="DockLeft_Click">
+                        <MenuItem.Header>
+                            <TextBlock x:Name="MenuDockLeftText" Text="Dock at left" Style="{StaticResource TrayMenuItemText}"/>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <MenuItem x:Name="MenuDockRight"
+                              Style="{StaticResource TrayMenuItemStyle}"
+                              IsCheckable="True"
+                              Click="DockRight_Click">
+                        <MenuItem.Header>
+                            <TextBlock x:Name="MenuDockRightText" Text="Dock at right" Style="{StaticResource TrayMenuItemText}"/>
+                        </MenuItem.Header>
+                    </MenuItem>
+                    <Separator Style="{StaticResource TraySeparatorStyle}"/>
                     <MenuItem Style="{StaticResource TrayMenuItemStyle}"
                               Icon="{StaticResource TraySettingsIconGeometry}"
                               Click="OpenSettings_Click">
@@ -486,6 +512,7 @@
                   MouseLeftButtonDown="NotchBorder_MouseLeftButtonDown"
                   MouseMove="NotchWrapper_MouseMove"
                   MouseLeftButtonUp="NotchWrapper_MouseLeftButtonUp"
+                  LostMouseCapture="NotchWrapper_LostMouseCapture"
                   MouseEnter="NotchWrapper_MouseEnter"
                   MouseLeave="NotchWrapper_MouseLeave"
                   MouseWheel="NotchWrapper_MouseWheel"
@@ -1405,9 +1432,11 @@
                           UseLayoutRounding="False"
                           SnapsToDevicePixels="False">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.48*"/>
+                            <!-- Local customization: named so a side dock can give the
+                                 media card the whole column and stand the aside down. -->
+                            <ColumnDefinition x:Name="MediaPageMainColumn" Width="1.48*"/>
                             <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="0.72*"/>
+                            <ColumnDefinition x:Name="MediaPageAsideColumn" Width="0.72*"/>
                         </Grid.ColumnDefinitions>
 
                         <Grid x:Name="StatusBar" Grid.Column="0" Grid.ColumnSpan="3"
@@ -1726,7 +1755,9 @@
                                     <RowDefinition Height="Auto"/>
                                 </Grid.RowDefinitions>
 
-                                    <Grid Grid.Row="1" Margin="0,6,0,0">
+                                    <!-- Local customization: named so a side dock can stand
+                                         cover, playback and controls on top of each other. -->
+                                    <Grid x:Name="MediaCardRow" Grid.Row="1" Margin="0,6,0,0">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
@@ -1748,10 +1779,12 @@
                                             <ScaleTransform x:Name="ThumbnailScale" ScaleX="1" ScaleY="1"/>
                                         </Border.RenderTransform>
                                         <Grid ClipToBounds="False">
-                                            <Grid Width="102" Height="102" ClipToBounds="True">
+                                            <Grid x:Name="ThumbnailClipHost" Width="102" Height="102" ClipToBounds="True">
 
+                                                <!-- Local customization: the clip and the images below
+                                                     follow the cover's own size, which a side dock grows. -->
                                                 <Grid.Clip>
-                                                    <RectangleGeometry RadiusX="14" RadiusY="14" Rect="0,0,102,102"/>
+                                                    <RectangleGeometry x:Name="ThumbnailClip" RadiusX="14" RadiusY="14" Rect="0,0,102,102"/>
                                                 </Grid.Clip>
 
                                                 <Image x:Name="ThumbnailImage"
@@ -2014,7 +2047,9 @@
 
                     </Grid>
 
-                        <Grid Grid.Column="2" Margin="0,20,-1,0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.IsSharedSizeScope="True" RenderOptions.ClearTypeHint="Enabled">
+                        <!-- Local customization: the media page aside, stood down on a side edge. -->
+
+                        <Grid x:Name="MediaPageAside" Grid.Column="2" Margin="0,20,-1,0" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Grid.IsSharedSizeScope="True" RenderOptions.ClearTypeHint="Enabled">
                             <!-- Center each surface independently so collapsing lyrics after a fade
                                  cannot redistribute the calendar's Auto rows. -->
                             <Grid VerticalAlignment="Center">

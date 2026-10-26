@@ -1099,6 +1099,19 @@ public partial class MainWindow
             ReduceMotion: AnimationConfig.ReduceMotion
         );
 
+        // Each view above asked for the size it was authored at. One place here
+        // turns that into the size for the edge the notch is actually on, so a
+        // view never has to know which edge it is being shown from.
+        if (IsDockVertical)
+        {
+            var docked = DockedViewSize(effectiveTarget, targetWidth, targetHeight);
+            targetWidth = docked.Width;
+            targetHeight = docked.Height;
+            ResizeDockedContent(effectiveTarget, docked);
+            ExpandedContent.Width = docked.Width - ExpandedContentHorizontalInset;
+            ExpandedContent.Height = docked.Height - ExpandedContentVerticalInset;
+        }
+
         var plan = new VNotch.Models.TransitionPlan(
             SessionId: generation,
             FromView: fromView,

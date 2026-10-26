@@ -5,6 +5,7 @@ using System.IO;
 using System.Security;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -21,6 +22,99 @@ namespace VNotch.Controls;
 
 public partial class ClipboardTray : UserControl, IDisposable
 {
+    /// <summary>
+    /// How wide one card is. Across the top the cards are a strip of fixed
+    /// tiles; down a side edge they are a list, and a list's rows are as wide
+    /// as the column they are in.
+    /// </summary>
+    public static readonly DependencyProperty CardWidthProperty = DependencyProperty.Register(
+        nameof(CardWidth), typeof(double), typeof(ClipboardTray), new PropertyMetadata(DefaultCardWidth));
+    public double CardWidth
+    {
+        get => (double)GetValue(CardWidthProperty);
+        set => SetValue(CardWidthProperty, value);
+    }
+
+    /// <summary>The gap around a card, which falls on the axis the list runs.</summary>
+    public static readonly DependencyProperty CardSpacingProperty = DependencyProperty.Register(
+        nameof(CardSpacing), typeof(Thickness), typeof(ClipboardTray),
+        new PropertyMetadata(new Thickness(DefaultCardGap, 0, DefaultCardGap, 0)));
+    public Thickness CardSpacing
+    {
+        get => (Thickness)GetValue(CardSpacingProperty);
+        set => SetValue(CardSpacingProperty, value);
+    }
+
+    internal const double DefaultCardWidth = 210;
+    private const double DefaultCardGap = 6;
+
+    /// <summary>
+    /// Run the cards down the tray instead of across it. A column is a list:
+    /// the rows are the column's width, the gaps fall between them rather than
+    /// beside them, and the scrolling follows.
+    /// </summary>
+    public void SetColumnLayout(bool vertical, double columnWidth, double navigationClearance)
+    {
+        if (Cards == null) return;
+
+        // The list keeps its own margin inside the tray, so a card that fills
+        // the column is the column less that margin - taken from the list
+        // itself rather than repeated in the caller.
+        _authoredHeaderHeight ??= TrayContentGrid?.RowDefinitions.Count > 0
+            ? TrayContentGrid.RowDefinitions[0].Height
+            : GridLength.Auto;
+
+        var layout = ColumnLayout.For(vertical, columnWidth,
+            Cards.Margin.Left + Cards.Margin.Right, navigationClearance,
+            DefaultCardWidth, DefaultCardGap, _authoredHeaderHeight.Value);
+
+        var panel = new FrameworkElementFactory(typeof(VirtualizingStackPanel));
+        panel.SetValue(VirtualizingStackPanel.OrientationProperty, layout.Panel);
+        Cards.ItemsPanel = new ItemsPanelTemplate(panel);
+
+        ScrollViewer.SetHorizontalScrollBarVisibility(Cards, layout.HorizontalScroll);
+        ScrollViewer.SetVerticalScrollBarVisibility(Cards, layout.VerticalScroll);
+
+        CardSpacing = layout.Spacing;
+        CardWidth = layout.CardWidth;
+
+        ApplyHeaderLayout(layout);
+    }
+
+    /// <summary>
+    /// The header keeps clear of the navigation tabs. Across the top that is a
+    /// column beside them; down a side there is no width to give away, so it
+    /// becomes a gap above instead.
+    /// </summary>
+    private void ApplyHeaderLayout(ColumnLayout.Layout layout)
+    {
+        if (TrayContentGrid?.RowDefinitions.Count > 0)
+            TrayContentGrid.RowDefinitions[0].Height = layout.HeaderBand;
+
+        if (TrayHeaderRow == null || TrayHeaderRow.ColumnDefinitions.Count == 0) return;
+
+        var reserved = TrayHeaderRow.ColumnDefinitions[0];
+        _authoredNavigationWidth ??= BindingOperations.GetBinding(reserved, ColumnDefinition.WidthProperty);
+
+        if (layout.ReserveNavigationColumn)
+        {
+            if (_authoredNavigationWidth != null)
+                BindingOperations.SetBinding(reserved, ColumnDefinition.WidthProperty, _authoredNavigationWidth);
+        }
+        else
+        {
+            BindingOperations.ClearBinding(reserved, ColumnDefinition.WidthProperty);
+            reserved.Width = new GridLength(0);
+        }
+
+        TrayHeaderRow.VerticalAlignment = layout.ReserveNavigationColumn
+            ? VerticalAlignment.Stretch
+            : VerticalAlignment.Bottom;
+    }
+
+    private BindingBase? _authoredNavigationWidth;
+    private GridLength? _authoredHeaderHeight;
+
     public static readonly DependencyProperty NavigationWidthProperty = DependencyProperty.Register(
         nameof(NavigationWidth), typeof(double), typeof(ClipboardTray), new PropertyMetadata(0d),
         value => value is double width && double.IsFinite(width) && width >= 0);

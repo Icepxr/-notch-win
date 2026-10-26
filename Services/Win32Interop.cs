@@ -380,6 +380,9 @@ internal static class Win32Interop
     public const uint SWP_SHOWWINDOW = 0x0040;
     public const int GWL_STYLE = -16;
     public const int GWL_EXSTYLE = -20;
+    /// <summary>Either Control key, for GetAsyncKeyState.</summary>
+    public const int VK_CONTROL = 0x11;
+
     public const int SW_RESTORE = 9;
     public const int SW_SHOW = 5;
     public const int SW_SHOWMAXIMIZED = 3;
