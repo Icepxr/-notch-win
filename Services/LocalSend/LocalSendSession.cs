@@ -65,9 +65,9 @@ internal sealed class LocalSendSession : ILocalSendSession
                     // Revoking Strict Local-Only permission terminates discovery too.
                     var lifetime = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, _privacy.Acquire());
                     _discoveryLifetime = lifetime;
-                    _workers.Add(RunGuardedAsync(() => ReceiveAsync(lifetime.Token)));
-                    _workers.Add(RunGuardedAsync(() => AcceptAsync(lifetime.Token)));
-                    _workers.Add(RunGuardedAsync(() => PulseAsync(lifetime.Token), lifetime));
+                    RegisterWorker(RunGuardedAsync(() => ReceiveAsync(lifetime.Token)));
+                    RegisterWorker(RunGuardedAsync(() => AcceptAsync(lifetime.Token)));
+                    RegisterWorker(RunGuardedAsync(() => PulseAsync(lifetime.Token), lifetime));
                 }
             }
             await AnnounceAsync(linked.Token);
@@ -141,7 +141,11 @@ internal sealed class LocalSendSession : ILocalSendSession
         {
             var client = await _listener!.AcceptTcpClientAsync(cancellation);
             if (!await _connections.WaitAsync(0, cancellation)) { client.Dispose(); continue; }
-            _ = HandleRegistrationAsync(client, cancellation);
+            lock (_gate)
+            {
+                if (_disposed) { client.Dispose(); _connections.Release(); return; }
+                RegisterWorker(HandleRegistrationAsync(client, cancellation));
+            }
         }
     }
 
@@ -228,8 +232,20 @@ internal sealed class LocalSendSession : ILocalSendSession
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            var task = action(); _workers.Add(task); return task;
+            var task = action(); RegisterWorker(task); return task;
         }
+    }
+
+    // Called under _gate. Completed requests must not retain their results,
+    // upload state and exception graphs for the lifetime of the send window.
+    private void RegisterWorker(Task task)
+    {
+        _workers.Add(task);
+        _ = task.ContinueWith(completed =>
+        {
+            lock (_gate) _workers.Remove(completed);
+            _ = completed.Exception;
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
 
     private static async Task RunGuardedAsync(Func<Task> action, IDisposable? lifetime = null)

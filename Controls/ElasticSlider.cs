@@ -11,6 +11,20 @@ namespace VNotch.Controls;
 
 public class ElasticSlider : Slider
 {
+    public ElasticSlider()
+    {
+        IsVisibleChanged += (_, _) => { if (!IsVisible) SettleHiddenPresentation(); };
+        Unloaded += (_, _) => SettleHiddenPresentation();
+    }
+
+    private bool ShouldAnimate => IsLoaded && IsVisible && !VNotch.Services.AnimationConfig.ReduceMotion;
+
+    private void SettleHiddenPresentation()
+    {
+        SetFillImmediate();
+        UpdateIndicatorPosition();
+        AnimateRubberBandRelease();
+    }
     #region Dependency Properties
 
     public static readonly DependencyProperty LabelProperty =
@@ -240,7 +254,7 @@ public class ElasticSlider : Slider
         double x = leftPad + fraction * usableWidth;
         double targetLeft = x - _indicator.Width / 2;
         double currentLeft = Canvas.GetLeft(_indicator);
-        if (double.IsNaN(currentLeft) || double.IsInfinity(currentLeft))
+        if (!ShouldAnimate || double.IsNaN(currentLeft) || double.IsInfinity(currentLeft))
         {
             _indicator.BeginAnimation(Canvas.LeftProperty, null);
             Canvas.SetLeft(_indicator, targetLeft);
@@ -311,6 +325,7 @@ public class ElasticSlider : Slider
     {
         if (_fillBorder == null || _rootBorder == null) return;
         if (Maximum <= Minimum) return;
+        if (!ShouldAnimate) { SetFillImmediate(); return; }
 
         double width = _rootBorder.ActualWidth;
         if (width <= 0) return;
@@ -338,6 +353,7 @@ public class ElasticSlider : Slider
     {
         if (_fillBorder == null || _rootBorder == null) return;
         if (Maximum <= Minimum) return;
+        if (!ShouldAnimate) { SetFillImmediate(); return; }
 
         double width = _rootBorder.ActualWidth;
         if (width <= 0) return;
@@ -567,6 +583,14 @@ public class ElasticSlider : Slider
     private void AnimateRubberBandRelease()
     {
         if (_rootScale == null || _rootBorder == null) return;
+        if (!ShouldAnimate)
+        {
+            _rootScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            _rootScale.BeginAnimation(ScaleTransform.ScaleYProperty, null);
+            _rootScale.ScaleX = _rootScale.ScaleY = 1;
+            _rootBorder.RenderTransformOrigin = new Point(0.5, 0.5);
+            return;
+        }
         var dur = TimeSpan.FromMilliseconds(600);
         var ease = new ElasticEase { EasingMode = EasingMode.EaseOut, Oscillations = 1, Springiness = 5 };
         var ax = new DoubleAnimation(1.0, dur) { EasingFunction = ease };

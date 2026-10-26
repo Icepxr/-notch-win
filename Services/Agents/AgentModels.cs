@@ -1,5 +1,6 @@
 // Local customization: local agent telemetry is independent of Spotlight AI chat.
 using System.Text.Json;
+using System.Text;
 
 namespace VNotch.Services.Agents;
 
@@ -33,8 +34,27 @@ internal interface IAgentMonitor : IDisposable
 internal static class AgentJson
 {
     internal static JsonElement Get(this JsonElement element, string key) => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(key, out var value) ? value : default;
-    internal static string Text(this JsonElement element, int limit = 100) => element.ValueKind == JsonValueKind.String
-        ? new string((element.GetString() ?? "").Where(c => !char.IsControl(c)).Take(limit).ToArray()) : "";
+    internal static string Text(this JsonElement element, int limit = 100)
+    {
+        if (element.ValueKind != JsonValueKind.String || limit <= 0) return "";
+        string text = element.GetString() ?? "";
+        int length = Math.Min(text.Length, limit);
+        for (int i = 0; i < length; i++)
+        {
+            if (!char.IsControl(text[i])) continue;
+            var clean = new StringBuilder(length);
+            foreach (char character in text)
+            {
+                if (char.IsControl(character)) continue;
+                clean.Append(character);
+                if (clean.Length == limit) break;
+            }
+            return clean.ToString();
+        }
+        // Most log metadata is already clean. Avoid a LINQ iterator, temporary
+        // character array and second string for every field of every record.
+        return length == text.Length ? text : text[..length];
+    }
     internal static long Count(this JsonElement element) => element.ValueKind == JsonValueKind.Number && element.TryGetInt64(out long value) && value is >= 0 and <= 1_000_000_000_000 ? value : 0;
     internal static double? Percent(this JsonElement element) => element.ValueKind == JsonValueKind.Number && element.TryGetDouble(out double value) && double.IsFinite(value) ? Math.Clamp(value, 0, 100) : null;
     internal static DateTimeOffset? Time(this JsonElement element) => element.ValueKind == JsonValueKind.String && DateTimeOffset.TryParse(element.GetString(), out var time) ? time :

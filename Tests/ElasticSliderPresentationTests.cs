@@ -17,6 +17,21 @@ public sealed class ElasticSliderPresentationTests
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
 
+    [Fact]
+    public void UnloadedSliderChangesSettleWithoutKeepingAnimationClocks() => SharedStaTestRunner.Run(() =>
+    {
+        var slider = Create();
+        slider.Value = 75;
+        Assert.False(Part<Border>(slider, "PART_Fill").HasAnimatedProperties);
+        Assert.False(Part<Rectangle>(slider, "PART_Indicator").HasAnimatedProperties);
+        Invoke(slider, "AnimateScaleImmediate", 1.04, .92, true);
+        Invoke(slider, "AnimateRubberBandRelease");
+        var scale = (ScaleTransform)Part<Border>(slider, "PART_Root").RenderTransform;
+        Assert.False(scale.HasAnimatedProperties);
+        Assert.Equal(1, scale.ScaleX);
+        Assert.Equal(1, scale.ScaleY);
+    });
+
     [Theory]
     [InlineData(FlowDirection.LeftToRight, Key.Left, 45)]
     [InlineData(FlowDirection.RightToLeft, Key.Left, 55)]
@@ -37,7 +52,10 @@ public sealed class ElasticSliderPresentationTests
         Assert.Equal(expected, slider.Value);
         var root = Part<Border>(slider, "PART_Root");
         var fill = Part<Border>(slider, "PART_Fill");
-        await WpfFrameWaiter.UntilAsync(() => Math.Abs(fill.Width - root.ActualWidth * expected / 100) < 0.001, "slider fill follows keyboard value", ct);
+        var activeTick = (Rectangle)Part<Canvas>(slider, "PART_Ticks").Children[(int)(expected / 5)];
+        double tickCentre = Canvas.GetLeft(activeTick) + activeTick.Width / 2;
+        // The fill ends at the active tick, leaving room for the value caption.
+        await WpfFrameWaiter.UntilAsync(() => Math.Abs(fill.Width - tickCentre) < 0.001, "slider fill follows keyboard value", ct);
         Assert.Equal(((int)expected).ToString(), Part<TextBlock>(slider, "PART_Value").Text);
         slider.Value = 100;
         Invoke(slider, "OnPreviewKeyDown", KeyArgs(Key.Up));
@@ -81,8 +99,10 @@ public sealed class ElasticSliderPresentationTests
         Invoke(slider, "DrawTicks");
         Assert.Empty(ticks.Children);
         root.Arrange(new Rect(0, 0, 400, 48));
+        Invoke(slider, "DrawTicks");
         Invoke(slider, "SetFillImmediate");
-        Assert.Equal(160, Part<Border>(slider, "PART_Fill").Width);
+        var activeTick = (Rectangle)ticks.Children[8]; // 30 in the 10–60 range.
+        Assert.Equal(Canvas.GetLeft(activeTick) + activeTick.Width / 2, Part<Border>(slider, "PART_Fill").Width, 5);
         await WpfFrameWaiter.NextAsync(ct);
     });
 

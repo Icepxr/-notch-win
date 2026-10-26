@@ -162,9 +162,10 @@ public class ProgressEngine
         DateTime snapshotTsUtc,
         DateTime nowUtc)
     {
+        if (!RuntimeLog.IsEnabled(LogLevel.Debug)) return;
         TimeSpan snapshotAge = nowUtc - snapshotTsUtc;
         TimeSpan currentPredictedForLog = _baseTimeUtc != DateTime.MinValue ? PredictPosition(nowUtc) : TimeSpan.FromSeconds(-1);
-        RuntimeLog.Log("PROGRESS-ENGINE-SNAP",
+        RuntimeLog.Debug("PROGRESS-ENGINE-SNAP",
             $"seq={snapshot.SequenceNumber} rawPos={snapshot.Position.TotalSeconds:F2}s effectivePos={effectiveSnapshotPosition.TotalSeconds:F2}s " +
             $"dur={snapshot.Duration.TotalSeconds:F1}s playing={snapshot.IsPlaying} isBrowser={snapshot.IsYouTube} " +
             $"snapshotAge={snapshotAge.TotalSeconds:F2}s predicted={currentPredictedForLog.TotalSeconds:F2}s " +
@@ -175,7 +176,7 @@ public class ProgressEngine
     {
         if (snapshot.SequenceNumber > 0 && snapshot.SequenceNumber <= _lastSnapshotSequence)
         {
-            RuntimeLog.Log(LogReject, $"out-of-order seq={snapshot.SequenceNumber} <= last={_lastSnapshotSequence}");
+            RuntimeLog.Debug(LogReject, $"out-of-order seq={snapshot.SequenceNumber} <= last={_lastSnapshotSequence}");
             return true;
         }
 
@@ -189,7 +190,7 @@ public class ProgressEngine
             !stoppingActivePlayback &&
             snapshotTsUtc < _lastSnapshotTimestampUtc - SnapshotOutOfOrderTolerance)
         {
-            RuntimeLog.Log(LogReject, $"timestamp out-of-order: snapshot={snapshotTsUtc:O} < last={_lastSnapshotTimestampUtc:O}");
+            RuntimeLog.Debug(LogReject, $"timestamp out-of-order: snapshot={snapshotTsUtc:O} < last={_lastSnapshotTimestampUtc:O}");
             return true;
         }
 
@@ -202,7 +203,7 @@ public class ProgressEngine
             snapshotTsUtc == _lastSnapshotTimestampUtc &&
             Math.Abs((snapshot.Position - _lastSnapshotPosition).TotalSeconds) < 0.01)
         {
-            RuntimeLog.Log(LogReject, $"duplicate snapshot: ts={snapshotTsUtc:O} pos={snapshot.Position.TotalSeconds:F2}s");
+            RuntimeLog.Debug(LogReject, $"duplicate snapshot: ts={snapshotTsUtc:O} pos={snapshot.Position.TotalSeconds:F2}s");
             return true;
         }
 
@@ -234,7 +235,7 @@ public class ProgressEngine
 
         if (isFalseZeroGlitch && !predictedAtTrackEnd && !isExpectedPreviousTrackJump && _state != ProgressState.Seeking)
         {
-            RuntimeLog.Log(LogReject,
+            RuntimeLog.Debug(LogReject,
                 $"false-zero-glitch: predicted={currentPredicted.TotalSeconds:F2}s snapshot={effectiveSnapshotPosition.TotalSeconds:F2}s " +
                 $"rawPos={snapshot.Position.TotalSeconds:F2}s — rejecting SMTC zero report");
             return true;
@@ -247,7 +248,7 @@ public class ProgressEngine
             && !likelyUserSeekBackward
             && !isExpectedPreviousTrackJump)
         {
-            RuntimeLog.Log(LogReject,
+            RuntimeLog.Debug(LogReject,
                 $"backward-guard: predicted={currentPredicted.TotalSeconds:F2}s snapshot={effectiveSnapshotPosition.TotalSeconds:F2}s " +
                 $"backwardDiff={backwardDiff.TotalSeconds:F2}s threshold={backwardThreshold:F1}s " +
                 $"sessionSwitch={likelySessionSwitch} userSeek={likelyUserSeekBackward}");
@@ -471,7 +472,7 @@ public class ProgressEngine
             return;
         }
 
-        RuntimeLog.Log(LogCorrect,
+        RuntimeLog.Debug(LogCorrect,
             $"*** LARGE-SNAP: predicted={predictedNow.TotalSeconds:F2}s observed={observedPos.TotalSeconds:F2}s " +
             $"diff={diff.TotalSeconds:F2}s direction={(diff < TimeSpan.Zero ? "BACKWARD" : "forward")} " +
             $"rawSnapshotPos={snapshot.Position.TotalSeconds:F2}s snapshotAge={(nowUtc - snapshotTsUtc).TotalSeconds:F2}s " +
@@ -496,7 +497,7 @@ public class ProgressEngine
             double minAllowed = predictedNow.TotalSeconds - 0.05;
             if (correctedSeconds < minAllowed)
                 correctedSeconds = minAllowed;
-            RuntimeLog.Log(LogCorrect,
+            RuntimeLog.Debug(LogCorrect,
                 $"smooth-native-backward: predicted={predictedNow.TotalSeconds:F2}s observed={observedPos.TotalSeconds:F2}s " +
                 $"diff={diff.TotalSeconds:F2}s corrected={correctedSeconds:F2}s (slowdown)");
             _basePosition = ClampPosition(TimeSpan.FromSeconds(correctedSeconds));
@@ -514,13 +515,13 @@ public class ProgressEngine
             {
                 correctedSeconds2 = minAllowedBackward;
             }
-            RuntimeLog.Log(LogCorrect,
+            RuntimeLog.Debug(LogCorrect,
                 $"smooth-browser-backward: predicted={predictedNow.TotalSeconds:F2}s observed={observedPos.TotalSeconds:F2}s " +
                 $"diff={diff.TotalSeconds:F2}s corrected={correctedSeconds2:F2}s cap={SmoothBackwardCap.TotalMilliseconds}ms");
         }
         else
         {
-            RuntimeLog.Log(LogCorrect,
+            RuntimeLog.Debug(LogCorrect,
                 $"smooth-forward: predicted={predictedNow.TotalSeconds:F2}s observed={observedPos.TotalSeconds:F2}s " +
                 $"diff={diff.TotalSeconds:F2}s corrected={correctedSeconds2:F2}s");
         }
