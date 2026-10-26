@@ -135,10 +135,11 @@ public partial class MainWindow
         if (expandedBlur != null && blurOutAnim != null)
             expandedBlur.BeginAnimation(BlurEffect.RadiusProperty, blurOutAnim);
 
+        var clockTarget = DockedViewTarget(VNotch.Models.NotchView.Timer, _clockViewWidth, _clockViewHeight);
         AnimateClockViewNotchResize(
             NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : _expandedWidth,
             NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _expandedHeight,
-            _clockViewWidth, _clockViewHeight, durIn, inDelay, generation: generation);
+            clockTarget.Width, clockTarget.Height, durIn, inDelay, generation: generation);
 
         PlayTimerViewEntrance(durIn, inDelay, generation);
 
@@ -949,7 +950,8 @@ public partial class MainWindow
         double currentHeight = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _timerViewHeight;
         double currentWidth = NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : NotchBorder.Width;
         if (double.IsNaN(currentWidth) || currentWidth <= 0) currentWidth = _expandedWidth;
-        AnimateClockViewNotchResize(currentWidth, currentHeight, _clockViewWidth, _clockViewHeight, durIn, TimeSpan.Zero);
+        var clockBack = DockedViewTarget(VNotch.Models.NotchView.Timer, _clockViewWidth, _clockViewHeight);
+        AnimateClockViewNotchResize(currentWidth, currentHeight, clockBack.Width, clockBack.Height, durIn, TimeSpan.Zero);
     }
 
     private void CountdownDismiss_Click(object sender, MouseButtonEventArgs e)

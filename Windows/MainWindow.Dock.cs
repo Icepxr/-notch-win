@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Threading;
+using System.Diagnostics;
 using VNotch.Models;
 using VNotch.Services;
 
@@ -26,6 +27,24 @@ public partial class MainWindow
 
     private NotchEdge? _appliedDockEdge;
     private bool _isDockDragging;
+    private bool _isDockLanding;
+    private DockDragSession? _dockDrag;
+    private DispatcherTimer? _dockDragTimer;
+    private DispatcherTimer? _dockArmingTimer;
+    private bool _dockWasArmed;
+    private Point _dockGrabFraction;
+    private bool _dockDidMove;
+    private int _dockMoveVersion;
+    internal Func<DockPointerState> DockPointerReader { get; set; } = ReadSystemDockPointer;
+
+    private static DockPointerState ReadSystemDockPointer()
+    {
+        Win32Interop.GetCursorPos(out var point);
+        return new(new Point(point.X, point.Y),
+            (Win32Interop.GetAsyncKeyState(Win32Interop.VK_LBUTTON) & 0x8000) != 0,
+            (Win32Interop.GetAsyncKeyState(DockPickUpModifier) & 0x8000) != 0,
+            (Win32Interop.GetAsyncKeyState(0x1B) & 0x8000) != 0);
+    }
 
     internal NotchEdge DockEdge => NotchDock.Active(_settings.DockEdge, _settings.EnableEdgeDocking);
 
@@ -74,6 +93,9 @@ public partial class MainWindow
             ApplyDynamicIslandLayout();
             ApplyMediaPageOrientation(vertical);
             ApplyClipboardOrientation(vertical);
+            ApplyTimerOrientation(vertical);
+            ApplyAudioOrientation(vertical);
+            ApplyAgentsOrientation(vertical);
             // Pages given a column's width keep it until they are told
             // otherwise, and the top edge never tells them.
             if (!vertical) RestoreAuthoredContentSizes();
@@ -157,16 +179,37 @@ public partial class MainWindow
         {
             if (NavTabsStackPanel == null) return 0;
 
-            double height = NavTabsStackPanel.ActualHeight;
-            if (!(height > 0))
-            {
-                NavTabsStackPanel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                height = NavTabsStackPanel.DesiredSize.Height;
-            }
+            // Measure the current row, not its last orientation's layout slot.
+            NavTabsStackPanel.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double height = NavTabsStackPanel.DesiredSize.Height;
             if (!double.IsFinite(height) || height <= 0) return 0;
 
-            var margin = NavTabsStackPanel.Margin;
-            return height + margin.Top + margin.Bottom;
+            // DesiredSize includes the element's margin already.
+            return height;
+        }
+    }
+
+    /// <summary>
+    /// How far in from the edge the status corner reaches, taken from the
+    /// corner itself. Asked for its measurement rather than its laid-out width,
+    /// because the first time this is needed it has not been laid out.
+    /// </summary>
+    private double StatusCornerWidth
+    {
+        get
+        {
+            if (StatusBar == null) return 0;
+
+            double width = StatusBar.ActualWidth;
+            if (!(width > 0))
+            {
+                StatusBar.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                width = StatusBar.DesiredSize.Width;
+            }
+            if (!double.IsFinite(width) || width <= 0) return 0;
+
+            var margin = StatusBar.Margin;
+            return width + margin.Left + margin.Right;
         }
     }
 
@@ -287,13 +330,7 @@ public partial class MainWindow
         // navigation takes the centre and the status buttons keep their corner.
         if (NavTabsStackPanel != null)
         {
-            _authoredNavMargin ??= NavTabsStackPanel.Margin;
-            _authoredNavAlignment ??= NavTabsStackPanel.HorizontalAlignment;
-            var authored = _authoredNavMargin.Value;
-            NavTabsStackPanel.HorizontalAlignment = vertical ? HorizontalAlignment.Center : _authoredNavAlignment.Value;
-            NavTabsStackPanel.Margin = vertical
-                ? new Thickness(0, authored.Top, 0, authored.Bottom)
-                : authored;
+            ApplyNavigationClearance(vertical);
         }
 
     }
@@ -339,11 +376,43 @@ public partial class MainWindow
     }
 
     /// <summary>
+    /// The icon row shares its line with the status corner, which floats over
+    /// the same strip. Across the top there is width to spare; in a column
+    /// there is not, so the icons centre in what is left once that corner has
+    /// taken its room. Settled again as a page opens, because the corner only
+    /// has a width once it has been shown.
+    /// </summary>
+    private void ApplyNavigationClearance(bool vertical)
+    {
+        if (NavTabsStackPanel == null) return;
+
+        _authoredNavMargin ??= NavTabsStackPanel.Margin;
+        _authoredNavAlignment ??= NavTabsStackPanel.HorizontalAlignment;
+        var authored = _authoredNavMargin.Value;
+
+        NavTabsStackPanel.HorizontalAlignment = vertical ? HorizontalAlignment.Left : _authoredNavAlignment.Value;
+        NavTabsStackPanel.Margin = vertical
+            ? new Thickness(0, authored.Top, 0, authored.Bottom)
+            : authored;
+        if (DockNavigation != null)
+        {
+            double statusWidth = StatusCornerWidth;
+            DockNavigation.SetColumnWidth(vertical
+                ? Math.Max(48, DockColumnDepth - ExpandedContentHorizontalInset - statusWidth - 24)
+                : double.NaN);
+            DockNavigation.HorizontalAlignment = HorizontalAlignment.Left;
+            DockNavigation.Margin = vertical ? new Thickness(12, 0, statusWidth, 0) : default;
+        }
+    }
+
+    /// <summary>
     /// Keep the card below the floating navigation row. Called again as a page
     /// opens, because the row only has a height once it has been shown.
     /// </summary>
     private void ApplyMediaCardClearance(bool vertical)
     {
+        ApplyNavigationClearance(vertical);
+
         if (MediaWidgetContainer == null) return;
 
         _authoredCardOffset ??= MediaWidgetContainer.Margin;
@@ -396,6 +465,95 @@ public partial class MainWindow
         => new(thickness.Top, thickness.Left, thickness.Bottom, thickness.Right);
 
     /// <summary>
+    /// The clock page is a face with a column of dates beside it. A column has
+    /// room for one or the other, so the face stands on top of the dates.
+    /// </summary>
+    private void ApplyTimerOrientation(bool vertical)
+    {
+        if (DockTimerScroll != null)
+            DockTimerScroll.VerticalScrollBarVisibility = vertical
+                ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled;
+        GridFlip.SetVertical(ClockViewHeader, vertical);
+        // The side page has its own small wall-clock caption above the dial.
+        // Keep the authored clock/calendar composition intact across the top.
+        ClockViewHeader.Visibility = vertical ? Visibility.Collapsed : Visibility.Visible;
+        TimerPageFlow.RowDefinitions[0].Height = vertical ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+
+        // Seven day columns across a 180 column gives each one the width of a
+        // couple of characters. The month line already carries the date, so
+        // the grid stands down rather than being squeezed into nonsense.
+        var calendar = vertical ? Visibility.Collapsed : Visibility.Visible;
+        if (ClockViewWeekHeader != null) ClockViewWeekHeader.Visibility = calendar;
+        if (ClockViewDayGrid != null) ClockViewDayGrid.Visibility = calendar;
+
+        CountdownWidget?.SetCompact(vertical);
+
+        // Across the top the row's last cell takes the slack. Standing up, that
+        // slack becomes a gap down the middle of the page, so nothing stretches
+        // and the clock, the date and the transport sit together.
+        if (vertical && ClockViewHeader != null)
+        {
+            foreach (var row in ClockViewHeader.RowDefinitions)
+                if (row.Height.IsStar) row.Height = GridLength.Auto;
+        }
+
+        // Under the clock the date reads as a caption, so it sits on the same
+        // centre line rather than against the left edge it had beside it.
+        if (ClockViewDateColumn != null)
+        {
+            _authoredDateAlignment ??= ClockViewDateColumn.HorizontalAlignment;
+            ClockViewDateColumn.HorizontalAlignment = vertical
+                ? HorizontalAlignment.Center
+                : _authoredDateAlignment.Value;
+        }
+
+        if (ClockViewMonthText != null)
+        {
+            _authoredMonthAlignment ??= ClockViewMonthText.TextAlignment;
+            ClockViewMonthText.TextAlignment = vertical ? TextAlignment.Center : _authoredMonthAlignment.Value;
+        }
+
+        RuntimeLog.Log(DockLogTag, $"TIMER-ORIENT vertical={vertical}"
+            + $" headerRows={ClockViewHeader?.RowDefinitions.Count} headerCols={ClockViewHeader?.ColumnDefinitions.Count}");
+    }
+
+    /// <summary>
+    /// The mixer's list is authored at a fixed width. It has to be told the
+    /// column, because nothing inside it would otherwise narrow.
+    /// </summary>
+    private void ApplyAudioOrientation(bool vertical)
+    {
+        if (AudioContent == null) return;
+
+        // The page itself, not only the list inside it: it is authored 682 wide
+        // and several paths set that again, which left the sliders sitting off
+        // the end of the column with only the names showing.
+        _authoredAudioWidth ??= AudioContent.Width;
+        AudioContent.Width = vertical
+            ? Math.Max(0, DockColumnDepth - ExpandedContentHorizontalInset)
+            : _authoredAudioWidth.Value;
+
+        AudioContent.SetColumnWidth(vertical ? PageContentWidth(AudioContent) : double.NaN);
+    }
+
+    /// <summary>
+    /// The agent dashboard is two cards across with its title and its filters
+    /// each sharing a line. In a column it becomes one card across and both
+    /// header lines stand up.
+    /// </summary>
+    private void ApplyAgentsOrientation(bool vertical) => AgentDashboardView?.SetColumnLayout(vertical);
+
+    /// <summary>
+    /// The room a page has inside the column, once the shell's inset and the
+    /// page's own margins have taken theirs.
+    /// </summary>
+    private double PageContentWidth(FrameworkElement page)
+    {
+        double margin = page.Margin.Left + page.Margin.Right;
+        return Math.Max(0, DockColumnDepth - ExpandedContentHorizontalInset - margin);
+    }
+
+    /// <summary>
     /// The compact pill is a row - artwork, the title that marches past, the
     /// visualiser - sized for a pill that is long across. A side edge gives it
     /// the pill's breadth across and its length down, which a row of artwork
@@ -426,28 +584,115 @@ public partial class MainWindow
             foreach (var row in authored.Rows) pill.RowDefinitions.Add(new RowDefinition { Height = row });
             foreach (var column in authored.Columns) pill.ColumnDefinitions.Add(new ColumnDefinition { Width = column });
             PlaceInPill(pill, authored, transposed: false);
+            RestoreAuthoredCompactArtwork();
+            RestoreAuthoredVisualiser();
             if (CompactHoverInfo != null) CompactHoverInfo.Visibility = authored.HoverInfo;
             return;
         }
 
-        // The gap the pill keeps at each end of its row becomes the gap between
-        // the two things now stacked in it, so the rhythm is the one that was
-        // designed rather than a new number.
-        foreach (var column in authored.Columns)
-            pill.RowDefinitions.Add(new RowDefinition
-            {
-                Height = column.IsStar ? new GridLength(CompactStackGap) : column
-            });
+        // A badge is one cell. The artwork sits in the middle and the
+        // visualiser is laid over it as a ring, so they share the cell rather
+        // than queueing up in it.
+        pill.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         pill.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        PlaceInPill(pill, authored, transposed: true);
+        foreach (UIElement child in pill.Children)
+        {
+            Grid.SetRow(child, 0);
+            Grid.SetRowSpan(child, 1);
+            Grid.SetColumn(child, 0);
+            Grid.SetColumnSpan(child, 1);
+        }
+
+        ApplyBadge();
 
         // The title runs the length of the pill, which is now its breadth. It
         // has no room at all, and left visible it would sit over the artwork.
         if (CompactHoverInfo != null) CompactHoverInfo.Visibility = Visibility.Collapsed;
     }
 
-    /// <summary>The gap between the stacked artwork and visualiser.</summary>
-    private double CompactStackGap => Math.Max(0, (GetCollapsedWidth() - CompactRowBreadth) / 2.0);
+    /// <summary>
+    /// Size the badge: the artwork takes its share of the circle and is rounded
+    /// right off, and the visualiser fills the whole circle so its ring falls
+    /// in the gap left around the artwork.
+    /// </summary>
+    private void ApplyBadge()
+    {
+        double badge = GetCollapsedWidth();
+        if (!(badge > 0)) return;
+
+        double artwork = Math.Round(badge * NotchDock.BadgeArtworkShare);
+        ResizeCompactArtwork(artwork, artwork / 2);
+
+        if (MusicViz == null) return;
+        _authoredVisualiser ??= (MusicViz.Width, MusicViz.Height, MusicViz.Margin);
+        MusicViz.Radial = true;
+        MusicViz.Width = badge;
+        MusicViz.Height = badge;
+        MusicViz.Margin = new Thickness(0);
+    }
+
+    /// <summary>
+    /// Put the visualiser back to the row of bars it was authored as.
+    /// </summary>
+    private void RestoreAuthoredVisualiser()
+    {
+        if (MusicViz == null) return;
+
+        MusicViz.Radial = false;
+        if (_authoredVisualiser is not { } authored) return;
+
+        MusicViz.Width = authored.Width;
+        MusicViz.Height = authored.Height;
+        MusicViz.Margin = authored.Margin;
+    }
+
+    /// <summary>
+    /// The artwork in the collapsed pill, and everything cut to its shape. Like
+    /// the expanded cover, the frame, the clip and both images were authored at
+    /// one size and have to move together.
+    /// </summary>
+    private void ResizeCompactArtwork(double size, double radius)
+    {
+        if (CompactThumbnailBorder == null || !(size > 0)) return;
+
+        _authoredCompactArtwork ??= (CompactThumbnailBorder.Width, CompactThumbnailClip?.RadiusX ?? 0);
+
+        CompactThumbnailBorder.Width = size;
+        CompactThumbnailBorder.Height = size;
+        CompactThumbnailBorder.CornerRadius = new CornerRadius(radius);
+
+        if (CompactThumbnailClipHost != null)
+        {
+            CompactThumbnailClipHost.Width = size;
+            CompactThumbnailClipHost.Height = size;
+        }
+
+        foreach (var image in new[] { CompactThumbnail, CompactThumbnailNext })
+        {
+            if (image == null) continue;
+            image.Width = size;
+            image.Height = size;
+        }
+
+        if (CompactThumbnailClip != null)
+        {
+            CompactThumbnailClip.Rect = new Rect(0, 0, size, size);
+            CompactThumbnailClip.RadiusX = radius;
+            CompactThumbnailClip.RadiusY = radius;
+        }
+
+        if (CompactThumbnailRim != null) CompactThumbnailRim.CornerRadius = new CornerRadius(radius);
+    }
+
+    private void RestoreAuthoredCompactArtwork()
+    {
+        if (_authoredCompactArtwork is not { } authored) return;
+
+        ResizeCompactArtwork(authored.Size, authored.Radius);
+    }
+
+    private (double Size, double Radius)? _authoredCompactArtwork;
+    private (double Width, double Height, Thickness Margin)? _authoredVisualiser;
 
     private static void PlaceInPill(Grid pill, PillLayout authored, bool transposed)
     {
@@ -489,6 +734,9 @@ public partial class MainWindow
         PillSlot[] Slots);
 
     private PillLayout? _authoredPill;
+    private double? _authoredAudioWidth;
+    private HorizontalAlignment? _authoredDateAlignment;
+    private TextAlignment? _authoredMonthAlignment;
 
     #endregion
 
@@ -534,14 +782,57 @@ public partial class MainWindow
     /// it would never open on hover again.
     /// </remarks>
     internal bool IsDockPickUpArmed =>
-        _settings.EnableEdgeDocking && (Win32Interop.GetAsyncKeyState(DockPickUpModifier) & 0x8000) != 0;
+        _settings.EnableEdgeDocking && DockPointerReader().ControlDown;
 
     /// <summary>
     /// True while a move is actually under way, for the hover timers and the
     /// glass motion state to stay out of the way. Holding the modifier is not
     /// a move: a panel that would have opened still opens.
     /// </summary>
-    internal bool IsDockMoveInProgress => DockGesture.SuppressesHover(_isDockDragging, IsDockPickUpArmed);
+    internal bool IsDockMoveInProgress => _isDockDragging || _isDockLanding;
+    internal bool IsDockHoverSuppressed => DockGesture.SuppressesHover(IsDockMoveInProgress, IsDockPickUpArmed);
+
+    private void UpdateDockArmingMonitor()
+    {
+        if (_cleanedUp || _settings?.EnableEdgeDocking != true) return;
+        if (!_isExpanded && !_isMusicExpanded && !IsDockPickUpArmed && !NotchWrapper.IsMouseOver) return;
+        if (_dockArmingTimer == null)
+        {
+            _dockArmingTimer = new DispatcherTimer(DispatcherPriority.Input, Dispatcher) { Interval = TimeSpan.FromMilliseconds(60) };
+            _dockArmingTimer.Tick += (_, _) => UpdateDockArmingState();
+        }
+        _dockArmingTimer.Start();
+    }
+
+    private void UpdateDockArmingState()
+    {
+        if (_cleanedUp || !_settings.EnableEdgeDocking)
+        {
+            _dockArmingTimer?.Stop();
+            return;
+        }
+        bool armed = IsDockPickUpArmed;
+        if (armed && !IsDockMoveInProgress)
+        {
+            _dockWasArmed = true;
+            _hoverCollapseTimer.Stop();
+            _hoverThumbnailDelayTimer.Stop();
+            // A held Ctrl prepares the collapsed pill even without mouse
+            // movement. Keep normal text editing shortcuts usable, however.
+            if ((_isExpanded || _isMusicExpanded) && !_isGreetingActive && !_isDebugViewLocked &&
+                !_spotlightMorphSessionActive && !_spotlightMorphOwnsNotchVisibility &&
+                Keyboard.FocusedElement is not System.Windows.Controls.Primitives.TextBoxBase)
+                CollapseNotch();
+        }
+        UpdateDockPickUpAffordance();
+        if (!armed && !IsDockMoveInProgress && !_isExpanded && !_isMusicExpanded)
+        {
+            if (!NotchWrapper.IsMouseOver) _dockArmingTimer?.Stop();
+            bool restoreHover = _dockWasArmed;
+            _dockWasArmed = false;
+            if (restoreHover && NotchWrapper.IsMouseOver && !_isAnimating) QueueHoverExpand();
+        }
+    }
 
     /// <summary>
     /// Take hold of the notch so the cursor can move it. Returns false when the
@@ -549,27 +840,66 @@ public partial class MainWindow
     /// </summary>
     private bool BeginDockPickUp()
     {
-        if (!IsDockPickUpArmed) return false;
-
-        // An expanded panel is not the thing being moved. Shrink back to the
-        // pill first so what follows the cursor is what will be left behind.
-        if (_isExpanded || _isMusicExpanded) CollapseNotch();
-
-        // Only hold the notch if the capture was actually granted. Setting the
-        // flag first and failing to capture leaves a move that never ends, and
-        // a move that never ends suppresses hover for good.
-        if (!NotchWrapper.CaptureMouse())
-        {
-            RuntimeLog.Log(DockLogTag, "pick up refused: no mouse capture");
-            return false;
-        }
+        var input = DockPointerReader();
+        if (!_settings.EnableEdgeDocking || !input.ControlDown || !input.LeftDown ||
+            IsDockMoveInProgress || _cleanedUp || _isGreetingActive || _isDebugViewLocked ||
+            _spotlightMorphSessionActive || _spotlightMorphOwnsNotchVisibility) return false;
+        if (!TryGetDockScreen(out var screen)) return false;
+        var origin = NotchBorder.PointToScreen(new Point());
+        var end = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth, NotchBorder.ActualHeight));
+        if (end.X <= origin.X || end.Y <= origin.Y) return false;
+        _dockGrabFraction = new Point(Math.Clamp((input.Position.X - origin.X) / (end.X - origin.X), 0, 1),
+            Math.Clamp((input.Position.Y - origin.Y) / (end.Y - origin.Y), 0, 1));
+        _dockDrag = new DockDragSession(DockEdge, input.Position, screen,
+            System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX);
+        ++_dockMoveVersion;
+        _dockDidMove = false;
+        // Capture a stable ancestor. A timer scoped to this gesture covers
+        // no-activate capture failures and release outside the painted shell.
+        bool captured = Mouse.Capture(this, CaptureMode.SubTree);
 
         _hoverCollapseTimer.Stop();
         _hoverThumbnailDelayTimer.Stop();
         _isDockDragging = true;
+        _dockDragTimer ??= CreateDockDragTimer();
+        _dockDragTimer.Start();
         UpdateGlassMotionState();
-        RuntimeLog.Log(DockLogTag, "picked up");
+        UpdateDockPickUpAffordance();
+        RuntimeLog.Log(DockLogTag, $"picked up (capture={captured})");
         return true;
+    }
+
+    private bool IsPointOnDockShell(Point screenPoint)
+    {
+        var point = NotchBorder.PointFromScreen(screenPoint);
+        return point.X >= 0 && point.Y >= 0 && point.X <= NotchBorder.ActualWidth && point.Y <= NotchBorder.ActualHeight;
+    }
+
+    private void Window_DockPreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // Collapse temporarily disables content hit testing. The stable window
+        // must still accept a Ctrl grab on the visible shell during that morph.
+        if (e.ChangedButton == MouseButton.Left && IsDockPickUpArmed &&
+            CanPickUpDockFrom(e.OriginalSource as DependencyObject) &&
+            IsPointOnDockShell(DockPointerReader().Position) && BeginDockPickUp())
+            e.Handled = true;
+    }
+
+    private bool CanPickUpDockFrom(DependencyObject? source)
+    {
+        if (!IsDockPickUpArmed) return false;
+        if (!_isExpanded && !_isMusicExpanded) return true;
+        if (IsInteractiveControl(source)) return false;
+        for (var node = source; node != null && node != NotchWrapper; node = InputParent(node))
+            if (node is VNotch.Controls.ActionBorder) return false;
+        return true;
+    }
+
+    private DispatcherTimer CreateDockDragTimer()
+    {
+        var timer = new DispatcherTimer(DispatcherPriority.Input, Dispatcher) { Interval = TimeSpan.FromMilliseconds(16) };
+        timer.Tick += (_, _) => ContinueDockDrag();
+        return timer;
     }
 
     /// <summary>
@@ -580,13 +910,9 @@ public partial class MainWindow
     /// </summary>
     private void NotchWrapper_LostMouseCapture(object sender, MouseEventArgs e)
     {
-        if (!_isDockDragging) return;
-
-        _isDockDragging = false;
-        UpdateGlassMotionState();
-        UpdateDockPickUpAffordance();
-        _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
-        RuntimeLog.Log(DockLogTag, $"capture lost; left on the {NotchDock.Describe(_settings.DockEdge)} edge");
+        // Physical button state still ends/cancels the session after capture
+        // changes. Losing capture must not strand a drag or stop it mid-move.
+        if (_isDockDragging) RuntimeLog.Log(DockLogTag, "capture changed; tracking physical button until release");
     }
 
     /// <summary>
@@ -597,33 +923,47 @@ public partial class MainWindow
     /// </summary>
     private void UpdateDockPickUpAffordance()
     {
-        var wanted = DockGesture.OffersPickUp(_isDockDragging, IsDockPickUpArmed)
+        var wanted = DockGesture.OffersPickUp(IsDockMoveInProgress, IsDockPickUpArmed)
             ? Cursors.SizeAll
             : Cursors.Hand;
         if (NotchWrapper.Cursor != wanted) NotchWrapper.Cursor = wanted;
     }
 
     /// <summary>
-    /// Follow the cursor. The notch stays docked throughout, changing edge once
-    /// the cursor is clearly within another one's reach, so there is no loose
-    /// state to land from and nowhere lopsided to land.
+    /// Follow the grab point without rebuilding the dock orientation mid-drag.
     /// </summary>
     /// <returns>true when the move consumed the event</returns>
     private bool ContinueDockDrag()
     {
-        if (!_isDockDragging) return false;
-
-        Win32Interop.GetCursorPos(out var cursor);
-        if (!TryGetDockScreen(out var screen)) return true;
-
-        var edge = NotchDock.Snap(new Point(cursor.X, cursor.Y), screen);
-        if (edge == _settings.DockEdge) return true;
-
-        _settings.DockEdge = edge;
-        _notchManager.UpdateSettings(_settings);
-        RefreshDockMenuState();
-        ApplyDockPlacement();
+        if (!_isDockDragging || _dockDrag == null) return false;
+        var input = DockPointerReader();
+        if (input.EscapeDown || !IsVisible) { FinishDockDrag(true); return true; }
+        _dockDrag.Update(input.Position);
+        StartDockDragMotion();
+        if (!input.LeftDown) { FinishDockDrag(false); return true; }
+        if (!_dockDrag.HasMoved) return true;
+        var origin = NotchBorder.PointToScreen(new Point());
+        var end = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth, NotchBorder.ActualHeight));
+        MoveDockHost(DockDragSession.HostPosition(input.Position, origin - new Vector(_fixedX, _fixedY),
+            new Size(Math.Max(0, end.X - origin.X), Math.Max(0, end.Y - origin.Y)), _dockGrabFraction));
         return true;
+    }
+
+    private void StartDockDragMotion()
+    {
+        if (_dockDrag?.HasMoved != true || _dockDidMove) return;
+        _dockDidMove = true;
+        _gestureController.CancelTracking();
+        _isGestureActive = false;
+        if (_isExpanded || _isMusicExpanded) CollapseNotch();
+    }
+
+    private void MoveDockHost(Point point)
+    {
+        int x = (int)Math.Round(point.X), y = (int)Math.Round(point.Y);
+        if (x == _fixedX && y == _fixedY) return;
+        _overlayWindow.MoveFixedPosition(x, y);
+        _liquidGlass?.SetLiveRegion(GetGlassCaptureRegion());
     }
 
     /// <summary>Put the notch down and remember where it was left.</summary>
@@ -631,13 +971,88 @@ public partial class MainWindow
     private bool EndDockDrag()
     {
         if (!_isDockDragging) return false;
-
-        _isDockDragging = false;
-        NotchWrapper.ReleaseMouseCapture();
-        UpdateGlassMotionState();
-        _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
-        RuntimeLog.Log(DockLogTag, $"put down on the {NotchDock.Describe(_settings.DockEdge)} edge");
+        _dockDrag?.Update(DockPointerReader().Position);
+        StartDockDragMotion();
+        FinishDockDrag(false);
         return true;
+    }
+
+    private void FinishDockDrag(bool cancelled)
+    {
+        var drag = _dockDrag;
+        if (!_isDockDragging || drag == null) return;
+        _isDockDragging = false;
+        _isDockLanding = true;
+        _dockDrag = null;
+        _dockDragTimer?.Stop();
+        if (ReferenceEquals(Mouse.Captured, this) || ReferenceEquals(Mouse.Captured, NotchWrapper)) Mouse.Capture(null);
+        CompleteDockLandingAsync(drag, cancelled, _dockMoveVersion).SafeFireAndForget("DOCK-LANDING");
+    }
+
+    private async Task CompleteDockLandingAsync(DockDragSession drag, bool cancelled, int version)
+    {
+        try
+        {
+            if (!drag.HasMoved) return;
+            // Wait out a quick-release collapse so its callbacks cannot put
+            // the old horizontal pill's size back onto the new side badge.
+            while (_isAnimating)
+            {
+                if (_cleanedUp || version != _dockMoveVersion) return;
+                cancelled |= DockPointerReader().EscapeDown;
+                await Task.Delay(16);
+            }
+            if (_cleanedUp || version != _dockMoveVersion) return;
+            var center = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth / 2, NotchBorder.ActualHeight / 2));
+            _settings.DockEdge = cancelled ? drag.Source : drag.Target;
+            _notchManager.UpdateSettings(_settings);
+            ApplyDockPlacement();
+            RefreshDockMenuState();
+            UpdateLayout();
+            var destination = new Point(_fixedX, _fixedY);
+            var newCenter = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth / 2, NotchBorder.ActualHeight / 2));
+            var start = destination + (center - newCenter);
+            if (!AnimationConfig.ReduceMotion)
+            {
+                MoveDockHost(start);
+                var clock = Stopwatch.StartNew();
+                while (clock.Elapsed.TotalMilliseconds < 180)
+                {
+                    if (_cleanedUp || version != _dockMoveVersion) return;
+                    double t = DockDragSession.LandingEase(clock.Elapsed.TotalMilliseconds / 180);
+                    MoveDockHost(start + (destination - start) * t);
+                    await Task.Delay(16);
+                }
+            }
+            MoveDockHost(destination);
+            _notchManager.UpdatePosition();
+            if (!cancelled) _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+            RuntimeLog.Log(DockLogTag, $"{(cancelled ? "cancelled" : "landed")} on {NotchDock.Describe(_settings.DockEdge)}");
+        }
+        finally
+        {
+            if (version == _dockMoveVersion)
+            {
+                _isDockLanding = false;
+                _hoverCollapseTimer.Stop();
+                _hoverThumbnailDelayTimer.Stop();
+                _suppressHoverCollapseUntilUtc = DateTime.UtcNow.AddMilliseconds(350);
+                UpdateGlassMotionState();
+                UpdateDockPickUpAffordance();
+                UpdateDockArmingMonitor();
+            }
+        }
+    }
+
+    private void DisposeDockDrag()
+    {
+        ++_dockMoveVersion;
+        _dockDragTimer?.Stop();
+        _dockArmingTimer?.Stop();
+        _dockWasArmed = false;
+        _isDockDragging = _isDockLanding = false;
+        _dockDrag = null;
+        if (ReferenceEquals(Mouse.Captured, this) || ReferenceEquals(Mouse.Captured, NotchWrapper)) Mouse.Capture(null);
     }
 
     /// <summary>
@@ -645,6 +1060,11 @@ public partial class MainWindow
     /// </summary>
     internal void MoveDockTo(NotchEdge edge)
     {
+        if (IsDockMoveInProgress)
+        {
+            DisposeDockDrag();
+            ApplyDockPlacement();
+        }
         if (_settings.DockEdge == edge && _settings.EnableEdgeDocking)
         {
             RefreshDockMenuState();
@@ -724,19 +1144,72 @@ public partial class MainWindow
         if (!IsDockVertical) return NotchDock.ViewSize(DockEdge, width, height, DockPillLength, screen);
 
         double depth = DockColumnDepth;
+        // Reapply width-dependent layouts before measuring. Changing notch size
+        // or monitor DPI without changing edge must also resize the cover/list.
+        ApplyMediaPageOrientation(true);
+        if (view == NotchView.Timer) ApplyTimerOrientation(true);
+        if (view == NotchView.AudioMixer) ApplyAudioOrientation(true);
+        if (view == NotchView.Agents) ApplyAgentsOrientation(true);
         // Settle the card's clearance before measuring, not after: the gap the
         // navigation row needs is part of how long the page turns out to be,
         // and the row only has a height once it has been shown.
         ApplyMediaCardClearance(true);
         // The page sits inside the shell with an inset all round, so the shell
         // has to be that much longer than the page itself.
-        double length = MeasureDockedLength(SelfSizingContent(view), depth - ExpandedContentHorizontalInset);
-        if (length > 0) length += ExpandedContentVerticalInset;
+        double measureWidth = view == NotchView.Timer
+            ? depth - TimerContent.Margin.Left - TimerContent.Margin.Right
+            : depth - ExpandedContentHorizontalInset;
+        double length = MeasureDockedLength(SelfSizingContent(view), measureWidth);
+        if (length > 0) length += view == NotchView.Timer
+            ? TimerContent.Margin.Top + TimerContent.Margin.Bottom
+            : ExpandedContentVerticalInset;
         // A page that fills whatever it is given - a list, a grid of cards -
         // measures to nothing useful, so it keeps the budget it asked for
         // across the top and spends it down the side instead.
-        if (!(length > 0)) length = width;
+        if (!(length > 0)) length = view == NotchView.AudioMixer ? height : width;
         return new Size(depth, NotchDock.Length(length, DockPillLength, screen));
+    }
+
+    /// <summary>
+    /// The size a view should take on the current edge, with the page inside it
+    /// given the same treatment. Views reached through <c>ExpandNotch</c> get
+    /// this at its one chokepoint; the clock and the mixer are switched to by
+    /// paths of their own, which is why they went on being laid out for the top
+    /// edge however the notch was docked. They ask here instead.
+    /// </summary>
+    internal Size DockedViewTarget(NotchView view, double width, double height)
+    {
+        if (!IsDockVertical) return new Size(width, height);
+
+        var docked = DockedViewSize(view, width, height);
+        ResizeDockedContent(view, docked);
+        return docked;
+    }
+
+    private int _timerSizeRequest;
+
+    private void RefreshTimerSize() => RefreshTimerSizeAfterTransitionAsync(++_timerSizeRequest)
+        .SafeFireAndForget("TIMER-LAYOUT");
+
+    private async Task RefreshTimerSizeAfterTransitionAsync(int request)
+    {
+        // Mode changes during a resize must not be dropped, or a quick second
+        // click can leave the focus footer clipped at the timer's old height.
+        while (_isAnimating)
+        {
+            if (!IsVisible || !_isTimerView || request != _timerSizeRequest) return;
+            await Task.Delay(35);
+        }
+        if (!IsVisible || !_isTimerView || request != _timerSizeRequest) return;
+        if (!IsDockVertical)
+        {
+            PrepareClockViewContentSize();
+            ApplyClockViewWindowSize();
+        }
+        var target = DockedViewTarget(NotchView.Timer, _clockViewWidth, _clockViewHeight);
+        if (Math.Abs(NotchBorder.ActualHeight - target.Height) < 1) return;
+        AnimateClockViewNotchResize(NotchBorder.ActualWidth, NotchBorder.ActualHeight,
+            target.Width, target.Height, new Duration(TimeSpan.FromMilliseconds(220)), TimeSpan.Zero);
     }
 
     /// <summary>
@@ -746,6 +1219,9 @@ public partial class MainWindow
     private FrameworkElement? SelfSizingContent(NotchView view) => view switch
     {
         NotchView.Media or NotchView.Compact => ExpandedContent,
+        // Stood up, the clock page is as tall as the face plus the dates
+        // under it, which is a good deal shorter than its wide budget.
+        NotchView.Timer => TimerPageFlow,
         _ => null,
     };
 
@@ -791,12 +1267,21 @@ public partial class MainWindow
         // known once it has been shown. Settle that each time the page opens.
         if (view == NotchView.Secondary) ApplyClipboardOrientation(IsDockVertical);
 
+        // Settle the page's own layout each time it opens, not only when the
+        // edge changes. A page that was never opened on this edge has had no
+        // other chance to hear about it, and one whose content arrived later
+        // would otherwise keep the shape it was authored with.
+        if (view == NotchView.AudioMixer) ApplyAudioOrientation(IsDockVertical);
+        if (view == NotchView.Timer) ApplyTimerOrientation(IsDockVertical);
+        if (view == NotchView.Agents) ApplyAgentsOrientation(IsDockVertical);
+
         FrameworkElement? content = view switch
         {
             NotchView.Secondary => SecondaryContent,
             NotchView.Camera => CameraContent,
             NotchView.Agents => AgentContent,
             NotchView.AudioMixer => AudioContent,
+            NotchView.Timer => TimerContent,
             _ => null,
         };
         if (content == null) return;

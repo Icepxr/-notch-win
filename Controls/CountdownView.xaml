@@ -6,6 +6,27 @@
     <UserControl.Resources>
         <FontFamily x:Key="CountdownSystemFont">pack://application:,,,/V-Notch;component/Fonts/#SF Pro Display, Nirmala UI, Segoe UI</FontFamily>
     </UserControl.Resources>
+    <StackPanel>
+        <Grid x:Name="SideTimerHeading" Visibility="Collapsed" Margin="4,0,4,12">
+            <TextBlock Text="Time &amp; focus" FontSize="14" FontWeight="SemiBold" Foreground="#E8FFFFFF"/>
+            <ctrl:DigitalClock FontSize="13" Foreground="#88FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+        </Grid>
+        <Border x:Name="ModeSelector" Background="#12FFFFFF" CornerRadius="11" Padding="3" Margin="0,0,0,8">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition/></Grid.ColumnDefinitions>
+                <ctrl:ActionBorder x:Name="TimerModeButton" Background="#22FFFFFF" CornerRadius="8" Padding="8,8" Click="TimerMode_Click" ToolTip="Countdown timer">
+                    <TextBlock Text="Timer" FontSize="12" Foreground="White" TextAlignment="Center"/>
+                </ctrl:ActionBorder>
+                <ctrl:ActionBorder x:Name="FocusModeButton" Grid.Column="1" Background="Transparent" CornerRadius="8" Padding="8,8" Click="FocusMode_Click" ToolTip="Pomodoro: 25 min focus, 5 min rest; a 15 min rest after four sessions">
+                    <TextBlock Text="Pomodoro" FontSize="12" Foreground="White" TextAlignment="Center"/>
+                </ctrl:ActionBorder>
+            </Grid>
+        </Border>
+        <Grid x:Name="RingHost" Visibility="Collapsed" Height="190" Margin="0,0,0,4">
+            <ctrl:CountdownRing x:Name="ProgressRing" Width="186" Height="186" IsHitTestVisible="False" Accent="#FFAD66"/>
+            <TextBlock x:Name="PhaseLabel" Text="COUNTDOWN" Foreground="#AAFFFFFF" FontSize="10" FontWeight="SemiBold" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,49,0,0"/>
+            <TextBlock x:Name="PhaseHint" Text="Click time to edit" Foreground="#77FFFFFF" FontSize="10" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,43"/>
+        </Grid>
     <Border x:Name="TimerControlBar"
             Height="58"
             CornerRadius="16"
@@ -13,6 +34,14 @@
             BorderBrush="#18FFFFFF"
             BorderThickness="1"
             SnapsToDevicePixels="True">
+        <Border.ContextMenu>
+            <ContextMenu Background="#151515" Foreground="White">
+                <MenuItem x:Name="TimerModeMenu" Header="Countdown timer" IsCheckable="True" IsChecked="True" Click="TimerMode_MenuClick"/>
+                <MenuItem x:Name="FocusModeMenu" Header="Pomodoro · 25 / 5 / 15 min" IsCheckable="True" Click="FocusMode_MenuClick"/>
+                <Separator/>
+                <MenuItem x:Name="SkipPhaseMenu" Header="Skip current phase" IsEnabled="False" Click="SkipPhase_MenuClick"/>
+            </ContextMenu>
+        </Border.ContextMenu>
         <Border.Background>
             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                 <GradientStop Color="#F0141414" Offset="0"/>
@@ -24,7 +53,7 @@
             <DropShadowEffect x:Name="TimerControlBarShadow" Color="Black" BlurRadius="18" ShadowDepth="4" Opacity="0.45" RenderingBias="Performance"/>
         </Border.Effect>
 
-        <Grid VerticalAlignment="Center">
+        <Grid x:Name="TransportGrid" VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
@@ -268,4 +297,14 @@
 
         </Grid>
     </Border>
+        <Grid x:Name="FocusFooter" Visibility="Collapsed" Margin="4,12,4,0">
+            <StackPanel>
+                <TextBlock x:Name="RoundLabel" Text="SESSION 1 / 4" FontSize="10" FontWeight="SemiBold" Foreground="#CCFFFFFF"/>
+                <TextBlock x:Name="NextPhaseLabel" Text="Next · 5 min rest" FontSize="10" Foreground="#88FFFFFF" Margin="0,4,0,0"/>
+            </StackPanel>
+            <ctrl:ActionBorder x:Name="SkipPhaseButton" HorizontalAlignment="Right" VerticalAlignment="Center" Background="#12FFFFFF" CornerRadius="9" Padding="12,9" Click="SkipPhase_Click" ToolTip="Skip phase without counting a focus session">
+                <TextBlock Text="Skip →" Foreground="#CCFFFFFF" FontSize="11"/>
+            </ctrl:ActionBorder>
+        </Grid>
+    </StackPanel>
 </UserControl>

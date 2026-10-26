@@ -13,6 +13,7 @@
         ResizeMode="NoResize"
         WindowStartupLocation="Manual"
         PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewMouseDown="Window_DockPreviewMouseDown"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
@@ -27,6 +28,10 @@
         TextElement.FontFamily="{StaticResource SFProText}">
 
     <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/V-Notch;component/Controls/NotchScrollChrome.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
 
         <ExponentialEase x:Key="CameraExitEase" EasingMode="EaseOut" Exponent="6" po:Freeze="True"/>
         <Storyboard x:Key="CameraPreviewExit" Duration="0:0:0.42">
@@ -353,6 +358,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        </ResourceDictionary>
     </Window.Resources>
 
     <AdornerDecorator>
@@ -853,6 +859,7 @@
                         <Grid.RenderTransform>
                             <TranslateTransform x:Name="NavIconsTranslate" Y="0"/>
                         </Grid.RenderTransform>
+                        <ctrl:DockNavigationViewport x:Name="DockNavigation" HorizontalAlignment="Left" VerticalAlignment="Top">
                         <StackPanel x:Name="NavTabsStackPanel"
                                     Orientation="Horizontal"
                                     HorizontalAlignment="Left" VerticalAlignment="Top"
@@ -1010,6 +1017,7 @@
                                 </Viewbox>
                             </ctrl:ActionBorder>
                         </StackPanel>
+                        </ctrl:DockNavigationViewport>
                     </Grid>
 
                     <StackPanel x:Name="CollapsedContent"
@@ -1279,7 +1287,9 @@
                             </Border.RenderTransform>
 
                             <Grid ClipToBounds="False">
-                                <Grid Width="22" Height="22" ClipToBounds="True">
+                                <!-- Local customization: named so a side dock can grow the
+                                     badge artwork and round it into a circle. -->
+                                <Grid x:Name="CompactThumbnailClipHost" Width="22" Height="22" ClipToBounds="True">
                                     <Grid.Clip>
                                         <RectangleGeometry x:Name="CompactThumbnailClip" RadiusX="6" RadiusY="6" Rect="0,0,22,22"/>
                                     </Grid.Clip>
@@ -2594,6 +2604,10 @@
                           RenderOptions.ClearTypeHint="Enabled"
                           UseLayoutRounding="False"
                           SnapsToDevicePixels="False">
+                        <ScrollViewer x:Name="DockTimerScroll" VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
+                                      PanningMode="VerticalOnly" Focusable="False">
+                        <Grid x:Name="TimerPageFlow">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
@@ -2612,8 +2626,17 @@
                                                   ShowDate="False"
                                                   VerticalAlignment="Center"
                                                   HorizontalAlignment="Center"/>
+                                <!-- Local customization: this one was never given a size or a
+                                     colour, so it drew as black 12pt on a black panel - the
+                                     clock page looked empty whenever the digital style was
+                                     chosen. Styled to match the widget's own digital clock. -->
                                 <ctrl:DigitalClock x:Name="ClockViewDigitalClock"
-                                                   Width="150" Height="150"
+                                                   Width="150"
+                                                   FontFamily="{StaticResource MainSystemFont}"
+                                                   FontSize="40"
+                                                   FontWeight="Heavy"
+                                                   TextWrapping="NoWrap"
+                                                   Foreground="{x:Static svc:UiPalette.PrimaryBrush}"
                                                    VerticalAlignment="Center"
                                                    HorizontalAlignment="Center"
                                                    Visibility="Collapsed"/>
@@ -2624,7 +2647,9 @@
                                                 Visibility="Collapsed"/>
                             </Grid>
 
-                            <Grid Grid.Column="2" VerticalAlignment="Center">
+                            <!-- Local customization: named so a side dock can centre the
+                                 date block under the clock. -->
+                            <Grid x:Name="ClockViewDateColumn" Grid.Column="2" VerticalAlignment="Center">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="Auto"/>
@@ -2661,7 +2686,8 @@
                         <Grid Grid.Row="1" VerticalAlignment="Center">
                             <ctrl:CountdownView x:Name="CountdownWidget"/>
                         </Grid>
-
+                        </Grid>
+                        </ScrollViewer>
                     </Grid>
 
                     <ctrl:AudioMixerView x:Name="AudioContent"

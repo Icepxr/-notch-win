@@ -591,13 +591,15 @@ public partial class MainWindow
     {
         double width = _settings.EnableDynamicIslandMode ? _settings.DynamicIslandWidth : _settings.Width;
         double height = _settings.EnableDynamicIslandMode ? _settings.DynamicIslandHeight : _settings.Height;
-        return NotchDock.Rotate(DockEdge, width, height);
+        return NotchDock.CollapsedSize(DockEdge, width, height);
     }
 
     private double GetCollapsedCornerRadius()
     {
         // The capsule radius follows the short axis, whichever one that is now.
-        return _settings.EnableDynamicIslandMode
+        // A side edge collapses to a badge rather than a capsule, and a badge
+        // is round whether or not the island is switched on.
+        return _settings.EnableDynamicIslandMode || IsDockVertical
             ? Math.Max(0, Math.Min(_collapsedWidth, _collapsedHeight) / 2.0)
             : _settings.CornerRadius;
     }
@@ -649,18 +651,20 @@ public partial class MainWindow
 
     private void AnimateCornerRadius(double targetRadius, TimeSpan duration)
     {
-        double startRadius = NotchBorder.CornerRadius.BottomLeft;
-        if (Math.Abs(targetRadius - startRadius) < 0.5)
+        // A docked corner can be square; the animated scalar is the source of
+        // truth on every edge, including while reversing a running animation.
+        double startRadius = CurrentCornerRadius;
+        if (AnimationConfig.ReduceMotion || duration <= TimeSpan.Zero || Math.Abs(targetRadius - startRadius) < 0.5)
         {
-            CurrentCornerRadius = targetRadius;
             this.BeginAnimation(CurrentCornerRadiusProperty, null);
+            CurrentCornerRadius = targetRadius;
             return;
         }
 
-        CurrentCornerRadius = startRadius;
         this.BeginAnimation(CurrentCornerRadiusProperty, null);
+        CurrentCornerRadius = startRadius;
 
-        var anim = MakeAnim(startRadius, targetRadius, new Duration(duration), _easeExpOut6, null);
+        var anim = MakeAnim(startRadius, targetRadius, new Duration(duration), NotchRevealMotion.Ease, null);
         Timeline.SetDesiredFrameRate(anim, VNotch.Services.AnimationConfig.TargetFps);
         this.BeginAnimation(CurrentCornerRadiusProperty, anim);
     }

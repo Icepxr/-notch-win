@@ -160,14 +160,19 @@ public partial class MainWindow
         double openWindowHeight = Math.Max(fromH, _audioViewHeight);
         ResizeHostWindowHeight(openWindowHeight);
 
+        var audioTarget = DockedViewTarget(VNotch.Models.NotchView.AudioMixer, _audioViewWidth, _audioViewHeight);
         AnimateAudioViewSwap(
             outgoing, AudioContent,
-            new Size(fromW, fromH), new Size(_audioViewWidth, _audioViewHeight),
+            new Size(fromW, fromH), audioTarget,
             prepIncoming: () =>
             {
                 if (AudioScrollViewer != null)
                 {
-                    AudioScrollViewer.Width = _audioViewWidth - 38;
+                    // The list is handed a width here every time the mixer
+                    // opens, which is what kept overwriting the column.
+                    AudioScrollViewer.Width = IsDockVertical
+                        ? Math.Max(0, audioTarget.Width - ExpandedContentHorizontalInset - AudioContent.Margin.Left - AudioContent.Margin.Right)
+                        : _audioViewWidth - 38;
                     AudioScrollViewer.HorizontalAlignment = HorizontalAlignment.Left;
                     AudioScrollViewer.VerticalAlignment = VerticalAlignment.Top;
                     AudioScrollViewer.BeginAnimation(OpacityProperty, null);
@@ -181,7 +186,7 @@ public partial class MainWindow
             {
                 if (openWindowHeight > _audioViewHeight)
                     ResizeHostWindowHeight(_audioViewHeight);
-                if (!AudioContent.ApplyPendingSnapshot())
+                if (!AudioContent.ApplyPendingSnapshot() || IsDockVertical)
                     SettleAudioNotchToFit();
                 StartAudioPoll();
             },
@@ -491,6 +496,7 @@ public partial class MainWindow
     private void AnimateAudioNotchHeight(double target, Duration dur, IEasingFunction ease)
     {
         if (!_isAudioView || _isAnimating || AudioScrollViewer == null) return;
+        if (IsDockVertical) target = NotchDock.Length(target, DockPillLength, DockScreenDip);
 
         double current = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : target;
         double currentScrollHeight = AudioScrollViewer.ActualHeight > 0

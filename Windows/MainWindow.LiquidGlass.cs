@@ -1017,7 +1017,7 @@ public partial class MainWindow
     private void UpdateGlassMotionState()
     {
         // Hover applies a ScaleTransform (NotchScale) that renders the notch — and
-        bool motion = _isAnimating || _isModeTransitioning || _isGestureActive ||
+        bool motion = IsDockMoveInProgress || _isAnimating || _isModeTransitioning || _isGestureActive ||
                       _glassGestureSnapBackMotion || _glassHoverMotion;
 
         _liquidGlass?.SetAnimating(motion);

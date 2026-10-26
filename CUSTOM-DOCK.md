@@ -6,12 +6,14 @@ without the new keys loads as `Top`, so nothing changes until you move it.
 
 ## Use
 
-- **Hold Ctrl and drag the notch.** While Ctrl is held the notch offers the
-  move - the cursor becomes a move cursor - and otherwise behaves exactly as it
-  always does. The press is what starts the move: on Ctrl plus a press the panel
-  shrinks back to the pill so there is something small to take hold of, and the
-  notch then follows the cursor, changing edge once the cursor is clearly within
-  another one's reach. Release to leave it there.
+- **Hold Ctrl to ready the notch.** An open panel collapses without needing
+  mouse movement and stays collapsed while Ctrl is held. The cursor over the
+  pill becomes a move cursor. Active text editors retain their Ctrl shortcuts.
+- **Ctrl + drag follows your hand.** A 6-DIP threshold rejects small hand
+  jitter. The shell follows the grab point as it shrinks. Its orientation stays
+  stable during the drag; release to dock at the top/left/right with a short
+  ease-out. A 24-DIP boundary band stops the destination flickering. Releasing
+  Ctrl first does not interrupt an active drag. **Esc cancels** the move.
 - **Tray menu → Dock at top / Dock at left / Dock at right** does the same
   without a drag, and shows which edge is current.
 - The notch is always centred on its edge. There is one decision to make and
@@ -21,6 +23,18 @@ Ctrl is required rather than a plain drag because a plain press is already
 spoken for twice: the shell expands on mouse *down*, so a press-and-hold has
 opened the panel before any hold could elapse, and a plain horizontal drag is
 the swipe that skips a track. Ctrl collides with neither.
+
+## Open and close motion
+
+The shell opens in 360 ms and closes in 260 ms with a monotonic ease-out.
+Artwork stays at its final size and screen anchor while the rounded shell
+reveals it: centre/top on the top edge, left/centre on the left edge and
+right/centre on the right. The compact cover uses its own fixed resting slot.
+A short, staged dissolve replaces the old spring-scaled flying cover, so two
+independent geometry animations cannot pull the preview around. Fixed-size
+auxiliary pages share those anchors and fade away without an extra shrink.
+Reversals continue from the current rendered dimensions and opacity, and
+reduced motion settles without a delayed overlay or corner animation.
 
 ## What moves with the edge
 
@@ -42,17 +56,13 @@ the swipe that skips a track. Ctrl collides with neither.
 
 ## How a page is sized on a side edge
 
-Nothing here is a number chosen for one display or one notch size.
-
-- **The column is as deep as the collapsed pill is long**, times
-  `NotchDock.ColumnDepthInPills`, which is under 1 so the column stays narrower
-  than the notch is wide. The pill's length is the one size the user sets, so
-  doubling it doubles the column and every page with it. The display bounds it
-  at a third of its width, and a pill wider than that still gets a column of its
-  own.
+- **Readable side columns.** The configured pill scales the expanded column
+  between 300 and 420 DIPs. A small collapsed badge no longer squeezes a full
+  page into 200 pixels. The display still bounds the column at a third of its
+  width, including on high-DPI and smaller displays.
 - **No page runs the whole edge.** A page that fills whatever it is given would
   take the full height, which turns a panel beside your work into a second
-  screen; `NotchDock.MaximumLengthShare` holds it to two thirds of the display.
+  screen; `NotchDock.MaximumLengthShare` holds it to half of the display.
 - **The cover takes its share of the column**, `NotchDock.CoverShareOfColumn`,
   leaving a margin either side and a centre line for the title, the timeline and
   the transport to sit on.
@@ -66,6 +76,18 @@ Nothing here is a number chosen for one display or one notch size.
   the display allows.
 
 ## The vertical media page
+
+Side navigation keeps a bounded horizontal strip with edge fades and wheel
+scrolling when tabs overflow. Clipboard and timer scrollbars are dark rounded
+thumbs with no arrow buttons. The timer uses an editable countdown dial on the
+sides; the top retains its clock, calendar and transport row. The side timer's
+Pomodoro tab runs 25-minute focus / 5-minute rest phases, with a 15-minute rest
+after four completed focus sessions. Pause, reset and skip work without changing
+the dock; skipped focus sessions do not count. Timing continues on other tabs.
+Timer / Pomodoro buttons are visible at all three dock positions. At the top,
+the existing clock/calendar and transport remain, with a compact mode switch
+above the controls and a session/Skip footer in focus mode. The panel grows to
+fit that footer. The controls' context menu provides the same commands too.
 
 The page across the top is two columns: the card, and an aside carrying lyrics,
 the calendar and the greeting. A column of 300 to 400 has no room for anything
@@ -146,8 +168,8 @@ is in force, and everything asks it.
 another window, or by the notch hiding itself for a fullscreen app - and then no
 button-up arrives, leaving the move in progress forever and hover suppressed for
 good: the same symptom as the Ctrl bug below, from a different cause. The move
-now ends on `LostMouseCapture`, and it refuses to start at all if the capture
-was not granted.
+now tracks the physical mouse button during the gesture even if WPF capture is
+denied or lost. Polling stops on release/cancel and is disposed on shutdown.
 
 **The title had a ghost beside it down a side edge.** Each line is drawn twice,
 a dark copy a pixel below for the shadow and then the real one, and the shadow
@@ -183,10 +205,12 @@ the notch with it held did nothing, and moving the cursor over an open panel
 collapsed it, so the panel came and went mid-animation. It applied to every
 edge, the top included.
 
-The gesture now needs the press. `DockGesture.SuppressesHover` takes only a
-move already under way, and the cursor is all the modifier changes by itself.
-Shrinking an open panel belongs to `BeginDockPickUp`, where a press has
-actually landed.
+The current interaction deliberately uses Ctrl as a ready-to-move state:
+holding it collapses the panel once and suppresses hover expansion; release
+restores hover. It reads the physical key state on the non-activating overlay,
+without a global keyboard hook. A pointer press plus movement is still required
+to move or save the dock. The key monitor runs only while expanded, armed or
+hovered, and text-editing shortcuts remain available.
 
 **The notch could stop opening on hover after a drag.** `IsDockPickUpArmed`
 asked WPF whether Ctrl was down, and a window with `WS_EX_NOACTIVATE` can miss

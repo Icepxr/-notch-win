@@ -34,12 +34,14 @@ public static class NotchDock
     public static bool IsVertical(NotchEdge edge) => edge is NotchEdge.Left or NotchEdge.Right;
 
     /// <summary>
-    /// A column this many pills deep: enough for a cover with its title and
-    /// transport beneath it, while still reading as a column rather than a
-    /// second window. A side edge is somewhere a panel sits beside what you are
-    /// working on, so it is kept narrower than the notch's own width.
+    /// The column grows with the configured pill between readable bounds.
+    /// A tiny compact badge must not squeeze expanded controls into its width.
     /// </summary>
-    public const double ColumnDepthInPills = 1.25;
+    public const double ColumnDepthInPills = .92;
+    // The compact badge may be tiny; a page still needs room for labels and
+    // controls. Cap the reading width on large displays and fit small ones.
+    public const double MinimumColumnDepth = 300;
+    public const double MaximumColumnDepth = 420;
 
     /// <summary>
     /// The cover's share of the column it sits in. Short of the full width, so
@@ -51,10 +53,8 @@ public static class NotchDock
     public const double CoverShareOfColumn = .72;
 
     /// <summary>
-    /// How deep a side-docked page reaches into the desktop, measured in the
-    /// collapsed pill's own length. That length is the one size the user sets,
-    /// so a page scales with the notch they chose rather than with a number
-    /// chosen here; the display bounds it at a third of its width.
+    /// Side page depth in DIPs: scale with the pill, keep a readable 300–420
+    /// range, and give back space on displays narrower than that range permits.
     /// </summary>
     /// <param name="pillLength">the collapsed shell along its edge</param>
     /// <remarks>
@@ -64,8 +64,8 @@ public static class NotchDock
     /// </remarks>
     public static double Depth(double pillLength, Rect screen)
     {
-        double bound = Math.Max(pillLength, screen.Width / 3);
-        return Math.Min(pillLength * ColumnDepthInPills, bound);
+        double wanted = Math.Clamp(pillLength * ColumnDepthInPills, MinimumColumnDepth, MaximumColumnDepth);
+        return Math.Max(1, Math.Min(wanted, screen.Width / 3));
     }
 
     /// <summary>
@@ -91,7 +91,7 @@ public static class NotchDock
     /// fills whatever it is given would otherwise take the whole edge, which
     /// makes a panel beside your work into a second screen.
     /// </summary>
-    public const double MaximumLengthShare = .66;
+    public const double MaximumLengthShare = .5;
 
     public static double LongestLength(Rect screen)
         => Math.Min(screen.Height - AwayFromEdgePadding, screen.Height * MaximumLengthShare);
@@ -110,6 +110,30 @@ public static class NotchDock
     /// The shell's own size once docked. A side edge turns the pill on its end,
     /// so the configured width becomes its height.
     /// </summary>
+    /// <summary>
+    /// The artwork's share of the badge, leaving the ring its annulus. Under a
+    /// half would leave the artwork too small to recognise a cover by; much
+    /// over and the ring has no room to move in.
+    /// </summary>
+    public const double BadgeArtworkShare = .54;
+
+    /// <summary>
+    /// The collapsed shell. Across the top it is the pill the user configured,
+    /// which is long because it stands in for a notch cut out of the screen.
+    /// Down a side there is nothing to be that long for - the row it carried
+    /// becomes a badge - so it is as across as the pill is thick and only half
+    /// again as long, with its ends fully rounded.
+    /// </summary>
+    public static Size CollapsedSize(NotchEdge edge, double width, double height)
+        => IsVertical(edge) ? new Size(height, height * BadgeLengthInBreadths) : new Size(width, height);
+
+    /// <summary>
+    /// How much longer than it is thick the badge stands. Enough to read as a
+    /// pill hanging off the edge rather than a dot, and short enough that it
+    /// is still the artwork and its ring you see rather than empty capsule.
+    /// </summary>
+    public const double BadgeLengthInBreadths = 1.5;
+
     public static Size Rotate(NotchEdge edge, double width, double height)
         => IsVertical(edge) ? new Size(height, width) : new Size(width, height);
 

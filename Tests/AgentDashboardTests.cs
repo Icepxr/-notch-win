@@ -44,6 +44,16 @@ public sealed class AgentDashboardTests
         view.Present(sample);
         Assert.Equal(Visibility.Collapsed, Part<StackPanel>(view, "UsageDetails").Visibility);
         Assert.Equal("More detail", Part<Button>(view, "DetailsButton").Content);
+        Assert.Empty(Part<ItemsControl>(view, "Breakdowns").Items);
+        // Reopening must materialize the newest local snapshot immediately,
+        // even though no chart objects were built while details were hidden.
+        Part<Button>(view, "Week").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        view.Present(Sample(DateTimeOffset.Now.AddMinutes(1)));
+        Assert.Empty(Part<ItemsControl>(view, "Breakdowns").Items);
+        Part<Button>(view, "DetailsButton").RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+        Assert.Equal(2, Part<ItemsControl>(view, "Breakdowns").Items.Count);
+        object detail = Part<ItemsControl>(view, "Breakdowns").Items[0];
+        Assert.Equal(7, detail.GetType().GetProperty("BucketCount")!.GetValue(detail));
         return Task.CompletedTask;
     });
     [Theory]
@@ -90,4 +100,50 @@ public sealed class AgentDashboardTests
         }
         return Task.CompletedTask;
     });
+
+    [Theory]
+    [InlineData(244, 420)]
+    [InlineData(218, 340)]
+    public void SideDockCardsAndFiltersFitAndCanReturnToTop(double width, double height) => SharedStaTestRunner.RunAsync(() =>
+    {
+        using var view = new AgentDashboard();
+        view.SetColumnLayout(true);
+        view.Present(Sample(DateTimeOffset.Now));
+        view.Measure(new Size(width, height)); view.Arrange(new Rect(0, 0, width, height)); view.UpdateLayout();
+        foreach (string name in new[] { "DetailsButton", "RefreshLimits", "Today", "Week", "Month", "AgentScroll" })
+        {
+            var element = Part<FrameworkElement>(view, name);
+            var bounds = element.TransformToAncestor(view).TransformBounds(new Rect(element.RenderSize));
+            Assert.True(bounds.Left >= -.5 && bounds.Right <= width + .5, name + " must remain accessible in the side column");
+        }
+        var scroll = Part<ScrollViewer>(view, "AgentScroll");
+        Assert.True(scroll.ViewportHeight > 60, "The header must leave a useful scrolling viewport");
+        Assert.True(scroll.ScrollableWidth < 1);
+        scroll.ScrollToBottom(); view.UpdateLayout();
+        Assert.True(scroll.VerticalOffset > 0);
+        scroll.ScrollToTop(); view.UpdateLayout();
+        string folder = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../.test-output"));
+        Directory.CreateDirectory(folder);
+        var image = new RenderTargetBitmap((int)width, (int)height, 96, 96, PixelFormats.Pbgra32);
+        image.Render(view);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
+        using (var output = File.Create(Path.Combine(folder, $"agent-side-{width}.png"))) encoder.Save(output);
+        view.SetColumnLayout(false);
+        view.Measure(new Size(622, 496)); view.Arrange(new Rect(0, 0, 622, 496)); view.UpdateLayout();
+        Assert.False(view.IsColumnLayout);
+        Assert.Equal(Orientation.Horizontal, Part<StackPanel>(view, "AgentTitleActions").Orientation);
+        Assert.Equal(2, ((UniformGrid)FindPanel(Part<ItemsControl>(view, "Providers"))).Columns);
+        return Task.CompletedTask;
+    });
+
+    private static Panel FindPanel(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is UniformGrid grid) return grid;
+            try { return FindPanel(child); } catch (InvalidOperationException) { }
+        }
+        throw new InvalidOperationException("Items panel missing");
+    }
 }

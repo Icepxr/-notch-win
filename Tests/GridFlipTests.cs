@@ -148,9 +148,10 @@ public class VerticalMetricsTests
     private const double DefaultPill = 230;
 
     [Fact]
-    public void TheColumnIsMeasuredInThePillTheUserChose()
+    public void ASmallPillStillOpensAReadableColumn()
     {
-        Assert.Equal(DefaultPill * NotchDock.ColumnDepthInPills, NotchDock.Depth(DefaultPill, Display));
+        Assert.Equal(NotchDock.MinimumColumnDepth, NotchDock.Depth(DefaultPill, Display));
+        Assert.Equal(NotchDock.MinimumColumnDepth, NotchDock.Depth(160, Display));
     }
 
     [Fact]
@@ -158,24 +159,45 @@ public class VerticalMetricsTests
     {
         // Nothing here is fixed to one notch size: double the pill, double the
         // column, so changing the setting changes the pages with it.
-        Assert.Equal(2 * NotchDock.Depth(200, Display), NotchDock.Depth(400, Display), 3);
+        Assert.True(NotchDock.Depth(400, Display) > NotchDock.Depth(200, Display));
+        Assert.Equal(400 * NotchDock.ColumnDepthInPills, NotchDock.Depth(400, Display), 3);
     }
 
     [Fact]
     public void ThePageNeverTakesOverMoreThanAThirdOfTheDisplay()
     {
-        // 750/3 = 250, short of the 287.5 the pill would otherwise ask for.
-        var narrow = new Rect(0, 0, 750, 800);
+        // 600/3 = 200, short of the 211.6 the share would otherwise ask for.
+        var narrow = new Rect(0, 0, 600, 800);
 
-        Assert.Equal(250, NotchDock.Depth(DefaultPill, narrow));
+        Assert.Equal(200, NotchDock.Depth(DefaultPill, narrow));
     }
 
     [Fact]
-    public void TheColumnIsNarrowerThanTheNotchIsWide()
+    public void ALargePillDoesNotOpenAnOversizedPanel()
     {
-        // A panel beside what you are working on, not a second window.
-        Assert.True(NotchDock.Depth(DefaultPill, Display) < DefaultPill * 1.5,
-            "the column has grown as wide as the notch it came from");
+        // A panel beside what you are working on, not a second window. The
+        // share is under one, so this holds at every notch size.
+        Assert.Equal(NotchDock.MaximumColumnDepth, NotchDock.Depth(800, Display));
+    }
+
+    [Fact]
+    public void ASideEdgeCollapsesToARoundBadgeNotALongPill()
+    {
+        // The top pill is long because it stands in for a notch cut out of the
+        // screen. Down a side there is nothing to be long for, and 240 of
+        // capsule holding 40 of content is mostly empty.
+        Assert.Equal(new Size(40, 60), NotchDock.CollapsedSize(NotchEdge.Left, 240, 40));
+        Assert.Equal(new Size(40, 60), NotchDock.CollapsedSize(NotchEdge.Right, 240, 40));
+        Assert.Equal(new Size(34, 51), NotchDock.CollapsedSize(NotchEdge.Left, 230, 34));
+
+        // Far shorter than the capsule it replaces, and the ends stay round.
+        Assert.True(NotchDock.CollapsedSize(NotchEdge.Left, 240, 40).Height < 240 / 3.0);
+    }
+
+    [Fact]
+    public void TheBadgeLeavesTheRingRoomAroundTheArtwork()
+    {
+        Assert.InRange(NotchDock.BadgeArtworkShare, .5, .7);
     }
 
     [Fact]
@@ -185,18 +207,20 @@ public class VerticalMetricsTests
     }
 
     [Fact]
-    public void APillWiderThanAThirdOfTheDisplayStillFitsItsOwnColumn()
+    public void TheColumnFollowsTheNotchSizeInProportion()
     {
-        var narrow = new Rect(0, 0, 600, 800);
-
-        Assert.Equal(DefaultPill, NotchDock.Depth(DefaultPill, narrow));
+        // Nothing here is fixed to one notch size: the column is a share of
+        // whatever the user set, so the pages scale with their notch.
+        Assert.InRange(NotchDock.Depth(DefaultPill, Display), 300, 420);
+        Assert.InRange(NotchDock.Depth(320, Display), 300, 420);
     }
 
     [Fact]
     public void APageNeedsDownTheScreenWhatItNeededAcrossIt()
     {
+        // Anything inside the cap is handed back as asked for.
         Assert.Equal(480, NotchDock.Length(480, DefaultPill, Display));
-        Assert.Equal(600, NotchDock.Length(600, DefaultPill, Display));
+        Assert.Equal(520, NotchDock.Length(520, DefaultPill, Display));
     }
 
     [Fact]
@@ -208,9 +232,9 @@ public class VerticalMetricsTests
     [Fact]
     public void APageNeverRunsTheWholeEdge()
     {
-        // A panel beside your work, not a second screen.
-        Assert.True(NotchDock.LongestLength(Display) < Display.Height * .75,
-            "a page may take three quarters of the display down its edge");
+        // A widget beside your work, not a second screen: half the display.
+        Assert.True(NotchDock.LongestLength(Display) <= Display.Height * .5,
+            "a page may take more than half the display down its edge");
     }
 
     [Fact]

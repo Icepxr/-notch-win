@@ -12,6 +12,64 @@ namespace VNotch.Controls;
 
 public partial class CountdownView : UserControl, IDisposable
 {
+    /// <summary>
+    /// The top keeps its transport row. Side docks put the same editable time
+    /// inside a dial with the controls below, without creating a second clock.
+    /// </summary>
+    public void SetCompact(bool compact)
+    {
+        if (CountdownDisplayPanel == null) return;
+
+        _authoredDisplayMinWidth ??= CountdownDisplayPanel.MinWidth;
+        _authoredDisplayMargin ??= CountdownDisplayPanel.Margin;
+
+        CountdownDisplayPanel.MinWidth = compact ? 0 : _authoredDisplayMinWidth.Value;
+        CountdownDisplayPanel.Margin = compact
+            ? new Thickness(0)
+            : _authoredDisplayMargin.Value;
+        _compact = compact;
+        CancelEditing();
+        _displayBackground ??= CountdownDisplayPanel.Background;
+        _displayBorder ??= CountdownDisplayPanel.BorderBrush;
+        var parent = (Panel)CountdownDisplayPanel.Parent;
+        var target = compact ? RingHost : TransportGrid;
+        if (parent != target)
+        {
+            parent.Children.Remove(CountdownDisplayPanel);
+            target.Children.Add(CountdownDisplayPanel);
+        }
+        Grid.SetColumn(CountdownDisplayPanel, compact ? 0 : 2);
+        CountdownDisplayPanel.Width = compact ? 144 : double.NaN;
+        CountdownDisplayPanel.Height = compact ? 58 : 46;
+        CountdownDisplayPanel.VerticalAlignment = VerticalAlignment.Center;
+        CountdownDisplayPanel.HorizontalAlignment = compact ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+        CountdownDisplayPanel.Background = compact ? Brushes.Transparent : _displayBackground;
+        CountdownDisplayPanel.BorderBrush = compact ? Brushes.Transparent : _displayBorder;
+        CountdownDisplay.FontSize = compact ? 36 : 28;
+        CountdownDisplay.Margin = compact ? new Thickness(0) : new Thickness(0, 0, 0, 5);
+        CountdownProgressTrack.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        TransportGrid.ColumnDefinitions[2].Width = compact ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        TransportGrid.HorizontalAlignment = compact ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+        SideTimerHeading.Visibility = RingHost.Visibility = compact ? Visibility.Visible : Visibility.Collapsed;
+        ModeSelector.Visibility = Visibility.Visible;
+        ModeSelector.Width = compact ? double.NaN : 210;
+        ModeSelector.HorizontalAlignment = compact ? HorizontalAlignment.Stretch : HorizontalAlignment.Left;
+        ModeSelector.Margin = compact ? new Thickness(0, 0, 0, 10) : new Thickness(0, 0, 0, 8);
+        TimerModeButton.Padding = FocusModeButton.Padding = new Thickness(8, compact ? 8 : 5, 8, compact ? 8 : 5);
+        UpdateFocusPresentation();
+        if (_presenter != null) SetCountdownStartVisual(_controller?.IsRunning == true);
+    }
+
+    private bool _compact;
+    private Brush? _displayBackground, _displayBorder;
+    private PomodoroController? _pomodoro;
+    internal PomodoroController Pomodoro => _pomodoro!;
+    // The top's existing clock/calendar leave room for the small mode switch.
+    // Only the focus-session footer needs extra height.
+    public double ExtraTopHeight => _pomodoro?.IsEnabled == true ? 46 : 0;
+    private double? _authoredDisplayMinWidth;
+    private Thickness? _authoredDisplayMargin;
+
     private VNotch.ViewModels.TimerViewModel _viewModel = null!;
     private CountdownController? _controller;
     private CountdownPresenter? _presenter;
@@ -20,11 +78,13 @@ public partial class CountdownView : UserControl, IDisposable
     private CountdownPresenter CountdownPresenter => _presenter!;
     public CountdownController Controller => _controller ?? throw new InvalidOperationException("Attach a TimerViewModel before using the countdown.");
     public event EventHandler? Completed;
+    public event EventHandler? PreferredSizeChanged;
     public event Action<bool>? KeyboardInputRequested;
 
     public CountdownView()
     {
         InitializeComponent();
+        SetCompact(false);
         IsVisibleChanged += (_, _) =>
         {
             if (!IsVisible)
@@ -50,8 +110,18 @@ public partial class CountdownView : UserControl, IDisposable
             if (Dispatcher.CheckAccess()) action();
             else if (!Dispatcher.HasShutdownStarted) Dispatcher.BeginInvoke(action);
         });
+        _pomodoro = new PomodoroController(_controller);
+        _pomodoro.Changed += (_, _) =>
+        {
+            CancelEditing();
+            SetCountdownStartVisual(_controller.IsRunning);
+            UpdateFocusPresentation();
+            SetCountdownProgress(false);
+            PreferredSizeChanged?.Invoke(this, EventArgs.Empty);
+        };
         _controller.Completed += (_, _) =>
         {
+            if (_pomodoro.IsEnabled) return;
             SetCountdownStartVisual(false);
             Completed?.Invoke(this, EventArgs.Empty);
         };
@@ -69,6 +139,7 @@ public partial class CountdownView : UserControl, IDisposable
             PlusHighlight = CountdownPlusHighlight,
             MinusHighlight = CountdownMinusHighlight
         }, Dispatcher);
+        UpdateFocusPresentation();
     }
 
     public void RefreshProgress() => SetCountdownProgress(false);
@@ -92,9 +163,11 @@ public partial class CountdownView : UserControl, IDisposable
         if (_disposed) return;
         _disposed = true;
         CancelEditing();
+        _pomodoro?.Dispose();
         _controller?.Dispose();
         _presenter?.Dispose();
         Completed = null;
+        PreferredSizeChanged = null;
         KeyboardInputRequested = null;
     }
 
@@ -108,6 +181,52 @@ public partial class CountdownView : UserControl, IDisposable
     public void SetCountdownStartVisual(bool running)
     {
         CountdownPresenter.SetStartVisual(running);
+        if (_compact)
+        {
+            bool resting = _pomodoro?.IsEnabled == true && _pomodoro.Phase != PomodoroPhase.Focus;
+            CountdownStartBtn.Background = new SolidColorBrush(running ? Color.FromRgb(57, 57, 57)
+                : resting ? Color.FromRgb(108, 218, 177) : Color.FromRgb(255, 173, 102));
+            CountdownStartIcon.Fill = running ? Brushes.White : Brushes.Black;
+        }
+        else CountdownStartIcon.Fill = UiPalette.IconBrush;
+        if (_pomodoro?.IsEnabled == true) CountdownStepperCapsule.IsHitTestVisible = false;
+    }
+
+    private void TimerMode_Click(object sender, MouseButtonEventArgs e) { e.Handled = true; _pomodoro?.SetEnabled(false); }
+    private void FocusMode_Click(object sender, MouseButtonEventArgs e) { e.Handled = true; _pomodoro?.SetEnabled(true); }
+    private void SkipPhase_Click(object sender, MouseButtonEventArgs e) { e.Handled = true; _pomodoro?.Skip(); }
+    private void TimerMode_MenuClick(object sender, RoutedEventArgs e) { e.Handled = true; _pomodoro?.SetEnabled(false); }
+    private void FocusMode_MenuClick(object sender, RoutedEventArgs e) { e.Handled = true; _pomodoro?.SetEnabled(true); }
+    private void SkipPhase_MenuClick(object sender, RoutedEventArgs e) { e.Handled = true; _pomodoro?.Skip(); }
+
+    private void UpdateFocusPresentation()
+    {
+        bool focus = _pomodoro?.IsEnabled == true;
+        bool resting = focus && _pomodoro!.Phase != PomodoroPhase.Focus;
+        var accent = new SolidColorBrush(resting ? Color.FromRgb(108, 218, 177) : Color.FromRgb(255, 173, 102));
+        accent.Freeze();
+        ProgressRing.Accent = accent;
+        PhaseLabel.Foreground = accent;
+        PhaseLabel.Text = !focus ? "COUNTDOWN" : _pomodoro!.Phase switch
+        {
+            PomodoroPhase.ShortBreak => "SHORT REST", PomodoroPhase.LongBreak => "LONG REST", _ => "FOCUS"
+        };
+        PhaseHint.Text = focus ? "25 focus · 5 rest · 15 long rest" : "Click time to edit";
+        PhaseHint.FontSize = focus ? 9 : 10;
+        RoundLabel.Text = $"SESSION {(_pomodoro?.Phase == PomodoroPhase.Focus ? _pomodoro.Round : Math.Max(1, _pomodoro?.CompletedSessions % 4 ?? 0))} / 4";
+        if (focus && _pomodoro!.Phase == PomodoroPhase.LongBreak) RoundLabel.Text = "4 SESSIONS COMPLETE";
+        NextPhaseLabel.Text = resting ? "Next · 25 min focus" : _pomodoro?.Round == 4 ? "Next · 15 min rest" : "Next · 5 min rest";
+        FocusFooter.Visibility = focus ? Visibility.Visible : Visibility.Collapsed;
+        if (focus && _pomodoro!.Phase != PomodoroPhase.LongBreak)
+            RoundLabel.Text = PhaseLabel.Text + " · " + RoundLabel.Text;
+        TimerModeButton.Background = focus ? Brushes.Transparent : new SolidColorBrush(Color.FromArgb(34, 255, 255, 255));
+        FocusModeButton.Background = focus ? new SolidColorBrush(Color.FromArgb(38, 255, 173, 102)) : Brushes.Transparent;
+        CountdownStepperCapsule.Visibility = _compact && focus ? Visibility.Collapsed : Visibility.Visible;
+        SkipPhaseMenu.IsEnabled = focus;
+        TimerModeMenu.IsChecked = !focus;
+        FocusModeMenu.IsChecked = focus;
+        CountdownDisplayPanel.ToolTip = focus ? $"Pomodoro · {PhaseLabel.Text}" : "Click to type a custom time — 12:30, 90, or 1h 20m";
+        TimerControlBar.ToolTip = focus ? $"Pomodoro · {PhaseLabel.Text}. Reset restarts this phase." : "Countdown timer";
     }
 
 
@@ -204,7 +323,7 @@ public partial class CountdownView : UserControl, IDisposable
     private void CountdownMinus_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        if (_isCountdownRunning) return;
+        if (_isCountdownRunning || _pomodoro?.IsEnabled == true) return;
         if (_isEditingTimer) CommitTimerEditing(allowRetry: false);
 
         FlashStepHighlight(CountdownMinusHighlight);
@@ -215,7 +334,7 @@ public partial class CountdownView : UserControl, IDisposable
     private void CountdownPlus_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        if (_isCountdownRunning) return;
+        if (_isCountdownRunning || _pomodoro?.IsEnabled == true) return;
         if (_isEditingTimer) CommitTimerEditing(allowRetry: false);
 
         FlashStepHighlight(CountdownPlusHighlight);
@@ -275,7 +394,7 @@ public partial class CountdownView : UserControl, IDisposable
         if (_isCountdownRunning)
         {
             CountdownController.Pause();
-            SetCountdownStartVisual(false);
+            SetCountdownStartVisual(CountdownController.IsRunning);
             UpdateTimerDisplay();
         }
         else
@@ -290,7 +409,8 @@ public partial class CountdownView : UserControl, IDisposable
         e.Handled = true;
         PlayTimerButtonPress(CountdownResetBtn);
         if (_isEditingTimer) CancelTimerEditing();
-        CountdownController.Reset();
+        if (_pomodoro?.IsEnabled == true) _pomodoro.ResetPhase();
+        else CountdownController.Reset();
         SetCountdownStartVisual(false);
         SetCountdownProgress(animate: true);
         AnimateCountdownDigitBump(1.2);
@@ -325,6 +445,7 @@ public partial class CountdownView : UserControl, IDisposable
             return;
 
         double progress = Math.Clamp(_viewModel.Progress, 0, 1);
+        ProgressRing.RemainingShare = 1 - progress;
         double edgeOpacity = ComputeCountdownEdgeOpacity(progress);
 
         if (animate)
@@ -358,6 +479,7 @@ public partial class CountdownView : UserControl, IDisposable
     private void CountdownDisplayPanel_Click(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        if (_pomodoro?.IsEnabled == true) return;
         if (_isEditingTimer) return;
 
         if (_isCountdownRunning)

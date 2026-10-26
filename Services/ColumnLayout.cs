@@ -55,7 +55,10 @@ public static class ColumnLayout
         return new Layout(
             Orientation.Vertical,
             ScrollBarVisibility.Disabled,
-            ScrollBarVisibility.Hidden,
+            // A column holds a handful of cards at a time, so the rest have to
+            // be reachable - and a bar you can see and drag is the way to say
+            // there are more.
+            ScrollBarVisibility.Auto,
             room > 0 ? room : authoredCardWidth,
             new Thickness(0, authoredGap, 0, authoredGap),
             // A band of a fixed height has to lengthen to clear the navigation;

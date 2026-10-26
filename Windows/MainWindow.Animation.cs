@@ -24,6 +24,43 @@ public partial class MainWindow
 
     private double ExpandedContentRestY => _settings.EnableDynamicIslandMode ? 8.5 : 4;
 
+    private void AnchorRevealSurface(FrameworkElement content)
+    {
+        // Follow the shell's fixed screen anchor, never its moving outer edge.
+        content.HorizontalAlignment = DockEdge switch
+        {
+            VNotch.Models.NotchEdge.Left => HorizontalAlignment.Left,
+            VNotch.Models.NotchEdge.Right => HorizontalAlignment.Right,
+            _ => HorizontalAlignment.Center
+        };
+        content.VerticalAlignment = IsDockVertical ? VerticalAlignment.Center : VerticalAlignment.Top;
+    }
+
+    private void PrepareCompactMediaRevealLayout()
+    {
+        var margin = MusicCompactContent.Margin;
+        MusicCompactContent.Width = Math.Max(0, _collapsedWidth - margin.Left - margin.Right);
+        // Preserve the badge's natural height, including its visualiser ring.
+        if (double.IsNaN(MusicCompactContent.Height))
+            MusicCompactContent.Height = MusicCompactContent.ActualHeight > 0
+                ? MusicCompactContent.ActualHeight : Math.Max(0, _collapsedHeight - margin.Top - margin.Bottom);
+        AnchorRevealSurface(MusicCompactContent);
+    }
+
+    private void ReleaseCompactMediaRevealLayout()
+    {
+        MusicCompactContent.Width = double.NaN;
+        MusicCompactContent.Height = double.NaN;
+        MusicCompactContent.HorizontalAlignment = IsDockVertical ? HorizontalAlignment.Center : HorizontalAlignment.Stretch;
+        MusicCompactContent.VerticalAlignment = IsDockVertical ? VerticalAlignment.Center : VerticalAlignment.Top;
+    }
+
+    private static void FreezeRevealOpacity(FrameworkElement content)
+    {
+        double opacity = content.Visibility == Visibility.Visible ? content.Opacity : 0;
+        content.BeginAnimation(OpacityProperty, null);
+        content.Opacity = opacity;
+    }
 
     private void RestoreExpandedContentRestLayout()
     {
@@ -31,8 +68,7 @@ public partial class MainWindow
 
         ExpandedContent.BeginAnimation(WidthProperty, null);
         ExpandedContent.BeginAnimation(HeightProperty, null);
-        ExpandedContent.HorizontalAlignment = HorizontalAlignment.Center;
-        ExpandedContent.VerticalAlignment = VerticalAlignment.Top;
+        AnchorRevealSurface(ExpandedContent);
         ExpandedContent.UseLayoutRounding = false;
         ExpandedContent.Width = _expandedWidth - ExpandedContentHorizontalInset;
         ExpandedContent.Height = _expandedHeight - ExpandedContentVerticalInset;
@@ -57,12 +93,11 @@ public partial class MainWindow
     {
         var animation = new DoubleAnimationUsingKeyFrames
         {
-            Duration = _dur600,
+            Duration = NotchRevealMotion.Open,
             FillBehavior = FillBehavior.HoldEnd
         };
         animation.KeyFrames.Add(new LinearDoubleKeyFrame(from, KeyTime.FromTimeSpan(TimeSpan.Zero)));
-        animation.KeyFrames.Add(new EasingDoubleKeyFrame(to, KeyTime.FromTimeSpan(_dur500.TimeSpan), easing));
-        animation.KeyFrames.Add(new DiscreteDoubleKeyFrame(to, KeyTime.FromTimeSpan(_dur600.TimeSpan)));
+        animation.KeyFrames.Add(new EasingDoubleKeyFrame(to, KeyTime.FromTimeSpan(NotchRevealMotion.Open.TimeSpan), easing));
         Timeline.SetDesiredFrameRate(animation, fps);
         return animation;
     }
@@ -425,9 +460,10 @@ public partial class MainWindow
 
     private void SetupExpandedContentBeforeAnimation()
     {
+        double liveOpacity = ExpandedContent.Visibility == Visibility.Visible ? ExpandedContent.Opacity : 0;
         ExpandedContent.BeginAnimation(OpacityProperty, null);
-        CollapsedContent.BeginAnimation(OpacityProperty, null);
-        MusicCompactContent.BeginAnimation(OpacityProperty, null);
+        FreezeRevealOpacity(CollapsedContent);
+        FreezeRevealOpacity(MusicCompactContent);
         SecondaryContent.BeginAnimation(OpacityProperty, null);
         ResetAnimationThumbnailOverlay();
         MediaBackground.BeginAnimation(OpacityProperty, null);
@@ -443,8 +479,13 @@ public partial class MainWindow
         SecondaryContent.Visibility = Visibility.Collapsed;
         TimerContent.Visibility = Visibility.Collapsed;
 
-        ExpandedContent.Opacity = 0;
+        ExpandedContent.Opacity = liveOpacity;
         ExpandedContent.Visibility = Visibility.Visible;
+        AnchorRevealSurface(ExpandedContent);
+        ExpandedContent.RenderTransform = new TranslateTransform(0, ExpandedContentRestY);
+        ThumbnailBorder.BeginAnimation(OpacityProperty, null);
+        ThumbnailBorder.Opacity = 1;
+        RestoreExpandedContentOpacity();
 
         if (LyricsBlurBackground != null)
         {
@@ -992,13 +1033,7 @@ public partial class MainWindow
 
         DismissStateBeforeExpand();
 
-        (double X, double Y) compactThumbnailRestOffset = (0, 0);
-        bool morphMediaArtwork = effectiveTarget == VNotch.Models.NotchView.Media &&
-            fromView == VNotch.Models.NotchView.Compact && !AnimationConfig.ReduceMotion;
-        if (morphMediaArtwork && _isMusicCompactMode && CompactThumbnail.Source != null && !suppressCompactThumbnailMotion)
-        {
-            compactThumbnailRestOffset = MeasureCompactThumbnailRestOffset();
-        }
+        PrepareCompactMediaRevealLayout();
 
         EnsureTopmost();
 
@@ -1083,18 +1118,13 @@ public partial class MainWindow
         NotchBorder.IsHitTestVisible = false;
         int animFps = VNotch.Services.AnimationConfig.TargetFps;
 
-        var fadeOutAnim = MakeAnim(0, _dur200, _easeQuadOut);
+        var fadeOutAnim = MakeAnim(0, AnimationConfig.ReduceMotion ? new Duration(TimeSpan.Zero) : NotchRevealMotion.Exit, NotchRevealMotion.Ease);
         var fadeInAnim = MakeAnim(0d, 1d, _dur400, _easePowerOut3);
         var glowAnim = MakeAnim(0.15, _dur200);
 
-        if (morphMediaArtwork && _isMusicCompactMode && CompactThumbnail.Source != null && !suppressCompactThumbnailMotion)
-        {
-            AnimateThumbnailExpandOverlay(compactThumbnailRestOffset);
-        }
-
         var motion = new VNotch.Models.TransitionMotionConfig(
-            Duration: _dur500,
-            Easing: _easeAppleOut,
+            Duration: NotchRevealMotion.Open,
+            Easing: NotchRevealMotion.Ease,
             TargetFps: animFps,
             ReduceMotion: AnimationConfig.ReduceMotion
         );
@@ -1102,6 +1132,7 @@ public partial class MainWindow
         // Each view above asked for the size it was authored at. One place here
         // turns that into the size for the edge the notch is actually on, so a
         // view never has to know which edge it is being shown from.
+        VNotch.Services.RuntimeLog.Log("DOCK", $"SIZE view={effectiveTarget} vertical={IsDockVertical} asked={targetWidth:F0}x{targetHeight:F0}");
         if (IsDockVertical)
         {
             var docked = DockedViewSize(effectiveTarget, targetWidth, targetHeight);
@@ -1110,6 +1141,12 @@ public partial class MainWindow
             ResizeDockedContent(effectiveTarget, docked);
             ExpandedContent.Width = docked.Width - ExpandedContentHorizontalInset;
             ExpandedContent.Height = docked.Height - ExpandedContentVerticalInset;
+        }
+
+        foreach (var content in new FrameworkElement[] { ExpandedContent, SecondaryContent, CameraContent, TimerContent, AudioContent, AgentContent })
+        {
+            if (double.IsFinite(content.Width) && double.IsFinite(content.Height))
+                AnchorRevealSurface(content);
         }
 
         var plan = new VNotch.Models.TransitionPlan(
@@ -1135,14 +1172,14 @@ public partial class MainWindow
         }
         else
         {
-            var widthAnim = MakeExpandGeometryAnimation(currentWidth, targetWidth, _easeAppleOut, animFps);
-            var heightAnim = MakeExpandGeometryAnimation(currentHeight, targetHeight, _easeAppleOut, animFps);
+            var widthAnim = MakeExpandGeometryAnimation(currentWidth, targetWidth, NotchRevealMotion.Ease, animFps);
+            var heightAnim = MakeExpandGeometryAnimation(currentHeight, targetHeight, NotchRevealMotion.Ease, animFps);
             heightAnim.Completed += (s, e) => OnExpandCompleted(generation, suppressCompactThumbnailMotion, effectiveTarget);
             NotchBorder.BeginAnimation(WidthProperty, widthAnim);
             NotchBorder.BeginAnimation(HeightProperty, heightAnim);
             NotchBorder.Width = targetWidth;
             NotchBorder.Height = targetHeight;
-            AnimateCornerRadius(_cornerRadiusExpanded, TimeSpan.FromMilliseconds(400));
+            AnimateCornerRadius(_cornerRadiusExpanded, NotchRevealMotion.Open.TimeSpan);
         }
 
         CollapsedContent.BeginAnimation(OpacityProperty, fadeOutAnim);
@@ -1204,16 +1241,9 @@ public partial class MainWindow
 
         if (effectiveTarget == VNotch.Models.NotchView.Media)
         {
-            double contentTargetY = ExpandedContentRestY;
-            var expandedGroup = new TransformGroup();
-            var expandedTranslate = new TranslateTransform(0, contentTargetY);
-            expandedGroup.Children.Add(expandedTranslate);
-            ExpandedContent.RenderTransform = expandedGroup;
-            ExpandedContent.RenderTransformOrigin = new Point(0.5, 0.4);
-            var springSlide = MakeAnim(10, contentTargetY, _dur400, _easeExpOut6);
-
+            // The shell reveals a stationary destination, without a second slide
+            // or a spring-scaled copy of the cover fighting its geometry.
             ExpandedContentBlur.Radius = 0;
-            expandedTranslate.BeginAnimation(TranslateTransform.YProperty, springSlide);
         }
 
         HoverGlow.BeginAnimation(OpacityProperty, glowAnim);
@@ -1530,6 +1560,7 @@ public partial class MainWindow
 
         FinalizeCompactModeAfterCollapse(contentToShow, suppressCompactThumbnailMotion);
         FinalizeCompactThumbnailAndVisualizerAfterCollapse(suppressCompactThumbnailMotion);
+        ReleaseCompactMediaRevealLayout();
 
         if (_settings.StayBehindWindows && _isDesktopEdgePromoted && !IsDesktopNotchInteractionActive())
         {
@@ -1622,14 +1653,18 @@ public partial class MainWindow
 
     private void ResetContentBlurAndOverlaysBeforeCollapse()
     {
+        double liveOpacity = ExpandedContent.Visibility == Visibility.Visible ? ExpandedContent.Opacity : 0;
         ExpandedContent.BeginAnimation(OpacityProperty, null);
-        MusicCompactContent.BeginAnimation(OpacityProperty, null);
+        ExpandedContent.Opacity = liveOpacity;
+        FreezeRevealOpacity(MusicCompactContent);
         ResetCalendarScroll();
         ResetCalendarHoverFocusVisualState();
-        CollapsedContent.BeginAnimation(OpacityProperty, null);
+        FreezeRevealOpacity(CollapsedContent);
         ResetAnimationThumbnailOverlay();
 
+        double radius = CurrentCornerRadius;
         this.BeginAnimation(CurrentCornerRadiusProperty, null);
+        CurrentCornerRadius = radius;
 
         ExpandedContentBlur.BeginAnimation(BlurEffect.RadiusProperty, null);
         CollapsedContentBlur.BeginAnimation(BlurEffect.RadiusProperty, null);
@@ -1678,15 +1713,9 @@ public partial class MainWindow
         double currentWidth = NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : _expandedWidth;
         double currentHeight = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _expandedHeight;
 
-        var expandedGroup = new TransformGroup();
-        var expandedTranslate = new TranslateTransform(0, ExpandedContentRestY);
-        expandedGroup.Children.Add(expandedTranslate);
-        ExpandedContent.RenderTransform = expandedGroup;
-        ExpandedContent.RenderTransformOrigin = new Point(0.5, 0.4);
+        PrepareCompactMediaRevealLayout();
 
-        var fadeOutAnim = MakeAnim(0, _dur200, _easeQuadOut);
-        double currentY = ExpandedContentRestY;
-        var slideOutAnim = MakeAnim(currentY, -10, _dur400, _easeExpOut6);
+        var fadeOutAnim = MakeAnim(0, NotchRevealMotion.Exit, NotchRevealMotion.Ease);
 
         fadeOutAnim.Completed += (s, e) => OnExpandedContentFadeOutCompleted(generation, wasSecondary, wasTimer);
 
@@ -1704,15 +1733,11 @@ public partial class MainWindow
         contentToHide.Visibility = Visibility.Collapsed;
         contentToHide.Opacity = 0;
 
-        bool skipContentZoom = _isMusicCompactMode;
-        var showGroup = new TransformGroup();
-        var showScale = new ScaleTransform(skipContentZoom ? 1.0 : 0.8, skipContentZoom ? 1.0 : 0.8);
-        showGroup.Children.Add(showScale);
-        contentToShow.RenderTransform = showGroup;
-        contentToShow.RenderTransformOrigin = new Point(0.5, 0.5);
-
-        var fadeInAnim = MakeAnim(1, _dur400, _easePowerOut3);
-        var springShow = MakeAnim(skipContentZoom ? 1.0 : 0.8, 1, _dur400, _easeMenuSpring);
+        contentToShow.RenderTransform = null;
+        double compactOpacity = contentToShow.Visibility == Visibility.Visible ? contentToShow.Opacity : 0;
+        contentToShow.Opacity = compactOpacity;
+        var fadeInAnim = MakeAnim(compactOpacity, 1, AnimationConfig.ReduceMotion ? new Duration(TimeSpan.Zero) : NotchRevealMotion.CompactEnter, NotchRevealMotion.Ease);
+        fadeInAnim.BeginTime = AnimationConfig.ReduceMotion || compactOpacity > 0.01 ? TimeSpan.Zero : NotchRevealMotion.CompactDelay;
 
         var glowAnim = MakeAnim(0, _dur150);
 
@@ -1723,15 +1748,9 @@ public partial class MainWindow
         MusicCompactContentBlur.Radius = 0;
 
         bool suppressCompactThumbnailMotion = IsCountdownCompletionVisualActive;
-        if (_lastExpandedViewBeforeCollapse == LastExpandedView.Primary && !AnimationConfig.ReduceMotion &&
-            _isMusicCompactMode && ThumbnailImage.Source != null && !suppressCompactThumbnailMotion)
-        {
-            AnimateThumbnailCollapseOverlay();
-        }
-
         var motion = new VNotch.Models.TransitionMotionConfig(
-            Duration: _dur500,
-            Easing: _easeExpOut6,
+            Duration: NotchRevealMotion.Close,
+            Easing: NotchRevealMotion.Ease,
             TargetFps: animFps,
             ReduceMotion: AnimationConfig.ReduceMotion
         );
@@ -1772,13 +1791,13 @@ public partial class MainWindow
             NotchBorder.Width = currentWidth;
             NotchBorder.Height = currentHeight;
 
-            var widthAnim = MakeAnim(currentWidth, _collapsedWidth, _dur500, _easeExpOut6, animFps);
-            var heightAnim = MakeAnim(currentHeight, _collapsedHeight, _dur500, _easeExpOut6, animFps);
+            var widthAnim = MakeAnim(currentWidth, _collapsedWidth, NotchRevealMotion.Close, NotchRevealMotion.Ease, animFps);
+            var heightAnim = MakeAnim(currentHeight, _collapsedHeight, NotchRevealMotion.Close, NotchRevealMotion.Ease, animFps);
             heightAnim.Completed += (s, e) => OnCollapseCompleted(generation, wasTimer, wasAudio, contentToShow, suppressCompactThumbnailMotion);
 
             NotchBorder.BeginAnimation(WidthProperty, widthAnim);
             NotchBorder.BeginAnimation(HeightProperty, heightAnim);
-            AnimateCornerRadius(_cornerRadiusCollapsed, TimeSpan.FromMilliseconds(400));
+            AnimateCornerRadius(_cornerRadiusCollapsed, NotchRevealMotion.Close.TimeSpan);
         }
 
         if (_notchContentPresenter != null)
@@ -1795,22 +1814,15 @@ public partial class MainWindow
             }
         }
 
-        // Apply after the presenter so its general fade cannot replace the exit motion.
-        AnimateAuxiliaryViewCollapse(SecondaryContent, generation);
-        AnimateAuxiliaryViewCollapse(CameraContent, generation);
-        AnimateAuxiliaryViewCollapse(TimerContent, generation);
-        AnimateAuxiliaryViewCollapse(AudioContent, generation);
-        AnimateAuxiliaryViewCollapse(AgentContent, generation);
+        // One fade owner for every page: shrinking/blurred copies make previews
+        // drift inside a shell which is already moving and clipping them.
 
-        expandedTranslate.BeginAnimation(TranslateTransform.YProperty, slideOutAnim);
         ExpandedContentBlur.Radius = 0;
 
         {
             contentToShow.Visibility = Visibility.Visible;
             contentToShow.BeginAnimation(OpacityProperty, fadeInAnim);
         }
-        showScale.BeginAnimation(ScaleTransform.ScaleXProperty, springShow);
-        showScale.BeginAnimation(ScaleTransform.ScaleYProperty, springShow);
 
         var compactBlurTarget = _isMusicCompactMode ? MusicCompactContentBlur : CollapsedContentBlur;
         compactBlurTarget.Radius = 0;

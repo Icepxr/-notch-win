@@ -11,6 +11,10 @@
  RenderOptions.BitmapScalingMode="HighQuality" RenderOptions.ClearTypeHint="Enabled"
  FontFamily="{StaticResource SFProDisplay}" FontWeight="Bold">
  <UserControl.Resources>
+  <ResourceDictionary>
+   <ResourceDictionary.MergedDictionaries>
+    <ResourceDictionary Source="/V-Notch;component/Controls/NotchScrollChrome.xaml"/>
+   </ResourceDictionary.MergedDictionaries>
   <!-- The surface supplies entrance motion; the native popup supplies dismissal. -->
   <x:Static x:Key="{x:Static SystemParameters.MenuPopupAnimationKey}" Member="primitives:PopupAnimation.None"/>
   <SolidColorBrush x:Key="TraySurfaceBase" Color="{x:Static local:ClipboardTrayTokens.SurfaceBase}"/>
@@ -532,6 +536,7 @@
     </Grid>
    </ControlTemplate></Setter.Value></Setter>
   </Style>
+  </ResourceDictionary>
  </UserControl.Resources>
 
  <Grid x:Name="SelectionSurface" Background="Transparent">

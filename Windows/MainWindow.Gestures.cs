@@ -111,7 +111,11 @@ public partial class MainWindow
 
     private async void NotchWrapper_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-
+        if (e.ChangedButton == MouseButton.Left && CanPickUpDockFrom(e.OriginalSource as DependencyObject) && BeginDockPickUp())
+        {
+            e.Handled = true;
+            return;
+        }
         if (e.ChangedButton != MouseButton.Middle) return;
         if (!_settings.EnableGestureControls) return;
         if (_isDraggingVolumeIndicator || _isDraggingNotchDebug) return;
@@ -123,7 +127,11 @@ public partial class MainWindow
 
     private void NotchWrapper_PreviewMouseUp(object sender, MouseButtonEventArgs e)
     {
-
+        if (e.ChangedButton == MouseButton.Left && EndDockDrag())
+        {
+            e.Handled = true;
+            return;
+        }
         if (e.ChangedButton == MouseButton.Middle)
         {
             e.Handled = true;

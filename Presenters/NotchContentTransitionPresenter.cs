@@ -56,7 +56,7 @@ public sealed class NotchContentTransitionPresenter : IDisposable
         // Nếu collapse: ẩn tất cả
         if (plan.TargetView == NotchView.Compact || targetElement == null)
         {
-            FadeOutAll(sessionId, version, plan.Motion.Duration, plan.Motion.Easing, plan.Motion.TargetFps, plan.Motion.ReduceMotion, () =>
+            FadeOutAll(sessionId, version, NotchRevealMotion.Exit, NotchRevealMotion.Ease, plan.Motion.TargetFps, plan.Motion.ReduceMotion, () =>
             {
                 if (IsCurrent(sessionId, version))
                 {
@@ -105,7 +105,7 @@ public sealed class NotchContentTransitionPresenter : IDisposable
         bool switchingExpandedView = plan.FromView != NotchView.Compact && plan.FromView != plan.TargetView;
         var enterDuration = switchingExpandedView
             ? new Duration(TimeSpan.FromMilliseconds(Math.Min(320, plan.Motion.Duration.TimeSpan.TotalMilliseconds)))
-            : plan.Motion.Duration;
+            : NotchRevealMotion.Enter;
         var exitDuration = switchingExpandedView
             ? new Duration(TimeSpan.FromMilliseconds(Math.Min(160, plan.Motion.Duration.TimeSpan.TotalMilliseconds)))
             : plan.Motion.Duration;
@@ -120,6 +120,7 @@ public sealed class NotchContentTransitionPresenter : IDisposable
         var fadeIn = new DoubleAnimation(targetStartOpacity, 1.0, enterDuration)
         {
             EasingFunction = switchingExpandedView ? new CubicEase { EasingMode = EasingMode.EaseInOut } : plan.Motion.Easing,
+            BeginTime = !switchingExpandedView && targetStartOpacity < 0.01 ? NotchRevealMotion.EnterDelay : TimeSpan.Zero,
             FillBehavior = FillBehavior.HoldEnd
         };
         Timeline.SetDesiredFrameRate(fadeIn, fps);

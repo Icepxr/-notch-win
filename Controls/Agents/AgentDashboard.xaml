@@ -40,19 +40,27 @@
     <Setter Property="Background" Value="#101010"/><Setter Property="BorderBrush" Value="#2B2B2B"/>
     <Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="16"/><Setter Property="Padding" Value="14"/>
    </Style>
+   <Style x:Key="ProviderCard" TargetType="Border" BasedOn="{StaticResource AgentCard}">
+    <Setter Property="Margin" Value="0,0,10,0"/>
+    <Style.Triggers>
+     <DataTrigger Binding="{Binding IsColumnLayout, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+      <Setter Property="Margin" Value="0,0,0,10"/>
+     </DataTrigger>
+    </Style.Triggers>
+   </Style>
   </ResourceDictionary>
  </UserControl.Resources>
  <Grid>
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-  <Grid Margin="0,0,0,10">
+  <Grid x:Name="AgentTitleRow" Margin="0,0,0,10">
    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
    <TextBlock Text="AI Agent" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/>
-   <StackPanel Grid.Column="1" Orientation="Horizontal">
+   <StackPanel x:Name="AgentTitleActions" Grid.Column="1" Orientation="Horizontal">
     <Button x:Name="DetailsButton" Content="Less detail" Click="Details_Click" Margin="0,0,6,0" ToolTip="Hide model and activity breakdowns" AutomationProperties.Name="Toggle agent usage details"/>
     <Button x:Name="RefreshLimits" Content="Refresh limits" Click="Refresh_Click" ToolTip="Check account limits using your installed CLIs. No AI message is sent." AutomationProperties.Name="Refresh agent account limits"/>
    </StackPanel>
   </Grid>
-  <Grid Grid.Row="1" Margin="0,0,0,12">
+  <Grid x:Name="AgentFilterRow" Grid.Row="1" Margin="0,0,0,12">
    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
    <TextBlock x:Name="ReadStatus" Text="Reading local activity…" Foreground="{StaticResource AgentMuted}" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,8,0" AutomationProperties.LiveSetting="Polite"/>
    <StackPanel Grid.Column="1" Orientation="Horizontal">
@@ -66,7 +74,7 @@
     <ItemsControl x:Name="Providers" HorizontalContentAlignment="Stretch">
      <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="2"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
      <ItemsControl.ItemTemplate><DataTemplate>
-      <Border Style="{StaticResource AgentCard}" Margin="0,0,10,0">
+      <Border Style="{StaticResource ProviderCard}">
        <StackPanel>
         <Grid Margin="0,0,0,8">
          <Grid.ColumnDefinitions><ColumnDefinition Width="36"/><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>

@@ -289,6 +289,8 @@ public partial class MainWindow : Window
         MediaPlayback.BufferingChanged += value => MusicViz.IsBuffering = value;
         CountdownWidget.Attach(_viewModel.Timer);
         CountdownWidget.Completed += (_, _) => OnCountdownCompleted();
+        CountdownWidget.PreferredSizeChanged += (_, _) => Dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Loaded, new Action(RefreshTimerSize));
         CountdownWidget.KeyboardInputRequested += enabled =>
         {
             if (enabled) EnableKeyboardInput();
@@ -429,6 +431,7 @@ public partial class MainWindow : Window
         _hoverCollapseTimer.Tick += (s, e) =>
         {
             _hoverCollapseTimer.Stop();
+            if (IsDockHoverSuppressed) return;
             if (IsKeyboardFocusWithin) return;
             _hoverCollapseTimer.Interval = TimeSpan.FromMilliseconds(_settings.HoverCollapseDelay);
 
@@ -467,7 +470,7 @@ public partial class MainWindow : Window
 
             // The modifier can go down after this timer started, so the check
             // has to happen here too, not only where it was queued.
-            if (IsDockMoveInProgress) return;
+            if (IsDockHoverSuppressed) return;
 
             if (_settings.EnableHoverExpand && !_isExpanded && !_isAnimating)
             {
@@ -679,6 +682,7 @@ public partial class MainWindow : Window
     {
         if (_cleanedUp) return;
         _cleanedUp = true;
+        DisposeDockDrag();
         DiscardPreparedSettingsWindow();
         StopLiquidGlass();
         _moduleHost.StopAll();
@@ -781,6 +785,7 @@ public partial class MainWindow : Window
         UpdateGlassMotionState();
         SyncPrivacyDotVisibilityForCurrentView();
         UpdateSpotifyCanvasPresentationContext();
+        UpdateDockArmingMonitor();
     }
 
     private void OnCountdownCompletionDisplayRequested(object? sender, EventArgs e)
@@ -829,6 +834,10 @@ public partial class MainWindow : Window
             _clipboardHistory?.Store.IsPersonalUnlocked == true)
             _ = _clipboardHistory.LockPersonalAsync();
         NavTabsStackPanel.Margin = new Thickness(14, 3, 0, 0);
+        // That margin is the one authored for the top edge, and it is set again
+        // on every switch. In a column the row has to keep clear of the status
+        // corner, so the clearance is decided again right after it.
+        ApplyNavigationClearance(IsDockVertical);
         // Direct view switches do not always start another presenter animation.
         // Detach its old clocks first so HoldEnd cannot override the new view.
         _notchShellPresenter?.CancelCurrentAnimation();
@@ -2195,7 +2204,10 @@ public partial class MainWindow : Window
             double endInset = islandMode ? 12 : 4;
             if (sideways)
             {
-                MusicCompactContent.Margin = new Thickness(0, endInset, 0, endInset);
+                // The badge is the shell. There is no length to keep clear of,
+                // and an inset here would squeeze the circle's contents.
+                MusicCompactContent.Margin = new Thickness(0);
+                ApplyBadge();
             }
             else
             {
@@ -2262,7 +2274,7 @@ public partial class MainWindow : Window
 
     private void NotchBorder_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        if (!IsInteractiveControl(e.OriginalSource as DependencyObject) && BeginDockPickUp())
+        if (CanPickUpDockFrom(e.OriginalSource as DependencyObject) && BeginDockPickUp())
         {
             e.Handled = true;
             return;
@@ -2350,10 +2362,17 @@ public partial class MainWindow : Window
                 return true;
             }
             if (element is Window) break;
-            element = VisualTreeHelper.GetParent(element);
+            element = InputParent(element);
         }
         return false;
     }
+
+    private static DependencyObject? InputParent(DependencyObject element) => element switch
+    {
+        Visual or System.Windows.Media.Media3D.Visual3D => VisualTreeHelper.GetParent(element),
+        FrameworkContentElement content => content.Parent,
+        _ => LogicalTreeHelper.GetParent(element)
+    };
 
     private void ToggleNotchFromClick(int clickCount)
     {
@@ -2378,6 +2397,13 @@ public partial class MainWindow : Window
     {
         _hoverCollapseTimer.Stop();
         _hoverCollapseTimer.Interval = TimeSpan.FromMilliseconds(_settings.HoverCollapseDelay);
+        UpdateDockArmingMonitor();
+        UpdateDockPickUpAffordance();
+        if (IsDockHoverSuppressed)
+        {
+            AnimateNotchHover(false);
+            return;
+        }
         AnimateNotchHover(true);
         QueueHoverExpand();
     }
@@ -2418,7 +2444,7 @@ public partial class MainWindow : Window
     {
         // Holding the move modifier means the cursor is coming for the pill,
         // not for what is inside it.
-        if (IsDockMoveInProgress) return;
+        if (IsDockHoverSuppressed) return;
 
         if (_settings.EnableHoverExpand && !_isExpanded && !_isAnimating)
         {
@@ -2947,6 +2973,7 @@ public partial class MainWindow : Window
         if (System.Windows.Input.Mouse.Captured != null) return true;
         if (windowPt.X < 0 || windowPt.Y < 0 || windowPt.X > ActualWidth || windowPt.Y > ActualHeight)
             return false;
+        if (IsDockPickUpArmed && IsPointOnDockShell(PointToScreen(windowPt))) return true;
 
         HitTestResult result = VisualTreeHelper.HitTest(this, windowPt);
         if (result?.VisualHit == null) return false;

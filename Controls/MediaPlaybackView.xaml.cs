@@ -383,13 +383,26 @@ public partial class MediaPlaybackView : UserControl, IDisposable
             ArtistScrollContainer.Width = fadeEndX;
         }
 
-        // A title shorter than its column sits wherever its layer starts. Give
-        // the layers the column's width so a centred alignment has something to
-        // centre within; a longer title still overflows and marches as before.
+        // Short titles centre beneath the cover. Long titles start at their
+        // leading edge: centring a wider line inside a viewport clips BOTH
+        // ends before the marquee starts. Size each morph layer independently
+        // so a long outgoing title cannot displace a short incoming one.
         foreach (var layer in new[] { TitleMorphContainer, ArtistMorphContainer })
         {
             if (layer == null) continue;
             layer.Width = _centreInColumn ? fadeEndX : double.NaN;
+            foreach (var child in layer.Children.OfType<Grid>())
+            {
+                double natural = 0;
+                if (_centreInColumn)
+                    foreach (var text in child.Children.OfType<TextBlock>())
+                    {
+                        text.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        natural = Math.Max(natural, text.DesiredSize.Width);
+                    }
+                child.Width = _centreInColumn ? Math.Max(fadeEndX, natural) : double.NaN;
+                child.HorizontalAlignment = _centreInColumn ? HorizontalAlignment.Left : HorizontalAlignment.Stretch;
+            }
         }
 
         RefreshMediaMarquee();
@@ -421,7 +434,7 @@ public partial class MediaPlaybackView : UserControl, IDisposable
             return Math.Max(0, Math.Min(_columnWidth, infoWidth));
         }
 
-        return fallbackWidth;
+        return Math.Min(_columnWidth, fallbackWidth);
     }
 
 

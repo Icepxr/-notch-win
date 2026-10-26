@@ -34,6 +34,22 @@ namespace VNotch.Controls
             DependencyProperty.Register(nameof(TrackId), typeof(string), typeof(MusicVisualizer),
                 new PropertyMetadata(string.Empty, OnStateChanged));
 
+        /// <summary>
+        /// Local customization: draw the bars around a circle instead of in a
+        /// row. The levels, their smoothing and the audio capture behind them
+        /// are untouched - only where a bar is put changes - so a ring and a
+        /// row are the same visualiser seen two ways.
+        /// </summary>
+        public static readonly DependencyProperty RadialProperty =
+            DependencyProperty.Register(nameof(Radial), typeof(bool), typeof(MusicVisualizer),
+                new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender));
+
+        public bool Radial
+        {
+            get => (bool)GetValue(RadialProperty);
+            set => SetValue(RadialProperty, value);
+        }
+
         public static readonly DependencyProperty ActiveBrushProperty =
             DependencyProperty.Register(nameof(ActiveBrush), typeof(Brush), typeof(MusicVisualizer),
                 new FrameworkPropertyMetadata(Brushes.White, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -937,6 +953,20 @@ namespace VNotch.Controls
             drawingContext.PushOpacity(1 - morphOpacity);
             var gradientBrush = GetBarGradientBrush();
 
+            if (Radial)
+            {
+                DrawRing(drawingContext, width, height, ActiveBrush);
+                drawingContext.Pop();
+                drawingContext.Pop();
+                _hasRenderedBars = false;
+                _renderedWidth = width;
+                _renderedHeight = height;
+                _renderedOpacity = _currentOpacity;
+                _renderedDpi = dpi;
+                _renderedBaseColor = _cachedGradientBaseColor;
+                return;
+            }
+
             double radius = snappedW * CornerRadiusRatio;
             for (int i = 0; i < BarCount; i++)
             {
@@ -953,6 +983,99 @@ namespace VNotch.Controls
             _renderedOpacity = _currentOpacity;
             _renderedDpi = dpi;
             _renderedBaseColor = _cachedGradientBaseColor;
+        }
+
+        /// <summary>How many bars stand around the ring.</summary>
+        private const int RingBarCount = 28;
+
+        /// <summary>The ring sits in the gap between the artwork and the badge.</summary>
+        private const double RingInnerRadiusRatio = .60;
+
+        // The travel between quiet and loud is what makes a ring read as a
+        // waveform rather than a dotted border, so most of the annulus is
+        // given to it and the resting length is just enough to stay visible.
+        private const double RingMaxBarRatio = .185;
+        private const double RingMinBarRatio = .03;
+        private const double RingBarWidthRatio = .062;
+
+        private static RotateTransform[]? _ringRotations;
+
+        /// <summary>
+        /// Stand the bars around a circle. Five levels are folded symmetrically
+        /// around the ring, the way a spectrum is mirrored, so it reads as one
+        /// continuous ring rather than five lumps.
+        /// </summary>
+        private void DrawRing(DrawingContext context, double width, double height, Brush brush)
+        {
+            double size = Math.Min(width, height);
+            if (size < 1) return;
+
+            double cx = width / 2, cy = height / 2;
+            double inner = size * RingInnerRadiusRatio / 2;
+            double maxBar = size * RingMaxBarRatio;
+            double minBar = size * RingMinBarRatio;
+            double barWidth = Math.Max(0.75, size * RingBarWidthRatio);
+
+            var rotations = _ringRotations ??= BuildRingRotations();
+
+            // Move the origin to the middle once, so every bar can be turned
+            // about (0,0) and one frozen set of rotations serves every size.
+            if (_ringCentre is not { } centre || centre.X != cx || centre.Y != cy)
+            {
+                var translate = new TranslateTransform(cx, cy);
+                translate.Freeze();
+                _ringTranslate = translate;
+                _ringCentre = new Point(cx, cy);
+            }
+
+            context.PushTransform(_ringTranslate!);
+            for (int i = 0; i < RingBarCount; i++)
+            {
+                double level = Math.Clamp(RingLevel(i), 0, 1);
+                double length = minBar + level * (maxBar - minBar);
+
+                context.PushTransform(rotations[i]);
+                context.DrawRoundedRectangle(brush, null,
+                    new Rect(-barWidth / 2, -inner - length, barWidth, length),
+                    barWidth / 2, barWidth / 2);
+                context.Pop();
+            }
+
+            context.Pop();
+        }
+
+        private TranslateTransform? _ringTranslate;
+        private Point? _ringCentre;
+
+        /// <summary>
+        /// The level for one place on the ring. Walking round, the five bars
+        /// are read out and then back, which puts the same value opposite
+        /// itself and leaves the ring symmetric about its vertical axis.
+        /// </summary>
+        private double RingLevel(int index)
+        {
+            int span = RingBarCount / 2;
+            int step = index < span ? index : RingBarCount - index - 1;
+            double position = span <= 1 ? 0 : (double)step * (BarCount - 1) / (span - 1);
+            int low = (int)position;
+            int high = Math.Min(BarCount - 1, low + 1);
+            double blend = position - low;
+            return _drawHeights[low] * (1 - blend) + _drawHeights[high] * blend;
+        }
+
+        private static RotateTransform[] BuildRingRotations()
+        {
+            var rotations = new RotateTransform[RingBarCount];
+            for (int i = 0; i < RingBarCount; i++)
+            {
+                // The transform is about the element's own centre, which the
+                // caller draws around, so one set serves every size.
+                var rotation = new RotateTransform(360.0 * i / RingBarCount, 0, 0);
+                rotation.Freeze();
+                rotations[i] = rotation;
+            }
+
+            return rotations;
         }
 
         private Rect GetBarBounds(int index, double height, double startX, double barWidth, double spacing)

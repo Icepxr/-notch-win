@@ -3,6 +3,8 @@
  <ItemGroup>
   <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/><PackageReference Include="xunit" Version="2.7.0"/><PackageReference Include="xunit.runner.visualstudio" Version="2.5.7"/>
   <Compile Include="../../Services/Agents/*.cs"/><Compile Include="../../Controls/Agents/AgentDashboard.xaml.cs"/>
+  <Compile Include="../../Services/GridFlip.cs"/>
+  <Compile Include="../../Services/NotchRevealMotion.cs"/>
   <Page Include="../../Controls/Agents/AgentDashboard.xaml" Link="AgentDashboard.xaml"/><Page Include="../../Controls/Agents/AgentProviderMarks.xaml" Link="AgentProviderMarks.xaml"/>
   <Compile Include="../AgentDashboardTests.cs" Link="AgentDashboardTests.cs"/><Compile Include="../LocalSend.UI/HiddenStaRunner.cs" Link="HiddenStaRunner.cs"/>
   <Compile Include="../../Presenters/NotchContentTransitionPresenter.cs"/><Compile Include="../../Controllers/NotchTransitionCoordinator.cs"/>

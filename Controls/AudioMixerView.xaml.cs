@@ -40,6 +40,36 @@ public partial class AudioMixerView : UserControl, IDisposable
     public double PreferredShellHeight => _audioViewHeight;
     public AudioMixerSnapshot? Snapshot => _lastAudioSnapshot;
     public ScrollViewer ScrollViewer => AudioScrollViewer;
+
+    /// <summary>
+    /// Local customization: the mixer is authored at a fixed width for the top
+    /// edge. A side dock hands it a column instead, and the list inside has to
+    /// follow or it keeps its own width and simply overflows. Pass NaN to put
+    /// the authored width back.
+    /// </summary>
+    public void SetColumnWidth(double width)
+    {
+        _authoredScrollWidth ??= AudioScrollViewer.Width;
+
+        bool compact = width > 0 && double.IsFinite(width);
+        AudioScrollViewer.Width = compact ? width : _authoredScrollWidth.Value;
+
+        if (_compactRows == compact) return;
+        _compactRows = compact;
+
+        // The rows are built, not templated, so they keep the shape they were
+        // built with. Clear the structure key to have them built again.
+        _audioStructureKey = string.Empty;
+    }
+
+    /// <summary>
+    /// A row is name, slider, percentage, output device - around 570 at its
+    /// narrowest, which a column has no hope of holding. In a column the name
+    /// and the slider share the width and the other two stand down.
+    /// </summary>
+    private bool _compactRows;
+
+    private double? _authoredScrollWidth;
     public event Action<double, Duration, IEasingFunction>? FitHeightRequested;
     public event Action? OutputDeviceChanged;
 
@@ -684,7 +714,8 @@ public partial class AudioMixerView : UserControl, IDisposable
 
             if (AudioScrollViewer != null)
             {
-                AudioScrollViewer.Width = _audioViewWidth - 38;
+                // Leave a column alone; this is the authored top-edge width.
+                if (!_compactRows) AudioScrollViewer.Width = _audioViewWidth - 38;
                 AudioScrollViewer.HorizontalAlignment = HorizontalAlignment.Left;
                 AudioScrollViewer.VerticalAlignment = VerticalAlignment.Top;
             }
@@ -774,7 +805,9 @@ public partial class AudioMixerView : UserControl, IDisposable
     private double MeasureAudioFitHeight()
     {
         if (AudioRoot == null) return _audioViewMaxHeight;
-        double contentWidth = _audioViewWidth - 38 - 7;
+        double contentWidth = _compactRows && AudioScrollViewer?.Width > 0
+            ? AudioScrollViewer.Width - 7
+            : _audioViewWidth - 38 - 7;
         AudioRoot.Measure(new Size(contentWidth, double.PositiveInfinity));
         double desired = AudioRoot.DesiredSize.Height;
         return Math.Clamp(desired + _audioViewChrome, _audioViewMinHeight, _audioViewMaxHeight);
@@ -926,9 +959,18 @@ public partial class AudioMixerView : UserControl, IDisposable
         try { return fn(); } catch { return default; }
     }
 
-    private static Grid NewRowGrid()
+    private Grid NewRowGrid()
     {
         var g = new Grid();
+        if (_compactRows)
+        {
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 54 });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0) });
+            g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(0) });
+            return g;
+        }
+
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColName) });
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(ColPercent) });

@@ -11,12 +11,56 @@ namespace VNotch.Controls.Agents;
 
 public partial class AgentDashboard : UserControl, IDisposable
 {
+    public static readonly DependencyProperty IsColumnLayoutProperty = DependencyProperty.Register(
+        nameof(IsColumnLayout), typeof(bool), typeof(AgentDashboard), new PropertyMetadata(false));
+    public bool IsColumnLayout
+    {
+        get => (bool)GetValue(IsColumnLayoutProperty);
+        private set => SetValue(IsColumnLayoutProperty, value);
+    }
+    /// <summary>
+    /// Local customization: the dashboard is a two-up grid of cards with its
+    /// title and its filters each sharing a line. A column has room for one
+    /// card across and nothing beside a title, so the cards run one per row
+    /// and both header lines stand up. Everything restores, because the cells
+    /// it transposes are the ones that were authored.
+    /// </summary>
+    public void SetColumnLayout(bool vertical)
+    {
+        IsColumnLayout = vertical;
+        VNotch.Services.GridFlip.SetVertical(AgentTitleRow, vertical);
+        VNotch.Services.GridFlip.SetVertical(AgentFilterRow, vertical);
+
+        // Two buttons side by side need more than a column has. Stood up they
+        // each get the width, and the gap between them turns with them.
+        if (AgentTitleActions != null)
+        {
+            AgentTitleActions.Orientation = Orientation.Horizontal;
+            AgentTitleActions.Margin = vertical ? new Thickness(0, 8, 0, 0) : default;
+            if (DetailsButton != null)
+                DetailsButton.Margin = new Thickness(0, 0, 6, 0);
+        }
+
+        if (Providers == null) return;
+
+        int columns = vertical ? 1 : 2;
+        if (_providerColumns == columns) return;
+        _providerColumns = columns;
+
+        var panel = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.UniformGrid));
+        panel.SetValue(System.Windows.Controls.Primitives.UniformGrid.ColumnsProperty, columns);
+        Providers.ItemsPanel = new ItemsPanelTemplate(panel);
+    }
+
+    private int _providerColumns = 2;
+
     private IAgentMonitor? _monitor;
     private readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(5) };
     private CancellationTokenSource? _visible;
     private bool _reading, _pending, _checking, _disposed;
     private int _days = 1;
     private DateTimeOffset _lastAccountRequest = DateTimeOffset.MinValue;
+    private AgentSnapshot? _lastSnapshot;
     public AgentDashboard()
     {
         InitializeComponent();
@@ -31,7 +75,13 @@ public partial class AgentDashboard : UserControl, IDisposable
         if (_disposed || _monitor == null || _visible != null) return;
         _visible = new(); _timer.Start(); _ = ReadAsync();
     }
-    private void Stop() { _timer.Stop(); _visible?.Cancel(); _visible?.Dispose(); _visible = null; }
+    private void Stop()
+    {
+        _timer.Stop(); _visible?.Cancel(); _visible?.Dispose(); _visible = null;
+        _pending = false;
+        _lastSnapshot = null;
+        if (Breakdowns != null) Breakdowns.ItemsSource = null;
+    }
     private async Task ReadAsync()
     {
         var lifetime = _visible; if (lifetime == null || _monitor == null) return;
@@ -53,6 +103,8 @@ public partial class AgentDashboard : UserControl, IDisposable
     }
     internal void Present(AgentSnapshot snapshot)
     {
+        if (_disposed) return;
+        _lastSnapshot = snapshot;
         var now = snapshot.Updated;
         object Mark(string provider) => FindResource(provider == "Codex" ? "AgentOpenAiMark" : "AgentClaudeMark");
         string Exact(long value) => value.ToString("N0", CultureInfo.InvariantCulture);
@@ -81,6 +133,20 @@ public partial class AgentDashboard : UserControl, IDisposable
             Responses = provider.Records.Count == 0 ? "—" : provider.Records.Count.ToString("N0", CultureInfo.InvariantCulture),
             Note = provider.Partial ? "Partial local coverage · recent file tails" : provider.Records.Count == 0 ? "No local usage records in this period" : "Observed local records · " + provider.Sessions.Count + " recent sessions"
         }).ToArray();
+        if (UsageDetails.Visibility == Visibility.Visible) PresentBreakdowns(snapshot);
+        var allSessions = snapshot.Providers.SelectMany(p => p.Sessions).OrderBy(s => s.State == "Working" ? 0 : 1).ThenByDescending(s => s.Updated).ToArray();
+        var sessions = allSessions.Take(12).ToArray();
+        Sessions.ItemsSource = sessions.Select(session => new { session.Name, session.State, Mark = Mark(session.Provider), Detail = session.Project + " · " + session.Updated.LocalDateTime.ToString("HH:mm") }).ToArray();
+        EmptyActivity.Visibility = sessions.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
+        int working = allSessions.Count(s => s.State == "Working");
+        ActivityCount.Text = (working > 0 ? working + " working" : allSessions.Length + " sessions") + (allSessions.Length > 12 ? " · 12 shown" : "");
+        if (!_checking) ReadStatus.Text = "Updated " + now.LocalDateTime.ToString("HH:mm:ss") + " · " + (_days == 1 ? "Today" : _days + " days");
+    }
+    private void PresentBreakdowns(AgentSnapshot snapshot)
+    {
+        var now = snapshot.Updated;
+        object Mark(string provider) => FindResource(provider == "Codex" ? "AgentOpenAiMark" : "AgentClaudeMark");
+        string Exact(long value) => value.ToString("N0", CultureInfo.InvariantCulture);
         Breakdowns.ItemsSource = snapshot.Providers.Select(provider =>
         {
             var models = AgentBreakdown.Models(provider);
@@ -106,13 +172,6 @@ public partial class AgentDashboard : UserControl, IDisposable
                 }).ToArray()
             };
         }).ToArray();
-        var allSessions = snapshot.Providers.SelectMany(p => p.Sessions).OrderBy(s => s.State == "Working" ? 0 : 1).ThenByDescending(s => s.Updated).ToArray();
-        var sessions = allSessions.Take(12).ToArray();
-        Sessions.ItemsSource = sessions.Select(session => new { session.Name, session.State, Mark = Mark(session.Provider), Detail = session.Project + " · " + session.Updated.LocalDateTime.ToString("HH:mm") }).ToArray();
-        EmptyActivity.Visibility = sessions.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
-        int working = allSessions.Count(s => s.State == "Working");
-        ActivityCount.Text = (working > 0 ? working + " working" : allSessions.Length + " sessions") + (allSessions.Length > 12 ? " · 12 shown" : "");
-        if (!_checking) ReadStatus.Text = "Updated " + now.LocalDateTime.ToString("HH:mm:ss") + " · " + (_days == 1 ? "Today" : _days + " days");
     }
     internal static string ResetText(AgentWindow window, DateTimeOffset now)
     {
@@ -135,6 +194,8 @@ public partial class AgentDashboard : UserControl, IDisposable
     {
         bool show = UsageDetails.Visibility != Visibility.Visible;
         UsageDetails.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (show && _lastSnapshot is { } snapshot) PresentBreakdowns(snapshot);
+        else if (!show) Breakdowns.ItemsSource = null;
         DetailsButton.Content = show ? "Less detail" : "More detail";
         DetailsButton.ToolTip = show ? "Hide model and activity breakdowns" : "Show model and activity breakdowns";
     }
@@ -162,5 +223,5 @@ public partial class AgentDashboard : UserControl, IDisposable
     private void Dashboard_Wheel(object sender, MouseWheelEventArgs e) { AgentScroll.ScrollToVerticalOffset(AgentScroll.VerticalOffset - e.Delta); e.Handled = true; }
     private void Dashboard_MouseDown(object sender, MouseButtonEventArgs e) => e.Handled = true;
     private static string Compact(long value) => value >= 1_000_000 ? (value / 1_000_000d).ToString("0.#", CultureInfo.InvariantCulture) + "M" : value >= 1000 ? (value / 1000d).ToString("0.#", CultureInfo.InvariantCulture) + "K" : value.ToString("N0", CultureInfo.InvariantCulture);
-    public void Dispose() { if (_disposed) return; _disposed = true; Stop(); _monitor?.Dispose(); }
+    public void Dispose() { if (_disposed) return; _disposed = true; Stop(); _lastSnapshot = null; Providers.ItemsSource = Breakdowns.ItemsSource = Sessions.ItemsSource = null; _monitor?.Dispose(); }
 }

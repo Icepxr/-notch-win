@@ -40,6 +40,14 @@ public class TopEdgeRegressionTests
     }
 
     [Fact]
+    public void TheCollapsedPillAcrossTheTopIsStillThePillThatWasSet()
+    {
+        // A side edge collapses to a badge. The top keeps its capsule.
+        Assert.Equal(new Size(240, 40), NotchDock.CollapsedSize(NotchEdge.Top, 240, 40));
+        Assert.Equal(new Size(230, 34), NotchDock.CollapsedSize(NotchEdge.Top, 230, 34));
+    }
+
+    [Fact]
     public void OnlyTheBottomCornersAreRounded()
     {
         Assert.Equal(new CornerRadius(0, 0, 12, 12), NotchDock.Radius(NotchEdge.Top, 12));
@@ -155,6 +163,8 @@ public class TopEdgeRegressionTests
 
         Assert.Equal(Orientation.Vertical, layout.Panel);
         Assert.Equal(ScrollBarVisibility.Disabled, layout.HorizontalScroll);
+        // The older cards are below the fold and must stay reachable.
+        Assert.Equal(ScrollBarVisibility.Auto, layout.VerticalScroll);
         Assert.Equal(290 - 16, layout.CardWidth);
         Assert.Equal(new Thickness(0, 6, 0, 6), layout.Spacing);
         Assert.Equal(new GridLength(34 + 28), layout.HeaderBand);
@@ -212,12 +222,11 @@ public class MediaSourceActivationTests
 public class DockGestureTests
 {
     [Fact]
-    public void HoldingTheModifierDoesNotStopTheNotchOpening()
+    public void HoldingTheModifierKeepsThePillReadyToMove()
     {
-        // The modifier is held all day for copy, paste and tab switching. It
-        // used to arm the move on its own, which left the notch refusing to
-        // open on hover for as long as it was down - on every edge.
-        Assert.False(DockGesture.SuppressesHover(dragging: false, modifierHeld: true));
+        // Ctrl explicitly prepares the collapsed pill and suppresses expansion
+        // until release, without committing a dock move on its own.
+        Assert.True(DockGesture.SuppressesHover(dragging: false, modifierHeld: true));
     }
 
     [Fact]

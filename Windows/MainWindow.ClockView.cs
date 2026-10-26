@@ -13,7 +13,7 @@ public partial class MainWindow : IClockWidgetHost
     #region Clock View geometry constants (read by MainWindow.Timer.cs)
 
     private const double _clockViewWidth = 600;
-    private const double _clockViewHeight = 310;
+    private double _clockViewHeight => 310 + CountdownWidget.ExtraTopHeight;
 
     #endregion
 
@@ -86,9 +86,13 @@ public partial class MainWindow : IClockWidgetHost
 
     private void UpdateClockViewCalendar(DateTime now) => _clockWidgetPresenter?.UpdateClockViewCalendar(now);
 
-    private void PrepareClockViewContentSize() => EnsureClockWidgetPresenterLoaded().PrepareClockViewContentSize();
+    private void PrepareClockViewContentSize()
+    {
+        EnsureClockWidgetPresenterLoaded().PrepareClockViewContentSize();
+        if (!IsDockVertical) TimerContent.Height += CountdownWidget.ExtraTopHeight;
+    }
 
-    private void ApplyClockViewWindowSize() => EnsureClockWidgetPresenterLoaded().ApplyClockViewWindowSize();
+    private void ApplyClockViewWindowSize() => ResizeHostWindowHeight(_clockViewHeight);
 
     // Both of these grow the host downwards from the top edge, which is the
     // axis the notch morphs along only while it hangs from the top. On a side
