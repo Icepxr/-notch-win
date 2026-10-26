@@ -513,8 +513,6 @@ public partial class MainWindow
             ClockViewMonthText.TextAlignment = vertical ? TextAlignment.Center : _authoredMonthAlignment.Value;
         }
 
-        RuntimeLog.Log(DockLogTag, $"TIMER-ORIENT vertical={vertical}"
-            + $" headerRows={ClockViewHeader?.RowDefinitions.Count} headerCols={ClockViewHeader?.ColumnDefinitions.Count}");
     }
 
     /// <summary>
@@ -1177,6 +1175,20 @@ public partial class MainWindow
     /// paths of their own, which is why they went on being laid out for the top
     /// edge however the notch was docked. They ask here instead.
     /// </summary>
+    /// <summary>
+    /// The media page on the current edge, with the inner surface that goes
+    /// with it. The direct switches back to media set both from the authored
+    /// numbers, which on a side edge is a page laid out for the top inside a
+    /// shell the width of a column - the content simply runs off the side.
+    /// </summary>
+    internal Size DockedPrimaryTarget(out double contentWidth, out double contentHeight)
+    {
+        var target = DockedViewTarget(NotchView.Media, _expandedWidth, _expandedHeight);
+        contentWidth = target.Width - ExpandedContentHorizontalInset;
+        contentHeight = target.Height - ExpandedContentVerticalInset;
+        return target;
+    }
+
     internal Size DockedViewTarget(NotchView view, double width, double height)
     {
         if (!IsDockVertical) return new Size(width, height);
@@ -1263,6 +1275,11 @@ public partial class MainWindow
     /// </summary>
     private void ResizeDockedContent(NotchView view, Size size)
     {
+        // Remember the authored size first. The orientation passes below write
+        // to some of these pages, so capturing after them would record a
+        // column's width as the size the page was designed at.
+        RememberAuthoredSize(view);
+
         // The clipboard's header clears the navigation row, whose height is only
         // known once it has been shown. Settle that each time the page opens.
         if (view == NotchView.Secondary) ApplyClipboardOrientation(IsDockVertical);
@@ -1275,22 +1292,8 @@ public partial class MainWindow
         if (view == NotchView.Timer) ApplyTimerOrientation(IsDockVertical);
         if (view == NotchView.Agents) ApplyAgentsOrientation(IsDockVertical);
 
-        FrameworkElement? content = view switch
-        {
-            NotchView.Secondary => SecondaryContent,
-            NotchView.Camera => CameraContent,
-            NotchView.Agents => AgentContent,
-            NotchView.AudioMixer => AudioContent,
-            NotchView.Timer => TimerContent,
-            _ => null,
-        };
+        var content = DockedPageFor(view);
         if (content == null) return;
-
-        // Remember what the page was authored at before overwriting it. These
-        // are real numbers in the XAML - the clipboard is 888 across, the
-        // camera 488 - and nothing on the top edge would put them back.
-        if (!_authoredContentSizes.ContainsKey(content))
-            _authoredContentSizes[content] = (content.Width, content.Height);
 
         double width = size.Width - content.Margin.Left - content.Margin.Right;
         double height = size.Height - content.Margin.Top - content.Margin.Bottom;
@@ -1301,6 +1304,29 @@ public partial class MainWindow
     /// <summary>
     /// Hand every page a side edge resized back the size it was authored at.
     /// </summary>
+    /// <summary>
+    /// Note what a page was authored at, once, before anything resizes it.
+    /// These are real numbers in the XAML - the clipboard is 888 across, the
+    /// camera 488 - and nothing on the top edge would put them back.
+    /// </summary>
+    private void RememberAuthoredSize(NotchView view)
+    {
+        var content = DockedPageFor(view);
+        if (content == null || _authoredContentSizes.ContainsKey(content)) return;
+
+        _authoredContentSizes[content] = (content.Width, content.Height);
+    }
+
+    private FrameworkElement? DockedPageFor(NotchView view) => view switch
+    {
+        NotchView.Secondary => SecondaryContent,
+        NotchView.Camera => CameraContent,
+        NotchView.Agents => AgentContent,
+        NotchView.AudioMixer => AudioContent,
+        NotchView.Timer => TimerContent,
+        _ => null,
+    };
+
     private void RestoreAuthoredContentSizes()
     {
         foreach (var (content, authored) in _authoredContentSizes)

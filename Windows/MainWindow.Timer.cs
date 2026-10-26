@@ -308,14 +308,15 @@ public partial class MainWindow
 
         double currentH = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _clockViewHeight;
         double currentWidthExit = NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : _clockViewWidth;
-        AnimateClockViewNotchResize(currentWidthExit, currentH, _expandedWidth, _expandedHeight, durIn, inDelay, RestoreExpandedWindowSize, generation: generation);
+        var primaryTarget = DockedPrimaryTarget(out double primaryContentWidth, out double primaryContentHeight);
+        AnimateClockViewNotchResize(currentWidthExit, currentH, primaryTarget.Width, primaryTarget.Height, durIn, inDelay, RestoreExpandedWindowSize, generation: generation);
 
         ExpandedContent.Visibility = Visibility.Visible;
         ExpandedContent.BeginAnimation(OpacityProperty, null);
         ExpandedContent.Opacity = 0;
         ExpandedContent.Effect = null;
-        ExpandedContent.Width = _expandedWidth - 16;
-        ExpandedContent.Height = _expandedHeight - 10;
+        ExpandedContent.Width = primaryContentWidth;
+        ExpandedContent.Height = primaryContentHeight;
         ExpandedContent.HorizontalAlignment = HorizontalAlignment.Center;
         ExpandedContent.VerticalAlignment = VerticalAlignment.Top;
         ExpandedContent.UseLayoutRounding = false;

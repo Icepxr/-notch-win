@@ -142,6 +142,12 @@ public partial class MainWindow
             NavIconsBackground.Visibility = Visibility.Visible;
         }
 
+        // Tell the mixer which shape its rows take before it builds them. It
+        // builds from the snapshot it already holds, so being told afterwards
+        // leaves the rows it just made in the wrong shape - which is why
+        // arriving from the clock, which has a snapshot in hand, lost the
+        // sliders while arriving from elsewhere did not.
+        ApplyAudioOrientation(IsDockVertical);
         AudioContent.PrepareForEntrance();
 
         double fromW;
@@ -168,11 +174,7 @@ public partial class MainWindow
             {
                 if (AudioScrollViewer != null)
                 {
-                    // The list is handed a width here every time the mixer
-                    // opens, which is what kept overwriting the column.
-                    AudioScrollViewer.Width = IsDockVertical
-                        ? Math.Max(0, audioTarget.Width - ExpandedContentHorizontalInset - AudioContent.Margin.Left - AudioContent.Margin.Right)
-                        : _audioViewWidth - 38;
+                    AudioScrollViewer.Width = AudioListWidthFor(audioTarget.Width);
                     AudioScrollViewer.HorizontalAlignment = HorizontalAlignment.Left;
                     AudioScrollViewer.VerticalAlignment = VerticalAlignment.Top;
                     AudioScrollViewer.BeginAnimation(OpacityProperty, null);
@@ -227,14 +229,15 @@ public partial class MainWindow
         double fromW = NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : _audioViewWidth;
         double fromH = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _audioViewHeight;
 
+        var primaryTarget = DockedPrimaryTarget(out double primaryContentWidth, out double primaryContentHeight);
         AnimateAudioViewSwap(
             AudioContent, ExpandedContent,
-            new Size(fromW, fromH), new Size(_expandedWidth, _expandedHeight),
+            new Size(fromW, fromH), primaryTarget,
             prepIncoming: () =>
             {
                 ExpandedContent.Effect = null;
-                ExpandedContent.Width = _expandedWidth - 16;
-                ExpandedContent.Height = _expandedHeight - 10;
+                ExpandedContent.Width = primaryContentWidth;
+                ExpandedContent.Height = primaryContentHeight;
             },
             onComplete: () =>
             {
@@ -271,19 +274,33 @@ public partial class MainWindow
         double fromW = NotchBorder.ActualWidth > 0 ? NotchBorder.ActualWidth : _audioViewWidth;
         double fromH = NotchBorder.ActualHeight > 0 ? NotchBorder.ActualHeight : _audioViewHeight;
 
+        var timerTarget = DockedViewTarget(VNotch.Models.NotchView.Timer, _clockViewWidth, _clockViewHeight);
         AnimateAudioViewSwap(
             AudioContent, TimerContent,
-            new Size(fromW, fromH), new Size(_clockViewWidth, _clockViewHeight),
+            new Size(fromW, fromH), timerTarget,
             prepIncoming: () =>
             {
                 ApplyClockViewWindowSize();
                 PrepareClockViewContentSize();
+                // PrepareClockViewContentSize hands the page its authored
+                // width, so the docked size has to be put back after it.
+                ResizeDockedContent(VNotch.Models.NotchView.Timer, timerTarget);
                 RefreshClockView();
                 RestoreTimerContentOpacity();
             },
             onComplete: () => CountdownWidget.RefreshProgress(),
             generation: generation);
     }
+
+    /// <summary>
+    /// The width the mixer's list takes inside a shell of this width. Two
+    /// places hand it one, and the swap animator ran after the caller's own
+    /// preparation - so a column set there was overwritten with the authored
+    /// 682 a moment later, which left the sliders drawn off the side.
+    /// </summary>
+    private double AudioListWidthFor(double shellWidth) => IsDockVertical
+        ? Math.Max(0, shellWidth - ExpandedContentHorizontalInset - AudioContent.Margin.Left - AudioContent.Margin.Right)
+        : _audioViewWidth - 38;
 
     private void AnimateAudioViewSwap(
         FrameworkElement outgoing, FrameworkElement incoming,
@@ -388,7 +405,7 @@ public partial class MainWindow
         {
             if (AudioScrollViewer != null)
             {
-                AudioScrollViewer.Width = _audioViewWidth - 38;
+                AudioScrollViewer.Width = AudioListWidthFor(notchToW);
                 AudioScrollViewer.HorizontalAlignment = HorizontalAlignment.Left;
                 AudioScrollViewer.VerticalAlignment = VerticalAlignment.Top;
                 AudioScrollViewer.BeginAnimation(OpacityProperty, null);

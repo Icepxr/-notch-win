@@ -58,8 +58,11 @@ public partial class AudioMixerView : UserControl, IDisposable
         _compactRows = compact;
 
         // The rows are built, not templated, so they keep the shape they were
-        // built with. Clear the structure key to have them built again.
+        // built with. Clearing the key alone only takes effect on the next
+        // poll, which is why the sliders were there on one visit and gone on
+        // the next - build them again now, from the snapshot already in hand.
         _audioStructureKey = string.Empty;
+        if (_lastAudioSnapshot != null) ApplyAudioSnapshot(_lastAudioSnapshot);
     }
 
     /// <summary>

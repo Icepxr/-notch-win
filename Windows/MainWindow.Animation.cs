@@ -1132,7 +1132,6 @@ public partial class MainWindow
         // Each view above asked for the size it was authored at. One place here
         // turns that into the size for the edge the notch is actually on, so a
         // view never has to know which edge it is being shown from.
-        VNotch.Services.RuntimeLog.Log("DOCK", $"SIZE view={effectiveTarget} vertical={IsDockVertical} asked={targetWidth:F0}x{targetHeight:F0}");
         if (IsDockVertical)
         {
             var docked = DockedViewSize(effectiveTarget, targetWidth, targetHeight);
