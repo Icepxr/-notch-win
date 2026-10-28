@@ -59,6 +59,7 @@ public partial class MainWindow
         if (IsGreetingInteractionBlocked) return;
         if (_cleanedUp || _spotlightMorphSessionActive || _spotlightMorphOwnsNotchVisibility ||
             (!_isExpanded && !_isMusicExpanded)) return;
+        if (_settings.ShowOnAllMonitors && !DockScreen.Contains(new Point(pt.x, pt.y))) return;
         // Capture against the visible shell at mouse-down, before queued layout
         // or animation work can move/resize it under this click.
         _outsideClicks.Enqueue(new OutsideClickSnapshot(pt));

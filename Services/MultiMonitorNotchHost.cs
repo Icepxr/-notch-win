@@ -54,6 +54,9 @@ internal sealed class MultiMonitorNotchHost : IDisposable
             snapshot.MonitorDeviceId = _settings.MonitorDeviceId;
             snapshot.MonitorIndex = _settings.MonitorIndex;
         }
+        var local = source.DisplaySettings;
+        if (snapshot.ShowOnAllMonitors || snapshot.MonitorDockEdges.Count > 0)
+            DisplayPreferenceCoordinator.RecordPlacement(snapshot, MonitorSelection.ResolveId(local), local.DockEdge);
         _settings = snapshot;
         QueueRefresh();
     }

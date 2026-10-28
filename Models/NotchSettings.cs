@@ -32,6 +32,17 @@ public class NotchSettings
     public int MonitorIndex { get; set; } = 0;
     public string MonitorDeviceId { get; set; } = "";
     public bool ShowOnAllMonitors { get; set; }
+    private Dictionary<string, NotchEdge> _monitorDockEdges = new(StringComparer.OrdinalIgnoreCase);
+    public Dictionary<string, NotchEdge> MonitorDockEdges
+    {
+        get => _monitorDockEdges;
+        set
+        {
+            var normalized = new Dictionary<string, NotchEdge>(StringComparer.OrdinalIgnoreCase);
+            if (value != null) foreach (var pair in value) normalized[pair.Key] = pair.Value;
+            _monitorDockEdges = normalized;
+        }
+    }
 
     // Local customization: edge docking. Top is the original placement, so an
     // existing settings file without these keys keeps behaving as it did.
@@ -255,7 +266,7 @@ public class NotchSettings
         for (int i = 0; i < _cloneableProperties.Length; i++)
         {
             var prop = _cloneableProperties[i];
-            if (prop.PropertyType == typeof(LiquidGlassConfig))
+            if (prop.PropertyType == typeof(LiquidGlassConfig) || prop.Name == nameof(MonitorDockEdges))
                 continue;
 
             var p1 = Expression.Property(left, prop);
@@ -300,6 +311,7 @@ public class NotchSettings
         clone.IsDirty = false;
         clone.LiquidGlass = LiquidGlass?.Clone() ?? new LiquidGlassConfig();
         clone.LiquidGlassCustom = LiquidGlassCustom?.Clone();
+        clone.MonitorDockEdges = MonitorDockEdges;
         return clone;
     }
 
@@ -309,6 +321,11 @@ public class NotchSettings
         if (other is null) return false;
 
         if (!_scalarValueEquals(this, other))
+            return false;
+
+        var edges = MonitorDockEdges ?? new();
+        var otherEdges = other.MonitorDockEdges ?? new();
+        if (edges.Count != otherEdges.Count || edges.Any(pair => !otherEdges.TryGetValue(pair.Key, out var edge) || edge != pair.Value))
             return false;
 
         if ((LiquidGlass == null) != (other.LiquidGlass == null))

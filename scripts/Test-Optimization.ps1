@@ -6,6 +6,7 @@ else { $DotNetExe = (Get-Command $DotNetExe -ErrorAction Stop).Source }
 $notchSuites = @(
     'OptimizationRegressionTests','SecondPassOptimizationTests','HotPathRegressionTests','FrameWorkReuseTests',
     'GlassClipBuilderTests','GlassMaterialClipPresenterTests','MultiMonitorNotchTests','SideRadialVisualizerTests',
+    'SettingsServiceAsyncTests',
     'LocalSendWindowTests.Pending','ElasticSliderPresentationTests','AgentDashboardTests',
     'AgentMonitorTests','LocalSendTests','ProgressEngineTests','NotchRevealMotionTests',
     'DockDrag','DockMotionPerformanceTests','OverlayWindowControllerTests','DockGestureTests','SettingsHitTargetTests','TopPomodoroTests',
@@ -34,7 +35,7 @@ try {
     if (!(Test-Path -LiteralPath $notchReport)) { throw 'No test report was produced.' }
     [xml]$notchTrx = Get-Content -LiteralPath $notchReport -Raw
     $notchCounts = $notchTrx.TestRun.ResultSummary.Counters
-    if ([int]$notchCounts.executed -lt 479 -or [int]$notchCounts.failed -ne 0 -or [int]$notchCounts.passed -ne [int]$notchCounts.executed) {
+    if ([int]$notchCounts.executed -lt 489 -or [int]$notchCounts.failed -ne 0 -or [int]$notchCounts.passed -ne [int]$notchCounts.executed) {
         throw 'Some optimization regressions were missing, skipped or failed.'
     }
     Write-Output "$($notchCounts.passed) optimization regressions passed. Full-suite findings are documented separately."

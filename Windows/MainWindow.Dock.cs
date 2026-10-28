@@ -798,8 +798,16 @@ public partial class MainWindow
     /// and leave the notch believing the modifier is still held, after which
     /// it would never open on hover again.
     /// </remarks>
-    internal bool IsDockPickUpArmed =>
-        _settings.EnableEdgeDocking && DockPointerReader().ControlDown;
+    internal bool IsDockPickUpArmed
+    {
+        get
+        {
+            var input = DockPointerReader();
+            return _settings.EnableEdgeDocking && input.ControlDown &&
+                (!_settings.ShowOnAllMonitors || IsDockMoveInProgress ||
+                    (!IsAnotherDisplayMoving && DockScreen.Contains(input.Position)));
+        }
+    }
 
     /// <summary>
     /// True while a move is actually under way, for the hover timers and the

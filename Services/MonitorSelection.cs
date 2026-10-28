@@ -16,6 +16,12 @@ internal static class MonitorSelection
             + (screen.Primary ? Loc.Get("settings.display.primary") : "")
             + $" ({screen.Bounds.Width} × {screen.Bounds.Height})", index, screen)).ToArray();
 
+    internal static string ResolveId(NotchSettings settings)
+    {
+        var screen = Resolve(settings);
+        return GetChoices().FirstOrDefault(c => c.Screen?.DeviceName == screen.DeviceName)?.Id ?? settings.MonitorDeviceId;
+    }
+
     public static Screen Resolve(NotchSettings settings)
     {
         var screens = Screen.AllScreens;

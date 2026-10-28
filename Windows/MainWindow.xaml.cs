@@ -312,7 +312,7 @@ public partial class MainWindow : Window
         _viewModel.IsExpandedCheck = _isExpandedCheck;
         _viewModel.MediaInfoUpdated += ViewModel_MediaInfoUpdated;
         AnimationPrimitives.ApplyFpsToTree(this);
-        _settingsService = settingsService;
+        _settingsService = IsSecondaryDisplay ? settingsService : new DisplayPreferenceCoordinator(settingsService, MonitorSelection.ResolveId);
         _settings = _settingsService.Load();
         UpdateInvisibleTrayVisibility();
         if (string.IsNullOrEmpty(_settings.MonitorDeviceId))
@@ -680,7 +680,8 @@ public partial class MainWindow : Window
     internal Task CleanupAsync()
     {
         PerformCleanup();
-        return _clipboardShutdown;
+        return _settingsService is DisplayPreferenceCoordinator shared
+            ? Task.WhenAll(_clipboardShutdown, shared.DrainAsync()) : _clipboardShutdown;
     }
 
     private void PerformCleanup()
@@ -1530,6 +1531,12 @@ public partial class MainWindow : Window
 
     private void OnSettingsWindowSettingsChanged(SettingsWindow? settingsWindow, NotchSettings newSettings)
     {
+        if (settingsWindow != null)
+        {
+            newSettings.MonitorDockEdges = _settingsService.Load().MonitorDockEdges;
+            if (newSettings.ShowOnAllMonitors || newSettings.MonitorDockEdges.Count > 0)
+                DisplayPreferenceCoordinator.RecordPlacement(newSettings, MonitorSelection.ResolveId(newSettings), newSettings.DockEdge);
+        }
         var oldSettings = _settings;
         bool sizeChanged = HasNotchGeometryChanged(oldSettings, newSettings);
         bool languageChanged = !string.Equals(newSettings.Language, oldSettings.Language, StringComparison.Ordinal);
