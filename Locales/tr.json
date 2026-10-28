@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Çentiği her ekranda göster",
+  "settings.allMonitors.hint": "Bağlı her ekranda bir çentik tutar. Eklenen ekranlar otomatik olarak görünür.",
   "settings.privacy.invisible.enable": "Görünmez modu aç",
   "settings.privacy.invisible.disable": "Görünmez modu kapat",
   "settings.privacy.invisible.shortcut": "Ctrl + Alt + Shift + I ile açıp kapatın. Görünmez modu kapatmak sistem tepsisi simgesini geri getirir.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Genişletildiğinde açılacak varsayılan aracı seçin",
   "tooltip.youtubeApi": "Daha doğru bilgiler için kendi YouTube API anahtarınızı kullanın",
   "tooltip.youtubeSubtitles": "Oynatılan YouTube videoları için altyazıları göster",
+  "tray.dock.left": "Sola sabitle",
+  "tray.dock.right": "Sağa sabitle",
+  "tray.dock.top": "Üste sabitle",
   "tray.exit": "Çıkış",
   "tray.hide": "Çentiği Gizle",
   "tray.reset": "Konumu Sıfırla",

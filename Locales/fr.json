@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Afficher le notch sur chaque écran",
+  "settings.allMonitors.hint": "Garde un notch sur chaque écran connecté. Les écrans ajoutés apparaissent automatiquement.",
   "settings.privacy.invisible.enable": "Activer le mode invisible",
   "settings.privacy.invisible.disable": "Désactiver le mode invisible",
   "settings.privacy.invisible.shortcut": "Basculez avec Ctrl + Alt + Shift + I. Désactiver le mode invisible rétablit l’icône dans la zone de notification.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Choisir le widget affiché lors de l'expansion",
   "tooltip.youtubeApi": "Utiliser votre clé API YouTube pour de meilleures miniatures",
   "tooltip.youtubeSubtitles": "Afficher les sous-titres pour les vidéos YouTube",
+  "tray.dock.left": "Ancrer à gauche",
+  "tray.dock.right": "Ancrer à droite",
+  "tray.dock.top": "Ancrer en haut",
   "tray.exit": "Quitter",
   "tray.hide": "Masquer le Notch",
   "tray.reset": "Réinitialiser la position",

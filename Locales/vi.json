@@ -78,7 +78,6 @@
   "translation.advanced.TopPPercent": "Top P (%) [1–100]",
   "translation.advanced.TopK": "Top K [1–100]",
   "translation.advanced.TimeoutSeconds": "Thời gian chờ dịch (giây) [15–600]",
-
   "translation.title": "Dịch trực tiếp",
   "settings.badge.experimental": "THỬ NGHIỆM",
   "settings.updates.prerelease": "Nhận bản cập nhật pre-release (thử nghiệm beta)",
@@ -861,6 +860,9 @@
   "tooltip.widgetCombo": "Chọn tiện ích hiển thị khi mở rộng",
   "tooltip.youtubeApi": "Dùng khóa YouTube API để ghép ảnh thu nhỏ chính xác hơn",
   "tooltip.youtubeSubtitles": "Hiện phụ đề cho video YouTube",
+  "tray.dock.left": "Gắn bên trái",
+  "tray.dock.right": "Gắn bên phải",
+  "tray.dock.top": "Gắn ở trên",
   "tray.exit": "Thoát",
   "tray.hide": "Ẩn Notch",
   "tray.reset": "Đặt lại vị trí",

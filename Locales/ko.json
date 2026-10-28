@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "모든 모니터에 노치 표시",
+  "settings.allMonitors.hint": "연결된 모든 모니터에 노치를 유지합니다. 새로 연결한 모니터는 자동으로 표시됩니다.",
   "settings.privacy.invisible.enable": "숨김 모드 켜기",
   "settings.privacy.invisible.disable": "숨김 모드 끄기",
   "settings.privacy.invisible.shortcut": "Ctrl + Alt + Shift + I로 전환합니다. 숨김 모드를 끄면 시스템 트레이 아이콘이 다시 나타납니다.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "확장 시 기본으로 보여줄 위젯 선택",
   "tooltip.youtubeApi": "더 정확한 정보 수집을 위해 사용자 YouTube API 키 사용",
   "tooltip.youtubeSubtitles": "재생 중인 YouTube 동영상의 자막 표시",
+  "tray.dock.left": "왼쪽에 배치",
+  "tray.dock.right": "오른쪽에 배치",
+  "tray.dock.top": "위쪽에 배치",
   "tray.exit": "종료",
   "tray.hide": "노치 숨기기",
   "tray.reset": "위치 초기화",

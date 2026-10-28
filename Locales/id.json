@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Tampilkan notch di setiap layar",
+  "settings.allMonitors.hint": "Pertahankan notch di setiap layar yang terhubung. Layar yang ditambahkan muncul otomatis.",
   "settings.privacy.invisible.enable": "Aktifkan mode tak terlihat",
   "settings.privacy.invisible.disable": "Nonaktifkan mode tak terlihat",
   "settings.privacy.invisible.shortcut": "Tekan Ctrl + Alt + Shift + I untuk mengaktifkan atau menonaktifkan. Menonaktifkan mode ini akan menampilkan kembali ikon baki sistem.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Pilih widget default yang terbuka saat diperluas",
   "tooltip.youtubeApi": "Gunakan kunci API YouTube pribadi untuk hasil yang lebih akurat",
   "tooltip.youtubeSubtitles": "Tampilkan subtitle untuk video YouTube yang sedang diputar",
+  "tray.dock.left": "Tempelkan di kiri",
+  "tray.dock.right": "Tempelkan di kanan",
+  "tray.dock.top": "Tempelkan di atas",
   "tray.exit": "Keluar",
   "tray.hide": "Sembunyikan Notch",
   "tray.reset": "Reset Posisi",

@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "إظهار النتوء على كل شاشة",
+  "settings.allMonitors.hint": "أبقِ نتوءًا على كل شاشة متصلة. تظهر الشاشات المضافة تلقائيًا.",
   "settings.privacy.invisible.enable": "تفعيل الوضع غير المرئي",
   "settings.privacy.invisible.disable": "إيقاف الوضع غير المرئي",
   "settings.privacy.invisible.shortcut": "يمكنك التبديل باستخدام Ctrl + Alt + Shift + I. يؤدي إيقاف الوضع غير المرئي إلى إظهار أيقونة علبة النظام مجددًا.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "اختيار الأداة المعروضة تلقائياً عند توسيع النتوء",
   "tooltip.youtubeApi": "استخدام مفتاح YouTube الخاص لتحسين جودة البيانات",
   "tooltip.youtubeSubtitles": "عرض نصوص الترجمة المصاحبة لفيديوهات YouTube",
+  "tray.dock.left": "إرساء إلى اليسار",
+  "tray.dock.right": "إرساء إلى اليمين",
+  "tray.dock.top": "إرساء في الأعلى",
   "tray.exit": "خروج",
   "tray.hide": "إخفاء النتوء",
   "tray.reset": "إعادة ضبط الموضع",

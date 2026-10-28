@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "すべてのディスプレイにノッチを表示",
+  "settings.allMonitors.hint": "接続されているすべてのディスプレイにノッチを表示します。追加したディスプレイは自動的に表示されます。",
   "settings.privacy.invisible.enable": "非表示モードをオンにする",
   "settings.privacy.invisible.disable": "非表示モードをオフにする",
   "settings.privacy.invisible.shortcut": "Ctrl + Alt + Shift + I で切り替えます。非表示モードをオフにすると、システムトレイのアイコンが再表示されます。",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "展開時に表示するウィジェットを選択",
   "tooltip.youtubeApi": "より良いサムネイル検出のために独自のYouTube APIキーを使用",
   "tooltip.youtubeSubtitles": "YouTubeビデオのクローズドキャプションを表示",
+  "tray.dock.left": "左に配置",
+  "tray.dock.right": "右に配置",
+  "tray.dock.top": "上に配置",
   "tray.exit": "終了",
   "tray.hide": "ノッチを非表示",
   "tray.reset": "位置をリセット",

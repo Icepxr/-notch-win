@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "हर स्क्रीन पर नॉच दिखाएँ",
+  "settings.allMonitors.hint": "हर जुड़ी हुई स्क्रीन पर एक नॉच रखें। नई जोड़ी गई स्क्रीन अपने आप दिखती हैं।",
   "settings.privacy.invisible.enable": "अदृश्य मोड चालू करें",
   "settings.privacy.invisible.disable": "अदृश्य मोड बंद करें",
   "settings.privacy.invisible.shortcut": "Ctrl + Alt + Shift + I से चालू या बंद करें। अदृश्य मोड बंद करने पर सिस्टम ट्रे का आइकन फिर दिखाई देगा।",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "नॉच खुलने पर दिखने वाला विजेट चुनें",
   "tooltip.youtubeApi": "बेहतर थंबनेल मिलान के लिए अपना YouTube API key इस्तेमाल करें",
   "tooltip.youtubeSubtitles": "YouTube वीडियो के क्लोज़्ड कैप्शन दिखाएँ",
+  "tray.dock.left": "बाईं ओर लगाएँ",
+  "tray.dock.right": "दाईं ओर लगाएँ",
+  "tray.dock.top": "ऊपर लगाएँ",
   "tray.exit": "बाहर निकलें",
   "tray.hide": "नॉच छिपाएँ",
   "tray.reset": "स्थिति रीसेट करें",

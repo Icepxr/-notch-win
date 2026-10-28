@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Показывать шторку на всех экранах",
+  "settings.allMonitors.hint": "Сохраняет шторку на каждом подключённом экране. Добавленные экраны появляются автоматически.",
   "settings.privacy.invisible.enable": "Включить невидимый режим",
   "settings.privacy.invisible.disable": "Выключить невидимый режим",
   "settings.privacy.invisible.shortcut": "Переключайте режим сочетанием Ctrl + Alt + Shift + I. При выключении невидимого режима значок в системном трее появится снова.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Выбрать виджет по умолчанию при раскрытии",
   "tooltip.youtubeApi": "Использовать ключ YouTube API для точных данных",
   "tooltip.youtubeSubtitles": "Показывать субтитры для видеороликов YouTube",
+  "tray.dock.left": "Закрепить слева",
+  "tray.dock.right": "Закрепить справа",
+  "tray.dock.top": "Закрепить сверху",
   "tray.exit": "Выход",
   "tray.hide": "Скрыть шторку",
   "tray.reset": "Сбросить позицию",

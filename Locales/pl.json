@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Pokaż notch na każdym ekranie",
+  "settings.allMonitors.hint": "Utrzymuje notch na każdym podłączonym ekranie. Dodane ekrany pojawiają się automatycznie.",
   "settings.privacy.invisible.enable": "Włącz tryb niewidoczny",
   "settings.privacy.invisible.disable": "Wyłącz tryb niewidoczny",
   "settings.privacy.invisible.shortcut": "Przełączaj za pomocą Ctrl + Alt + Shift + I. Wyłączenie trybu niewidocznego przywraca ikonę w zasobniku systemowym.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Wybierz widżet otwierany domyślnie po rozwinięciu",
   "tooltip.youtubeApi": "Użyj własnego klucza API YouTube dla wyższej precyzji",
   "tooltip.youtubeSubtitles": "Pokazuj napisy dla odtwarzanych filmów z YouTube",
+  "tray.dock.left": "Zadokuj po lewej",
+  "tray.dock.right": "Zadokuj po prawej",
+  "tray.dock.top": "Zadokuj u góry",
   "tray.exit": "Zakończ",
   "tray.hide": "Ukryj Notch",
   "tray.reset": "Zresetuj pozycję",

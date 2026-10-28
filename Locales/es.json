@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Mostrar el notch en todas las pantallas",
+  "settings.allMonitors.hint": "Mantiene un notch en cada pantalla conectada. Las pantallas que añadas aparecen automáticamente.",
   "settings.privacy.invisible.enable": "Activar modo invisible",
   "settings.privacy.invisible.disable": "Desactivar modo invisible",
   "settings.privacy.invisible.shortcut": "Alterna con Ctrl + Alt + Shift + I. Al desactivar el modo invisible, vuelve a aparecer el icono de la bandeja del sistema.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Elegir qué widget aparece al expandir",
   "tooltip.youtubeApi": "Usar clave API de YouTube propia para mejores miniaturas",
   "tooltip.youtubeSubtitles": "Mostrar subtítulos para videos de YouTube",
+  "tray.dock.left": "Anclar a la izquierda",
+  "tray.dock.right": "Anclar a la derecha",
+  "tray.dock.top": "Anclar arriba",
   "tray.exit": "Salir",
   "tray.hide": "Ocultar Notch",
   "tray.reset": "Restablecer posición",

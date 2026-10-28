@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Notch auf jedem Bildschirm anzeigen",
+  "settings.allMonitors.hint": "Behält auf jedem angeschlossenen Bildschirm eine Notch. Neu hinzugefügte Bildschirme erscheinen automatisch.",
   "settings.privacy.invisible.enable": "Unsichtbaren Modus aktivieren",
   "settings.privacy.invisible.disable": "Unsichtbaren Modus deaktivieren",
   "settings.privacy.invisible.shortcut": "Mit Ctrl + Alt + Shift + I umschalten. Beim Deaktivieren erscheint das Symbol im Infobereich wieder.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Widget wählen, das beim Erweitern angezeigt wird",
   "tooltip.youtubeApi": "Eigenen YouTube-API-Key für bessere Cover-Bilder nutzen",
   "tooltip.youtubeSubtitles": "Untertitel für YouTube-Videos anzeigen",
+  "tray.dock.left": "Links andocken",
+  "tray.dock.right": "Rechts andocken",
+  "tray.dock.top": "Oben andocken",
   "tray.exit": "Beenden",
   "tray.hide": "Notch ausblenden",
   "tray.reset": "Position zurücksetzen",

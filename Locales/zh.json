@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "在每个显示器上显示刘海",
+  "settings.allMonitors.hint": "在每个已连接的显示器上保留刘海。新接入的显示器会自动出现。",
   "settings.privacy.invisible.enable": "开启隐身模式",
   "settings.privacy.invisible.disable": "关闭隐身模式",
   "settings.privacy.invisible.shortcut": "按 Ctrl + Alt + Shift + I 切换。关闭隐身模式后，系统托盘图标会重新显示。",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "选择展开时默认展示的小组件",
   "tooltip.youtubeApi": "使用专属 YouTube API 密钥提升解析精度",
   "tooltip.youtubeSubtitles": "为播放中的 YouTube 视频显示字幕",
+  "tray.dock.left": "停靠在左侧",
+  "tray.dock.right": "停靠在右侧",
+  "tray.dock.top": "停靠在顶部",
   "tray.exit": "退出",
   "tray.hide": "隐藏刘海",
   "tray.reset": "重置位置",

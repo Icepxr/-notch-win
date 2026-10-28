@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Notch op elk beeldscherm tonen",
+  "settings.allMonitors.hint": "Houdt op elk aangesloten beeldscherm een notch. Nieuw toegevoegde schermen verschijnen automatisch.",
   "settings.privacy.invisible.enable": "Onzichtbare modus inschakelen",
   "settings.privacy.invisible.disable": "Onzichtbare modus uitschakelen",
   "settings.privacy.invisible.shortcut": "Schakel om met Ctrl + Alt + Shift + I. Als je de onzichtbare modus uitschakelt, verschijnt het systeemvakpictogram weer.",
@@ -858,6 +860,9 @@
   "tooltip.widgetCombo": "Kies de widget die standaard opent bij het uitvouwen",
   "tooltip.youtubeApi": "Eigen YouTube API-sleutel gebruiken voor betere resultaten",
   "tooltip.youtubeSubtitles": "Ondertitels weergeven voor afgespeelde YouTube-video's",
+  "tray.dock.left": "Links vastzetten",
+  "tray.dock.right": "Rechts vastzetten",
+  "tray.dock.top": "Bovenaan vastzetten",
   "tray.exit": "Afsluiten",
   "tray.hide": "Notch verbergen",
   "tray.reset": "Positie herstellen",
