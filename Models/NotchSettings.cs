@@ -224,7 +224,11 @@ public class NotchSettings
     public bool AllowOnlineCanvas { get; set; } = false;
     public bool AllowOnlineWeather { get; set; } = true;
     public bool SaveAiChatHistory { get; set; } = true;
-    public bool AutoCheckUpdates { get; set; } = true;
+    // This fork does not publish its own releases, and the updater points at the
+    // upstream repository. A fresh install must not offer the original author's
+    // build, which would replace this customised one. Existing settings files
+    // keep whatever they already stored.
+    public bool AutoCheckUpdates { get; set; }
     public bool IncludePrereleaseUpdates { get; set; } = false;
     public bool EnableOnlineArtworkLookup { get; set; } = true;
     public bool EnableOnlineLyrics { get; set; } = true;

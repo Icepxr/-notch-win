@@ -30,7 +30,8 @@ public sealed class PrivacySettingsTests
         var settings = new NotchSettings();
 
         Assert.False(settings.EnableLocalOnlyMode);
-        Assert.True(settings.AutoCheckUpdates);
+        // This fork ships with the upstream update check off; see NotchSettings.
+        Assert.False(settings.AutoCheckUpdates);
         Assert.True(settings.EnableOnlineArtworkLookup);
         Assert.True(settings.EnableOnlineLyrics);
         Assert.True(settings.EnableBrowserUrlInspection);
