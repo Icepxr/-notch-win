@@ -31,6 +31,7 @@ public class NotchSettings
 
     public int MonitorIndex { get; set; } = 0;
     public string MonitorDeviceId { get; set; } = "";
+    public bool ShowOnAllMonitors { get; set; }
 
     // Local customization: edge docking. Top is the original placement, so an
     // existing settings file without these keys keeps behaving as it did.

@@ -336,7 +336,7 @@ public partial class MainWindow
 
     private void PlayAppearAnimation()
     {
-        bool showGreeting = _settings.EnableHelloGreeting;
+        bool showGreeting = _settings.EnableHelloGreeting && !IsSecondaryDisplay;
 
         if (showGreeting)
         {

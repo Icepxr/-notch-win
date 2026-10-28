@@ -53,6 +53,7 @@ public partial class SettingsWindow
             SpotifyCanvasBrightnessSlider.Value = defaults.SpotifyCanvasBrightness * 100;
             AnimationFpsSlider.Value = defaults.AnimationFps;
             AutoAnimationFpsCheck.IsChecked = defaults.AutoAnimationFps;
+            AllMonitorsCheck.IsChecked = defaults.ShowOnAllMonitors;
             EnableBlurEffectsCheck.IsChecked = defaults.EnableBlurEffects;
             MediaArtBackgroundCheck.IsChecked = defaults.ShowMediaArtBackground;
             _settings.NotchStyle = defaults.NotchStyle;
@@ -587,6 +588,7 @@ public partial class SettingsWindow
             snapshot.VisualizerAudioDeviceId = selectedAudioDevice.Id;
         snapshot.AutoStart = AutoStartCheck.IsChecked ?? false;
         snapshot.StayBehindWindows = StayBehindWindowsCheck.IsChecked ?? false;
+        snapshot.ShowOnAllMonitors = AllMonitorsCheck.IsChecked ?? false;
         snapshot.EnableHelloGreeting = HelloGreetingCheck.IsChecked ?? true;
         snapshot.EnableSpotlight = EnableSpotlightCheck.IsChecked ?? true;
         ReadSpotlightAiSettings(snapshot);

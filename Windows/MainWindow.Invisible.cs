@@ -13,7 +13,7 @@ public partial class MainWindow
     {
         if (_settings.InvisibleMode && TrayIcon.ContextMenu != null)
             TrayIcon.ContextMenu.IsOpen = false;
-        TrayIcon.Visibility = _settings.InvisibleMode ? Visibility.Collapsed : Visibility.Visible;
+        TrayIcon.Visibility = IsSecondaryDisplay || _settings.InvisibleMode ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void ApplyInvisibleMode()
@@ -40,7 +40,7 @@ public partial class MainWindow
             }
             _settings.InvisibleMode = !_settings.InvisibleMode;
             ApplyInvisibleMode();
-            await _settingsService.SaveAsync(_settings.Clone());
+            await PersistWindowSettingsAsync();
         }
         finally { _savingInvisibleMode = false; }
     }

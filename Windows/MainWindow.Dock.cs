@@ -1220,7 +1220,7 @@ public partial class MainWindow
             SetDockShellFrame(fromSize, toSize, fromRadius, toRadius, 1);
             MoveDockHost(destination);
             _notchManager.UpdatePosition();
-            if (!cancelled) _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+            if (!cancelled) PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
             RuntimeLog.Log(DockLogTag, $"{(cancelled ? "cancelled" : "landed")} on {NotchDock.Describe(_settings.DockEdge)}");
         }
         finally
@@ -1415,7 +1415,7 @@ public partial class MainWindow
         _notchManager.UpdateSettings(_settings);
         ApplyDockPlacement();
         RefreshDockMenuState();
-        _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+        PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
         RuntimeLog.Log(DockLogTag, $"moved to the {NotchDock.Describe(edge)} edge from the tray");
     }
 

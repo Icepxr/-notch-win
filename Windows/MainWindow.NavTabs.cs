@@ -545,7 +545,7 @@ public partial class MainWindow
             if (!string.Equals(_settings.NavTabOrder, newOrder, StringComparison.OrdinalIgnoreCase))
             {
                 _settings.NavTabOrder = newOrder;
-                _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+                PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
             }
         }
     }

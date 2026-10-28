@@ -24,6 +24,11 @@ namespace VNotch;
 
 public partial class SettingsWindow
 {
+    private void AllMonitors_Changed(object sender, RoutedEventArgs e)
+    {
+        if (MonitorCombo != null) MonitorCombo.IsEnabled = AllMonitorsCheck.IsChecked != true;
+        if (!_isLoadingSettings) PushLivePreview();
+    }
     private void ClipboardSetting_Changed(object sender, RoutedEventArgs e)
     {
         if (_isLoadingSettings || _isSyncingCameraVisibility) return;

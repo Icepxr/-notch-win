@@ -33,10 +33,11 @@ public partial class MainWindow
 
     private void InitializeClipboardHistory(VNotch.Services.Clipboard.ClipboardHistoryStore? store)
     {
-        _clipboardHistory = new ClipboardHistoryController(Dispatcher, store);
+        _clipboardHistory = _primaryDisplayWindow?._clipboardHistory ?? new ClipboardHistoryController(Dispatcher, store);
         _clipboardHistory.ApplySettings(_settings);
         _clipboardHistory.DropImported += PlayClipboardDropFeedback;
         ClipboardTrayView.Attach(_clipboardHistory);
+        if (IsSecondaryDisplay) return;
         _clipboardHotkey = new ClipboardHotkeyController(this, () =>
         {
             if (_cleanedUp || _isGreetingActive || _isAnimating) return;
@@ -52,6 +53,7 @@ public partial class MainWindow
     }
     private void HandleClipboardUpdated()
     {
+        if (IsSecondaryDisplay) return;
         _clipboardHistory?.NotifyClipboardUpdated();
         _clipboardListener.NotifyClipboardUpdated();
     }

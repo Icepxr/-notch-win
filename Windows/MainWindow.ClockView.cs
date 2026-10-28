@@ -122,7 +122,7 @@ public partial class MainWindow : IClockWidgetHost
     #region IClockWidgetHost (adapter onto the shared shell state)
 
     NotchSettings IClockWidgetHost.Settings => _settings;
-    void IClockWidgetHost.SaveSettings() => _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+    void IClockWidgetHost.SaveSettings() => PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
 
     bool IClockWidgetHost.IsAnimating { get => _isAnimating; set => _isAnimating = value; }
     bool IClockWidgetHost.IsSecondaryView => _isSecondaryView;

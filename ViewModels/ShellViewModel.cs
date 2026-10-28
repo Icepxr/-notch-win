@@ -10,6 +10,8 @@ public partial class ShellViewModel : ObservableObject, IDisposable
 {
     private readonly IMediaDetectionService _mediaService;
     private readonly IDispatcherService _dispatcher;
+    private readonly IVolumeService _volumeService;
+    private readonly IBatteryService _batteryService;
     private readonly MediaUpdateQueue _mediaUpdates;
 
     [ObservableProperty] private NotchView _currentView = NotchView.Compact;
@@ -41,6 +43,8 @@ public partial class ShellViewModel : ObservableObject, IDisposable
     {
         _mediaService = mediaService;
         _dispatcher = dispatcher;
+        _volumeService = volumeService;
+        _batteryService = batteryService;
         _coordinator = coordinator;
         Progress = new(mediaService);
         Media = new(mediaService, Progress.SeekRelative);
@@ -66,14 +70,17 @@ public partial class ShellViewModel : ObservableObject, IDisposable
         });
     }
 
-    public void Initialize()
+    public void Initialize(bool startMedia = true)
     {
-        _mediaService.Start();
+        if (startMedia) _mediaService.Start();
         Secondary.UpdateBattery();
         Secondary.UpdateCalendar();
     }
 
     private void OnMediaChanged(object? sender, MediaInfo info) => _mediaUpdates.Enqueue(info);
+    internal void ReplayMediaSnapshot(MediaInfo info) => _mediaUpdates.Enqueue(info.Clone());
+    internal ShellViewModel CreateDisplayViewModel(ISettingsService settings, NotchTransitionCoordinator coordinator)
+        => new(_mediaService, settings, _volumeService, _batteryService, _dispatcher, coordinator);
 
     private void ApplyMediaUpdate(MediaInfo info)
     {

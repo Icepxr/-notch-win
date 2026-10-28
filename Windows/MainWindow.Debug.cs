@@ -75,14 +75,14 @@ public partial class MainWindow
                     OnClose = () =>
                     {
                         _settings.EnableDebugMode = false;
-                        _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+                        PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
                         ToggleDebugMode(false);
                     },
                     OnPositionChanged = (x, y) =>
                     {
                         _settings.DebugWindowX = x;
                         _settings.DebugWindowY = y;
-                        _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+                        PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
                     },
                     LiveMetricsProvider = () =>
                     {

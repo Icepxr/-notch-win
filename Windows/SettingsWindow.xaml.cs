@@ -260,6 +260,7 @@ public partial class SettingsWindow : Window
         SpotifyCanvasBrightnessSlider.Value = _settings.SpotifyCanvasBrightness * 100;
         AnimationFpsSlider.Value = _settings.AnimationFps;
         AutoAnimationFpsCheck.IsChecked = _settings.AutoAnimationFps;
+        AllMonitorsCheck.IsChecked = _settings.ShowOnAllMonitors;
         AnimationFpsSlider.IsEnabled = !_settings.AutoAnimationFps;
         EnableBlurEffectsCheck.IsChecked = _settings.EnableBlurEffects;
         MediaArtBackgroundCheck.IsChecked = _settings.ShowMediaArtBackground;
@@ -625,6 +626,8 @@ public partial class SettingsWindow : Window
         ClearCacheHint.Text = Loc.Get("settings.clearCache.hint");
 
         MonitorLabel.Text = Loc.Get("settings.activeMonitor");
+        AllMonitorsCheck.Content = Loc.Get("settings.allMonitors");
+        AllMonitorsHint.Text = Loc.Get("settings.allMonitors.hint");
         MonitorHint.Text = Loc.Get("settings.activeMonitor.hint");
         RefreshMonitorChoices();
 

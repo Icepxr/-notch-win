@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Hiển thị notch trên mọi màn hình",
+  "settings.allMonitors.hint": "Giữ một notch trên mỗi màn hình được kết nối, tự cập nhật khi cắm hoặc tháo màn hình.",
   "settings.privacy.invisible.enable": "Bật chế độ Invisible",
   "settings.privacy.invisible.disable": "Tắt chế độ Invisible",
   "settings.privacy.invisible.shortcut": "Bật/tắt bằng Ctrl + Alt + Shift + I. Tắt Invisible sẽ hiện lại biểu tượng khay hệ thống.",

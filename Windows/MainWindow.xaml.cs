@@ -222,7 +222,7 @@ public partial class MainWindow : Window
         ISettingsService settingsService,
         IMediaDetectionService mediaService,
         ShellViewModel viewModel,
-        IUpdateService updateService,
+        IUpdateService? updateService,
         IModuleLifecycleManager moduleHost,
         BatteryModule batteryModule,
         CalendarModule calendarModule,
@@ -232,8 +232,10 @@ public partial class MainWindow : Window
         SystemMonitorModule systemMonitorModule,
         ISpotlightController spotlightController,
         VNotch.Controllers.NotchTransitionCoordinator? transitionCoordinator = null,
-        VNotch.Services.Clipboard.ClipboardHistoryStore? clipboardHistoryStore = null)
+        VNotch.Services.Clipboard.ClipboardHistoryStore? clipboardHistoryStore = null,
+        SecondaryDisplayContext? displayContext = null)
     {
+        _primaryDisplayWindow = displayContext?.Owner;
         InitializeComponent();
         InitializeShellCornerRadiusSync();
         MusicCompactContent.Loaded += (_, _) => MusicCompactContent.LayoutUpdated += CacheCompactThumbnailRestOffset;
@@ -323,7 +325,7 @@ public partial class MainWindow : Window
             {
                 _settings.MonitorDeviceId = preferred.Id;
                 _settings.MonitorIndex = preferred.Index;
-                _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
+                PersistWindowSettingsAsync().SafeFireAndForget("SETTINGS-SAVE");
             }
         }
         _notchManager = new NotchManager(this, _settings, _transitionCoordinator);
@@ -516,12 +518,15 @@ public partial class MainWindow : Window
 
     private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        InitializeSessionUnlockFeedback();
-        _invisibleHotkey ??= new VNotch.Controllers.InvisibleHotkeyController(this, ToggleInvisibleMode);
+        if (!IsSecondaryDisplay) InitializeSessionUnlockFeedback();
+        if (!IsSecondaryDisplay) _invisibleHotkey ??= new VNotch.Controllers.InvisibleHotkeyController(this, ToggleInvisibleMode);
         _overlayWindow.Initialize();
-        _spotlightController.Initialize(this, _settings);
-        InitializeLiveTranslation();
-        _clipboardListener.Start();
+        if (!IsSecondaryDisplay)
+        {
+            _spotlightController.Initialize(this, _settings);
+            InitializeLiveTranslation();
+            _clipboardListener.Start();
+        }
 
         try
         {
@@ -551,12 +556,12 @@ public partial class MainWindow : Window
         UpdateFullscreenAutoHideState(OverlayWindowController.GetForegroundWindowHandle(), force: true);
 
         _updateTimer.Start();
-        _updateCheckTimer.Start();
+        if (!IsSecondaryDisplay) _updateCheckTimer.Start();
         if (_updateService?.LatestUpdateInfo is { IsNewerVersion: true } initialUpdate)
         {
             SetAvailableUpdate(initialUpdate);
         }
-        CheckForUpdatesAsync().SafeFireAndForget("UPDATE-CHECK");
+        if (!IsSecondaryDisplay) CheckForUpdatesAsync().SafeFireAndForget("UPDATE-CHECK");
 
         PrepareFirstOpenUi();
 
@@ -592,7 +597,7 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(new Action(() =>
         {
             if (_cleanedUp) return;
-            _viewModel.Initialize();
+            _viewModel.Initialize(startMedia: !IsSecondaryDisplay);
             StartCoreModules();
             PrewarmAudioSnapshot();
         }), DispatcherPriority.ApplicationIdle);
@@ -709,7 +714,8 @@ public partial class MainWindow : Window
 
         ClipboardTrayView.Dispose();
         AgentDashboardView.Dispose();
-        _clipboardShutdown = _clipboardHistory?.DisposeAsync().AsTask() ?? Task.CompletedTask;
+        if (_clipboardHistory != null) _clipboardHistory.DropImported -= PlayClipboardDropFeedback;
+        _clipboardShutdown = IsSecondaryDisplay ? Task.CompletedTask : _clipboardHistory?.DisposeAsync().AsTask() ?? Task.CompletedTask;
         _clipboardShutdown.SafeFireAndForget("CLIPBOARD-SHUTDOWN");
         DisposeClipboardHotkey();
         _invisibleHotkey?.Dispose();
@@ -945,7 +951,7 @@ public partial class MainWindow : Window
     protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         base.OnClosing(e);
-        if (!e.Cancel && Application.Current is App { IsShutdownRequested: false })
+        if (!IsSecondaryDisplay && !e.Cancel && Application.Current is App { IsShutdownRequested: false })
         {
             e.Cancel = true;
             App.RequestShutdownAsync().SafeFireAndForget("APP-CLOSE");
@@ -1478,6 +1484,7 @@ public partial class MainWindow : Window
 
     private void OpenAppSettings(bool showTranslation = false)
     {
+        if (_primaryDisplayWindow != null) { _primaryDisplayWindow.OpenAppSettings(showTranslation); return; }
         if (IsGreetingInteractionBlocked) return;
         if (_activeSettingsWindow is { IsVisible: true } activeSettings)
         {
@@ -1521,7 +1528,7 @@ public partial class MainWindow : Window
         settingsWindow.Show();
     }
 
-    private void OnSettingsWindowSettingsChanged(SettingsWindow settingsWindow, NotchSettings newSettings)
+    private void OnSettingsWindowSettingsChanged(SettingsWindow? settingsWindow, NotchSettings newSettings)
     {
         var oldSettings = _settings;
         bool sizeChanged = HasNotchGeometryChanged(oldSettings, newSettings);
@@ -1551,6 +1558,7 @@ public partial class MainWindow : Window
         }
 
         RefreshUpdateCheckIfSettingsChanged(oldSettings, newSettings);
+        DisplaySettingsChanged?.Invoke(this, _settings.Clone());
     }
 
     private static bool HasNotchGeometryChanged(NotchSettings oldSettings, NotchSettings newSettings) =>
@@ -1570,7 +1578,7 @@ public partial class MainWindow : Window
     private void UpdateWindowAndNotchPlacementSettings(
         NotchSettings oldSettings,
         NotchSettings newSettings,
-        SettingsWindow settingsWindow)
+        SettingsWindow? settingsWindow)
     {
         if (oldSettings.HideOnExclusiveFullscreen != newSettings.HideOnExclusiveFullscreen ||
             oldSettings.HideOnWindowedFullscreen != newSettings.HideOnWindowedFullscreen)
@@ -1600,7 +1608,7 @@ public partial class MainWindow : Window
         _spotlightController.ApplySettings(_settings);
         if (oldSettings.EnableSpotlight != newSettings.EnableSpotlight)
         {
-            settingsWindow.SetSpotlightHotkeyStatus(_spotlightController.IsHotkeyRegistered);
+            settingsWindow?.SetSpotlightHotkeyStatus(_spotlightController.IsHotkeyRegistered);
         }
     }
 
@@ -1651,6 +1659,7 @@ public partial class MainWindow : Window
 
     private void RefreshUpdateCheckIfSettingsChanged(NotchSettings oldSettings, NotchSettings newSettings)
     {
+        if (IsSecondaryDisplay) return;
         bool autoCheckUpdatesChanged = oldSettings.AutoCheckUpdates != newSettings.AutoCheckUpdates;
         bool updateChannelChanged = oldSettings.IncludePrereleaseUpdates != newSettings.IncludePrereleaseUpdates;
         if (updateChannelChanged)

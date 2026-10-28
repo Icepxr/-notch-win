@@ -19,6 +19,7 @@ public partial class App : Application
     private static string MutexName => SingleInstanceGuard.GetCurrentUserMutexName();
     private Task? _shutdownTask;
     private bool _servicesDisposed;
+    private MultiMonitorNotchHost? _multiMonitorHost;
     internal bool IsShutdownRequested => _shutdownTask != null;
 
     internal static Task RequestShutdownAsync(int exitCode = 0)
@@ -35,6 +36,8 @@ public partial class App : Application
         await Task.Yield();
         try
         {
+            _multiMonitorHost?.Dispose();
+            _multiMonitorHost = null;
             if (MainWindow is MainWindow window) await window.CleanupAsync();
             if (Services?.GetService<IMediaDetectionService>() is MediaDetectionService media)
                 await media.DrainShutdownAsync();
@@ -148,6 +151,7 @@ public partial class App : Application
 
             var mainWindow = Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
+            _multiMonitorHost = new MultiMonitorNotchHost(mainWindow);
 
             _ = AppIntegrityService.StartBackgroundCheckAsync();
 
@@ -401,6 +405,8 @@ public partial class App : Application
     {
         try
         {
+            _multiMonitorHost?.Dispose();
+            _multiMonitorHost = null;
             if (!_servicesDisposed && Services is IDisposable disposable)
             {
                 disposable.Dispose();

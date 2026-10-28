@@ -1,4 +1,6 @@
 {
+  "settings.allMonitors": "Show notch on every display",
+  "settings.allMonitors.hint": "Keep a notch on each connected screen. Added displays appear automatically.",
   "settings.privacy.invisible.enable": "Enable Invisible mode",
   "settings.privacy.invisible.disable": "Disable Invisible mode",
   "settings.privacy.invisible.shortcut": "Toggle with Ctrl + Alt + Shift + I. Turning Invisible off restores the system tray icon.",
