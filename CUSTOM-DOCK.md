@@ -11,11 +11,16 @@ without the new keys loads as `Top`, so nothing changes until you move it.
   pill becomes a move cursor. Active text editors retain their Ctrl shortcuts.
 - **Ctrl + drag follows your hand.** A 6-DIP threshold rejects small hand
   jitter. The shell follows the grab point as it shrinks. Its orientation stays
-  stable during the drag; release to dock at the top/left/right with a short
-  ease-out. A 24-DIP boundary band stops the destination flickering. Releasing
+  stable during the drag; release to dock at the top/left/right. Position,
+  capsule/badge dimensions and corner radii settle together over 220–420ms,
+  depending on travel distance. Foreground content and edge flares fade during
+  the axis change, keeping artwork from jumping or stretching. Grab again to
+  interrupt a landing at its live position and shape. A 24-DIP boundary band
+  stops the destination flickering. Releasing
   Ctrl first does not interrupt an active drag. **Esc cancels** the move.
 - **Tray menu → Dock at top / Dock at left / Dock at right** does the same
-  without a drag, and shows which edge is current.
+  without a drag, including the morphing transition, and shows which edge is
+  current. Reduced motion places the shell immediately.
 - The notch is always centred on its edge. There is one decision to make and
   nowhere lopsided to leave it.
 

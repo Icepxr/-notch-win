@@ -95,7 +95,7 @@ public sealed class NotchRevealMotionTests
         finally { AnimationConfig.SetReduceMotion(previous); }
     });
 
-    private static async Task StartMusic(MainWindow w, CancellationToken ct)
+    internal static async Task StartMusic(MainWindow w, CancellationToken ct)
     {
         w.Show();
         await WpfFrameWaiter.UntilAsync(() => !Animating(w), "startup", ct);

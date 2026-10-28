@@ -49,5 +49,14 @@ public sealed class DockDragSession
         => new(pointer.X - shellInHostPixels.X - shellPixels.Width * grabFraction.X,
             pointer.Y - shellInHostPixels.Y - shellPixels.Height * grabFraction.Y);
 
-    public static double LandingEase(double progress) => 1 - Math.Pow(1 - Math.Clamp(progress, 0, 1), 3);
+    // Zero velocity and acceleration at both ends. The host and shell use
+    // this same clock, so changing axes cannot get ahead of the landing.
+    public static double LandingEase(double progress)
+    {
+        double t = Math.Clamp(progress, 0, 1);
+        return t * t * t * (t * (t * 6 - 15) + 10);
+    }
+
+    public static double LandingMilliseconds(double distanceDip)
+        => Math.Clamp(220 + Math.Max(0, distanceDip) * .18, 220, 420);
 }

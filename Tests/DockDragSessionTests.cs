@@ -63,5 +63,19 @@ public sealed class DockDragSessionTests
         { double t = DockDragSession.LandingEase(frame / 20d); Assert.InRange(t, previous, 1); previous = t; }
         Assert.Equal(0, DockDragSession.LandingEase(-1));
         Assert.Equal(1, DockDragSession.LandingEase(2));
+        // Both velocity and acceleration settle at the join with pointer
+        // tracking and at rest, rather than starting with a positional kick.
+        const double step = .001;
+        Assert.InRange(DockDragSession.LandingEase(step) / step, 0, .001);
+        Assert.InRange((1 - DockDragSession.LandingEase(1 - step)) / step, 0, .001);
+    }
+
+    [Fact]
+    public void LandingDurationScalesWithDistanceWithoutDraggingOutLongMoves()
+    {
+        Assert.Equal(220, DockDragSession.LandingMilliseconds(-10));
+        Assert.Equal(220, DockDragSession.LandingMilliseconds(0));
+        Assert.InRange(DockDragSession.LandingMilliseconds(500), 300, 320);
+        Assert.Equal(420, DockDragSession.LandingMilliseconds(5000));
     }
 }

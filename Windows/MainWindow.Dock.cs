@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using System.Diagnostics;
 using VNotch.Models;
@@ -35,6 +37,9 @@ public partial class MainWindow
     private Point _dockGrabFraction;
     private bool _dockDidMove;
     private int _dockMoveVersion;
+    private bool _dockNeedsSettle;
+    private EventHandler? _dockLandingRendering;
+    private TaskCompletionSource? _dockLandingCompletion;
     internal Func<DockPointerState> DockPointerReader { get; set; } = ReadSystemDockPointer;
 
     private static DockPointerState ReadSystemDockPointer()
@@ -768,10 +773,8 @@ public partial class MainWindow
     #region Picking the notch up and moving it
 
     /// <summary>
-    /// True while the modifier that moves the notch is held. On its own this
-    /// only offers the move - it changes the cursor, and nothing else - because
-    /// the modifier is held all day for copy, paste and tab switching. The
-    /// press on the pill is what actually starts one.
+    /// True while Ctrl readies the compact pill. A press starts the gesture;
+    /// the arming monitor leaves active text editors' shortcuts alone.
     /// </summary>
     /// <remarks>
     /// Asked of the system rather than of WPF. The notch never takes focus -
@@ -784,8 +787,8 @@ public partial class MainWindow
 
     /// <summary>
     /// True while a move is actually under way, for the hover timers and the
-    /// glass motion state to stay out of the way. Holding the modifier is not
-    /// a move: a panel that would have opened still opens.
+    /// glass motion state to stay out of the way. Holding Ctrl alone prepares
+    /// the pill and suppresses hover, without starting a drag session.
     /// </summary>
     internal bool IsDockMoveInProgress => _isDockDragging || _isDockLanding;
     internal bool IsDockHoverSuppressed => DockGesture.SuppressesHover(IsDockMoveInProgress, IsDockPickUpArmed);
@@ -840,7 +843,7 @@ public partial class MainWindow
     {
         var input = DockPointerReader();
         if (!_settings.EnableEdgeDocking || !input.ControlDown || !input.LeftDown ||
-            IsDockMoveInProgress || _cleanedUp || _isGreetingActive || _isDebugViewLocked ||
+            _isDockDragging || _cleanedUp || _isGreetingActive || _isDebugViewLocked ||
             _spotlightMorphSessionActive || _spotlightMorphOwnsNotchVisibility) return false;
         if (!TryGetDockScreen(out var screen)) return false;
         var origin = NotchBorder.PointToScreen(new Point());
@@ -851,6 +854,9 @@ public partial class MainWindow
         _dockDrag = new DockDragSession(DockEdge, input.Position, screen,
             System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX);
         ++_dockMoveVersion;
+        _dockNeedsSettle = _isDockLanding;
+        StopDockLandingFrames();
+        _isDockLanding = false;
         _dockDidMove = false;
         // Capture a stable ancestor. A timer scoped to this gesture covers
         // no-activate capture failures and release outside the painted shell.
@@ -914,10 +920,8 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Hold the modifier over the notch and the cursor says it can be moved.
-    /// That is all it does. Shrinking an open panel back to the pill belongs to
-    /// the press that starts the move, not to the key: doing it here collapsed
-    /// the panel out from under anyone who merely held the modifier nearby.
+    /// Reflect move readiness in the cursor. The arming monitor owns collapse,
+    /// so cursor updates never rebuild the layout under an active grab.
     /// </summary>
     private void UpdateDockPickUpAffordance()
     {
@@ -953,6 +957,7 @@ public partial class MainWindow
         _dockDidMove = true;
         _gestureController.CancelTracking();
         _isGestureActive = false;
+        FadeDockContents(0, 90);
         if (_isExpanded || _isMusicExpanded) CollapseNotch();
     }
 
@@ -984,44 +989,66 @@ public partial class MainWindow
         _dockDrag = null;
         _dockDragTimer?.Stop();
         if (ReferenceEquals(Mouse.Captured, this) || ReferenceEquals(Mouse.Captured, NotchWrapper)) Mouse.Capture(null);
-        CompleteDockLandingAsync(drag, cancelled, _dockMoveVersion).SafeFireAndForget("DOCK-LANDING");
+        CompleteDockLandingAsync(cancelled ? drag.Source : drag.Target, cancelled,
+            drag.HasMoved || _dockNeedsSettle, _dockMoveVersion).SafeFireAndForget("DOCK-LANDING");
     }
 
-    private async Task CompleteDockLandingAsync(DockDragSession drag, bool cancelled, int version)
+    private async Task CompleteDockLandingAsync(NotchEdge target, bool cancelled, bool moved, int version)
     {
         try
         {
-            if (!drag.HasMoved) return;
+            if (!moved) return;
+            var source = DockEdge;
             // Wait out a quick-release collapse so its callbacks cannot put
             // the old horizontal pill's size back onto the new side badge.
             while (_isAnimating)
             {
                 if (_cleanedUp || version != _dockMoveVersion) return;
-                cancelled |= DockPointerReader().EscapeDown;
+                if (!cancelled && DockPointerReader().EscapeDown) { target = source; cancelled = true; }
                 await Task.Delay(16);
             }
             if (_cleanedUp || version != _dockMoveVersion) return;
-            var center = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth / 2, NotchBorder.ActualHeight / 2));
-            _settings.DockEdge = cancelled ? drag.Source : drag.Target;
+            var center = DockShellCenter();
+            var fromSize = new Size(NotchBorder.ActualWidth, NotchBorder.ActualHeight);
+            var fromRadius = NotchBorder.CornerRadius;
+            // Compact media keeps its width clock after the reveal finishes.
+            // Detach that owner at its live value before driving this morph.
+            NotchBorder.BeginAnimation(WidthProperty, null);
+            NotchBorder.BeginAnimation(HeightProperty, null);
+            NotchBorder.Width = fromSize.Width;
+            NotchBorder.Height = fromSize.Height;
+            // Only the foreground fades. The black shell and glass layers
+            // stay visible while the row is laid out as a column (or back).
+            FadeDockContents(0, 0);
+            _settings.DockEdge = target;
             _notchManager.UpdateSettings(_settings);
             ApplyDockPlacement();
             RefreshDockMenuState();
+            var toSize = new Size(_collapsedWidth, _collapsedHeight);
+            var toRadius = MakeNotchCornerRadius(_cornerRadiusCollapsed);
+            SetDockShellFrame(fromSize, toSize, fromRadius, toRadius, 1);
             UpdateLayout();
             var destination = new Point(_fixedX, _fixedY);
-            var newCenter = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth / 2, NotchBorder.ActualHeight / 2));
-            var start = destination + (center - newCenter);
+            var destinationCenter = DockShellCenter();
             if (!AnimationConfig.ReduceMotion)
             {
+                // Reparent onto the new axis in the same dispatcher turn,
+                // retaining the live size and screen centre. There is no
+                // painted frame of the final badge at the old location.
+                SetDockShellFrame(fromSize, toSize, fromRadius, toRadius, 0);
+                UpdateLayout();
+                var start = destination + (center - DockShellCenter());
                 MoveDockHost(start);
-                var clock = Stopwatch.StartNew();
-                while (clock.Elapsed.TotalMilliseconds < 180)
+                double scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+                double milliseconds = DockDragSession.LandingMilliseconds((destinationCenter - center).Length / scale);
+                await AnimateDockLandingAsync(version, milliseconds, t =>
                 {
-                    if (_cleanedUp || version != _dockMoveVersion) return;
-                    double t = DockDragSession.LandingEase(clock.Elapsed.TotalMilliseconds / 180);
+                    SetDockShellFrame(fromSize, toSize, fromRadius, toRadius, t);
                     MoveDockHost(start + (destination - start) * t);
-                    await Task.Delay(16);
-                }
+                });
             }
+            if (_cleanedUp || version != _dockMoveVersion) return;
+            SetDockShellFrame(fromSize, toSize, fromRadius, toRadius, 1);
             MoveDockHost(destination);
             _notchManager.UpdatePosition();
             if (!cancelled) _settingsService.SaveAsync(_settings).SafeFireAndForget("SETTINGS-SAVE");
@@ -1031,7 +1058,10 @@ public partial class MainWindow
         {
             if (version == _dockMoveVersion)
             {
+                StopDockLandingFrames();
                 _isDockLanding = false;
+                _dockNeedsSettle = false;
+                FadeDockContents(1, 140);
                 _hoverCollapseTimer.Stop();
                 _hoverThumbnailDelayTimer.Stop();
                 _suppressHoverCollapseUntilUtc = DateTime.UtcNow.AddMilliseconds(350);
@@ -1042,14 +1072,99 @@ public partial class MainWindow
         }
     }
 
+    private Point DockShellCenter() =>
+        NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth / 2, NotchBorder.ActualHeight / 2));
+
+    private void FadeDockContents(double opacity, double milliseconds)
+    {
+        // Ears belong to the edge, rather than to the floating shell. Keep
+        // their authored opacity underneath the gesture's temporary clock.
+        foreach (var ear in new[] { LeftEar, RightEar, LeftShadowEar, RightShadowEar })
+        {
+            double earFrom = ear.Opacity;
+            double earTo = opacity == 0 ? 0 : (double)ear.GetAnimationBaseValue(OpacityProperty);
+            ear.BeginAnimation(OpacityProperty, null);
+            double duration = AnimationConfig.ReduceMotion ? 0 : milliseconds;
+            if (opacity == 1 && duration <= 0) continue;
+            ear.BeginAnimation(OpacityProperty, new DoubleAnimation(duration <= 0 ? earTo : earFrom, earTo,
+                TimeSpan.FromMilliseconds(duration))
+            {
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+                FillBehavior = opacity == 0 ? FillBehavior.HoldEnd : FillBehavior.Stop
+            });
+        }
+        double from = NotchLiveContent.Opacity;
+        NotchLiveContent.BeginAnimation(OpacityProperty, null);
+        NotchLiveContent.Opacity = opacity;
+        if (milliseconds <= 0 || AnimationConfig.ReduceMotion || Math.Abs(from - opacity) < .001) return;
+        NotchLiveContent.BeginAnimation(OpacityProperty, new DoubleAnimation(from, opacity,
+            TimeSpan.FromMilliseconds(milliseconds))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            FillBehavior = FillBehavior.Stop
+        });
+    }
+
+    private void SetDockShellFrame(Size from, Size to, CornerRadius fromRadius, CornerRadius toRadius, double t)
+    {
+        static double Mix(double a, double b, double progress) => a + (b - a) * progress;
+        double width = Mix(from.Width, to.Width, t), height = Mix(from.Height, to.Height, t);
+        if (NotchBorder.Width != width) NotchBorder.Width = width;
+        if (NotchBorder.Height != height) NotchBorder.Height = height;
+        var radius = new CornerRadius(Mix(fromRadius.TopLeft, toRadius.TopLeft, t),
+            Mix(fromRadius.TopRight, toRadius.TopRight, t),
+            Mix(fromRadius.BottomRight, toRadius.BottomRight, t),
+            Mix(fromRadius.BottomLeft, toRadius.BottomLeft, t));
+        if (NotchBorder.CornerRadius != radius)
+        {
+            SyncShellCornerRadius(radius);
+            _glassMaterialPresenter.SyncCornerRadius(radius);
+            UpdateNotchClip();
+        }
+    }
+
+    private Task AnimateDockLandingAsync(int version, double milliseconds, Action<double> frame)
+    {
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _dockLandingCompletion = completion;
+        var clock = Stopwatch.StartNew();
+        TimeSpan lastRender = TimeSpan.MinValue;
+        _dockLandingRendering = (_, args) =>
+        {
+            if (_cleanedUp || version != _dockMoveVersion) { StopDockLandingFrames(); return; }
+            if (args is RenderingEventArgs rendering)
+            {
+                if (rendering.RenderingTime == lastRender) return;
+                lastRender = rendering.RenderingTime;
+            }
+            double progress = AnimationConfig.ReduceMotion ? 1 : Math.Min(1, clock.Elapsed.TotalMilliseconds / milliseconds);
+            frame(DockDragSession.LandingEase(progress));
+            if (progress >= 1) StopDockLandingFrames();
+        };
+        CompositionTarget.Rendering += _dockLandingRendering;
+        return completion.Task;
+    }
+
+    private void StopDockLandingFrames()
+    {
+        if (_dockLandingRendering != null) CompositionTarget.Rendering -= _dockLandingRendering;
+        _dockLandingRendering = null;
+        var completion = _dockLandingCompletion;
+        _dockLandingCompletion = null;
+        completion?.TrySetResult();
+    }
+
     private void DisposeDockDrag()
     {
         ++_dockMoveVersion;
+        StopDockLandingFrames();
         _dockDragTimer?.Stop();
         _dockArmingTimer?.Stop();
         _dockWasArmed = false;
         _isDockDragging = _isDockLanding = false;
         _dockDrag = null;
+        _dockNeedsSettle = false;
+        FadeDockContents(1, 0);
         if (ReferenceEquals(Mouse.Captured, this) || ReferenceEquals(Mouse.Captured, NotchWrapper)) Mouse.Capture(null);
     }
 
@@ -1058,18 +1173,30 @@ public partial class MainWindow
     /// </summary>
     internal void MoveDockTo(NotchEdge edge)
     {
-        if (IsDockMoveInProgress)
+        bool interrupted = IsDockMoveInProgress;
+        if (interrupted)
         {
             DisposeDockDrag();
-            ApplyDockPlacement();
         }
-        if (_settings.DockEdge == edge && _settings.EnableEdgeDocking)
+        if (!interrupted && _settings.DockEdge == edge && _settings.EnableEdgeDocking)
         {
             RefreshDockMenuState();
             return;
         }
 
         _settings.EnableEdgeDocking = true;
+        if (IsVisible && !_cleanedUp)
+        {
+            ++_dockMoveVersion;
+            _isDockLanding = true;
+            _hoverCollapseTimer.Stop();
+            _hoverThumbnailDelayTimer.Stop();
+            FadeDockContents(0, 90);
+            if (_isExpanded || _isMusicExpanded) CollapseNotch();
+            UpdateGlassMotionState();
+            CompleteDockLandingAsync(edge, false, true, _dockMoveVersion).SafeFireAndForget("DOCK-MENU-LANDING");
+            return;
+        }
         _settings.DockEdge = edge;
         _notchManager.UpdateSettings(_settings);
         ApplyDockPlacement();

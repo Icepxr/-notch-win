@@ -770,12 +770,17 @@ public partial class MainWindow
             VNotch.Services.RuntimeLog.Log("NOTCH-WIDTH",
                 $"UpdateMusicCompactMode -> animating to _collapsedWidth={_collapsedWidth}, shouldBeCompact={shouldBeCompact}, _isExpanded={_isExpanded}");
 
-            var widthAnim = new DoubleAnimation(_collapsedWidth, TimeSpan.FromMilliseconds(450))
+            // The docking gesture owns shell geometry until it lands. Media
+            // data and artwork still update underneath its foreground fade.
+            if (!IsDockMoveInProgress)
             {
-                EasingFunction = _easeExpOut6
-            };
-            System.Windows.Media.Animation.Timeline.SetDesiredFrameRate(widthAnim, VNotch.Services.AnimationConfig.TargetFps);
-            NotchBorder.BeginAnimation(WidthProperty, widthAnim);
+                var widthAnim = new DoubleAnimation(_collapsedWidth, TimeSpan.FromMilliseconds(450))
+                {
+                    EasingFunction = _easeExpOut6
+                };
+                System.Windows.Media.Animation.Timeline.SetDesiredFrameRate(widthAnim, VNotch.Services.AnimationConfig.TargetFps);
+                NotchBorder.BeginAnimation(WidthProperty, widthAnim);
+            }
 
             if (_isMusicCompactMode)
             {

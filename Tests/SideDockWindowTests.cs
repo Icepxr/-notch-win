@@ -93,6 +93,7 @@ public sealed class SideDockWindowTests
         coordinator.RequestView(NotchView.Compact, "side-layout-regression");
         await WpfFrameWaiter.UntilAsync(() => !Animating(w), "collapse settles", ct);
         w.MoveDockTo(NotchEdge.Top);
+        await WpfFrameWaiter.UntilAsync(() => !w.IsDockMoveInProgress, "top landing settles", ct);
         coordinator.RequestView(NotchView.Media, "top-layout-regression");
         await WpfFrameWaiter.UntilAsync(() => !Animating(w) && coordinator.CurrentView == NotchView.Media, "top page settles", ct);
         Assert.False(w.DockNavigation.IsColumn);
@@ -112,14 +113,17 @@ public sealed class SideDockWindowTests
 
     private static bool Animating(MainWindow w) => (bool)typeof(MainWindow).GetProperty("_isAnimating", Private)!.GetValue(w)!;
 
-    internal static void Save(FrameworkElement surface, string name)
+    internal static void Save(FrameworkElement surface, string name, Brush? background = null)
     {
         string folder = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../.test-output"));
         Directory.CreateDirectory(folder);
         var image = new RenderTargetBitmap((int)Math.Ceiling(surface.ActualWidth), (int)Math.Ceiling(surface.ActualHeight), 96, 96, PixelFormats.Pbgra32);
         var drawing = new DrawingVisual();
         using (var dc = drawing.RenderOpen())
+        {
+            if (background != null) dc.DrawRectangle(background, null, new Rect(surface.RenderSize));
             dc.DrawRectangle(new VisualBrush(surface), null, new Rect(surface.RenderSize));
+        }
         image.Render(drawing);
         var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
         using var file = File.Create(Path.Combine(folder, name)); png.Save(file);
