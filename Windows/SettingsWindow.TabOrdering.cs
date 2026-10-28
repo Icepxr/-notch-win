@@ -449,9 +449,14 @@ public partial class SettingsWindow
             return;
         }
 
-        var orderTokens = (_settings.NavTabOrder ?? DefaultNavTabs)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+        // The rows on screen also carry tabs that an older saved order never
+        // listed, so the drag slots index them, not the stored tokens. Reorder
+        // what the user actually dragged, otherwise a newer tab is dropped from
+        // the saved order and its position is forgotten.
+        var orderTokens = NavTabsSettingsContainer.Children.OfType<Border>()
+            .Select(row => row.Tag as string)
+            .Where(tag => !string.IsNullOrEmpty(tag))
+            .Select(tag => tag!)
             .ToList();
 
         if (_settingsNavInitialSlot < orderTokens.Count && _settingsNavTargetSlot < orderTokens.Count)

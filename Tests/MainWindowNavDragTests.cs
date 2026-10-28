@@ -81,10 +81,16 @@ public sealed class MainWindowNavDragTests
         settings.NavTabOrder = "timer,Timer,unknown,AudioMixer";
         settings.VisibleNavTabs = "AudioMixer";
         window.ApplyNavTabOrderAndVisibility();
-        Assert.Equal(new[] { NotchView.AudioMixer, NotchView.Media, NotchView.Camera }, window.GetActiveTabSequence());
+        // Camera and Agents stay visible unless their own setting hides them;
+        // the remaining tabs come from VisibleNavTabs.
+        Assert.Equal(new[] { NotchView.AudioMixer, NotchView.Agents, NotchView.Media, NotchView.Camera }, window.GetActiveTabSequence());
         settings.HideCamera = true;
         window.ApplyNavTabOrderAndVisibility();
+        Assert.Equal(new[] { NotchView.AudioMixer, NotchView.Agents, NotchView.Media }, window.GetActiveTabSequence());
+        settings.HideAgentMonitor = true;
+        window.ApplyNavTabOrderAndVisibility();
         Assert.Equal(new[] { NotchView.AudioMixer, NotchView.Media }, window.GetActiveTabSequence());
+        Assert.Equal(Visibility.Collapsed, window.AgentIconButton.Visibility);
         Assert.Equal(Visibility.Collapsed, window.CameraIconButton.Visibility);
         Assert.Equal(Visibility.Collapsed, window.TimerIconButton.Visibility);
         Assert.Equal(Visibility.Collapsed, window.ClipboardIconButton.Visibility);
