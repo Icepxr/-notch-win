@@ -55,6 +55,25 @@ public sealed class DockDragSessionTests
         }
     }
 
+    [Theory]
+    [InlineData(NotchEdge.Top, 1)] [InlineData(NotchEdge.Top, 1.5)] [InlineData(NotchEdge.Top, 2)]
+    [InlineData(NotchEdge.Left, 1)] [InlineData(NotchEdge.Left, 1.5)] [InlineData(NotchEdge.Left, 2)]
+    [InlineData(NotchEdge.Right, 1)] [InlineData(NotchEdge.Right, 1.5)] [InlineData(NotchEdge.Right, 2)]
+    public void APreviewResizeKeepsAnOffCentreGripAtThePointerOnTheNextLayout(NotchEdge source, double scale)
+    {
+        var host = new Rect(0, 0, 800 * scale, 700 * scale);
+        var from = NotchDock.IsVertical(source) ? new Size(40 * scale, 60 * scale) : new Size(240 * scale, 40 * scale);
+        var to = NotchDock.IsVertical(source) ? new Size(240 * scale, 40 * scale) : new Size(40 * scale, 60 * scale);
+        var inset = new Vector(8 * scale, 8 * scale);
+        var oldOrigin = NotchDock.NotchRect(source, host, from).TopLeft + inset;
+        var newOrigin = NotchDock.NotchRect(source, host, to).TopLeft + inset;
+        var pointer = new Point(-330.5 * scale, 217.75 * scale);
+        var grip = new Point(.18, .77);
+        var position = DockDragSession.PreviewHostPosition(pointer, oldOrigin, from, to, grip, source);
+        var actualGrip = position + (Vector)newOrigin + new Vector(to.Width * grip.X, to.Height * grip.Y);
+        Assert.InRange((actualGrip - pointer).Length, 0, .000001);
+    }
+
     [Fact]
     public void LandingEasesOutWithoutOvershooting()
     {

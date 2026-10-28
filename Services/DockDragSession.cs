@@ -6,7 +6,7 @@ namespace VNotch.Services;
 
 public readonly record struct DockPointerState(Point Position, bool LeftDown, bool ControlDown, bool EscapeDown);
 
-/// <summary>Screen-pixel drag state. Layout changes are committed only on release.</summary>
+/// <summary>Screen-pixel drag selection. The shell previews Target while held; the persisted edge commits on release.</summary>
 public sealed class DockDragSession
 {
     private readonly Point _start;
@@ -48,6 +48,22 @@ public sealed class DockDragSession
     public static Point HostPosition(Point pointer, Point shellInHostPixels, Size shellPixels, Point grabFraction)
         => new(pointer.X - shellInHostPixels.X - shellPixels.Width * grabFraction.X,
             pointer.Y - shellInHostPixels.Y - shellPixels.Height * grabFraction.Y);
+
+    // Predict the shell's post-layout origin without forcing layout for each
+    // animation frame. The stable source alignment owns this preview surface.
+    public static Point PreviewHostPosition(Point pointer, Point shellInHostPixels,
+        Size previousPixels, Size nextPixels, Point grabFraction, NotchEdge source)
+    {
+        double dx = previousPixels.Width - nextPixels.Width;
+        double dy = previousPixels.Height - nextPixels.Height;
+        shellInHostPixels += source switch
+        {
+            NotchEdge.Left => new Vector(0, dy / 2),
+            NotchEdge.Right => new Vector(dx, dy / 2),
+            _ => new Vector(dx / 2, 0)
+        };
+        return HostPosition(pointer, shellInHostPixels, nextPixels, grabFraction);
+    }
 
     private const double LandingStiffness = 7.5;
     private static readonly double LandingTail = Math.Exp(-LandingStiffness);

@@ -133,6 +133,20 @@ public sealed class OverlayWindowController : IDisposable
             RuntimeLog.Warn("OVERLAY-POSITION", $"Failed to move the overlay; Win32 error {Marshal.GetLastWin32Error()}");
     }
 
+    public bool EnsureSurfaceSize(Size minimum)
+    {
+        double width = Math.Max(_window.Width, minimum.Width);
+        double height = Math.Max(_window.Height, minimum.Height);
+        if (width == _window.Width && height == _window.Height) return false;
+        double scale = GetDpiScale();
+        _window.Width = width;
+        _window.Height = height;
+        _state.WindowWidth = (int)Math.Round(width * scale);
+        _state.WindowHeight = (int)Math.Round(height * scale);
+        ApplyFixedBounds();
+        return true;
+    }
+
     public void ResetToCenteredTop(double widthDip, double heightDip)
     {
         bool vertical = NotchDock.IsVertical(_dockEdge);

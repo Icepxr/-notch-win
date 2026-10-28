@@ -45,6 +45,11 @@ public partial class MainWindow
     private Visibility _dockContentsVisibility;
     private long _dockLandingLastFrameTicks;
     private NotchEdge? _dockForegroundTarget;
+    private NotchEdge? _dockPreviewTarget;
+    private Size _dockPreviewFromSize, _dockPreviewToSize;
+    private CornerRadius _dockPreviewFromRadius, _dockPreviewToRadius;
+    private TimeSpan _dockPreviewStarted;
+    private bool _dockPreviewSettled;
     internal Func<DockPointerState> DockPointerReader { get; set; } = ReadSystemDockPointer;
 
     private static DockPointerState ReadSystemDockPointer()
@@ -113,10 +118,12 @@ public partial class MainWindow
 
         _collapsedWidth = GetCollapsedWidth();
         _collapsedHeight = GetCollapsedHeight();
+        _cornerRadiusCollapsed = GetCollapsedCornerRadius();
         if (NotchBorder != null && !_isExpanded && !_isAnimating)
         {
             NotchBorder.Width = _collapsedWidth;
             NotchBorder.Height = _collapsedHeight;
+            CurrentCornerRadius = _cornerRadiusCollapsed;
         }
 
         SyncShellCornerRadius(MakeNotchCornerRadius(_cornerRadiusCollapsed));
@@ -864,6 +871,8 @@ public partial class MainWindow
         _isDockLanding = false;
         _dockDidMove = false;
         _dockForegroundTarget = null;
+        _dockPreviewTarget = null;
+        _dockPreviewSettled = false;
         // Capture a stable ancestor. A timer scoped to this gesture covers
         // no-activate capture failures and release outside the painted shell.
         bool captured = Mouse.Capture(this, CaptureMode.SubTree);
@@ -938,7 +947,7 @@ public partial class MainWindow
                 if (rendering.RenderingTime == last) return;
                 last = rendering.RenderingTime;
             }
-            ContinueDockDrag();
+            ContinueDockDrag((args as RenderingEventArgs)?.RenderingTime);
         };
         CompositionTarget.Rendering += _dockDragRendering;
     }
@@ -975,10 +984,10 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// Follow the grab point without rebuilding the dock orientation mid-drag.
+    /// Preview the candidate shape while retaining the source layout and grab.
     /// </summary>
     /// <returns>true when the move consumed the event</returns>
-    private bool ContinueDockDrag()
+    private bool ContinueDockDrag(TimeSpan? renderTime = null)
     {
         if (!_isDockDragging || _dockDrag == null) return false;
         var input = DockPointerReader();
@@ -988,10 +997,20 @@ public partial class MainWindow
         UpdateDockDragForeground();
         if (!input.LeftDown) { FinishDockDrag(false); return true; }
         if (!_dockDrag.HasMoved) return true;
+        bool preview = renderTime.HasValue && PrepareDockDragPreview(renderTime.Value);
         var origin = NotchBorder.PointToScreen(new Point());
         var end = NotchBorder.PointToScreen(new Point(NotchBorder.ActualWidth, NotchBorder.ActualHeight));
-        MoveDockHost(DockDragSession.HostPosition(input.Position, origin - new Vector(_fixedX, _fixedY),
-            new Size(Math.Max(0, end.X - origin.X), Math.Max(0, end.Y - origin.Y)), _dockGrabFraction));
+        var previousPixels = new Size(Math.Max(0, end.X - origin.X), Math.Max(0, end.Y - origin.Y));
+        var localOrigin = origin - new Vector(_fixedX, _fixedY);
+        if (preview)
+        {
+            AdvanceDockDragPreview(renderTime!.Value);
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var nextPixels = new Size(NotchBorder.Width * dpi.DpiScaleX, NotchBorder.Height * dpi.DpiScaleY);
+            MoveDockHost(DockDragSession.PreviewHostPosition(input.Position, localOrigin,
+                previousPixels, nextPixels, _dockGrabFraction, DockEdge));
+        }
+        else MoveDockHost(DockDragSession.HostPosition(input.Position, localOrigin, previousPixels, _dockGrabFraction));
         return true;
     }
 
@@ -1011,7 +1030,63 @@ public partial class MainWindow
         _dockForegroundTarget = _dockDrag.Target;
         // Keep artwork with the hand while its layout is unchanged. Fade only
         // when the candidate edge asks for an orientation handoff.
+        if (_dockDrag.Target == _dockDrag.Source && _dockContentsSuspended) return;
         FadeDockForeground(_dockDrag.Target == _dockDrag.Source ? 1 : 0, 90);
+    }
+
+    private Size DockPreviewSize(NotchEdge edge) => NotchDock.CollapsedSize(edge,
+        _settings.EnableDynamicIslandMode ? _settings.DynamicIslandWidth : _settings.Width,
+        _settings.EnableDynamicIslandMode ? _settings.DynamicIslandHeight : _settings.Height);
+
+    private CornerRadius DockPreviewRadius(NotchEdge edge, Size size)
+    {
+        double radius = _settings.EnableDynamicIslandMode || NotchDock.IsVertical(edge)
+            ? Math.Min(size.Width, size.Height) / 2 : _settings.CornerRadius;
+        return _settings.EnableDynamicIslandMode ? new CornerRadius(radius) : NotchDock.Radius(edge, radius);
+    }
+
+    private bool PrepareDockDragPreview(TimeSpan renderTime)
+    {
+        if (_isAnimating || _dockDrag == null) return false;
+        var target = _dockDrag.Target;
+        if (_dockPreviewTarget == target) return true;
+        if (_dockPreviewTarget == null && target == _dockDrag.Source && !_dockContentsSuspended) return false;
+        // Let the old artwork fade before its row would be squeezed into a
+        // badge. Reversing before that fade finishes leaves the row intact.
+        if (!_dockContentsSuspended && NotchLiveContent.Opacity > .02) return false;
+        SuspendDockContentLayout();
+        var top = DockPreviewSize(NotchEdge.Top);
+        var side = DockPreviewSize(NotchEdge.Left);
+        if (_overlayWindow.EnsureSurfaceSize(new Size(
+            Math.Max(top.Width, side.Width) + NotchDock.AlongEdgePadding,
+            Math.Max(top.Height, side.Height) + NotchDock.AwayFromEdgePadding))) UpdateLayout();
+        _dockPreviewFromSize = new Size(NotchBorder.ActualWidth, NotchBorder.ActualHeight);
+        _dockPreviewFromRadius = NotchBorder.CornerRadius;
+        NotchBorder.BeginAnimation(WidthProperty, null);
+        NotchBorder.BeginAnimation(HeightProperty, null);
+        NotchBorder.Width = _dockPreviewFromSize.Width;
+        NotchBorder.Height = _dockPreviewFromSize.Height;
+        _dockPreviewToSize = DockPreviewSize(target);
+        _dockPreviewToRadius = DockPreviewRadius(target, _dockPreviewToSize);
+        _dockPreviewTarget = target;
+        _dockPreviewStarted = renderTime;
+        _dockPreviewSettled = false;
+        return true;
+    }
+
+    private void AdvanceDockDragPreview(TimeSpan renderTime)
+    {
+        if (_dockPreviewSettled) return;
+        double progress = AnimationConfig.ReduceMotion ? 1 : Math.Clamp((renderTime - _dockPreviewStarted).TotalMilliseconds / 180, 0, 1);
+        SetDockShellFrame(_dockPreviewFromSize, _dockPreviewToSize, _dockPreviewFromRadius,
+            _dockPreviewToRadius, DockDragSession.LandingEase(progress));
+        if (progress < 1) return;
+        _dockPreviewSettled = true;
+        if (_dockDrag?.Target == _dockDrag?.Source)
+        {
+            RestoreDockContentLayout();
+            FadeDockForeground(1, 140);
+        }
     }
 
     private void MoveDockHost(Point point)

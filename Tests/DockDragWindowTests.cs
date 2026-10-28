@@ -434,30 +434,30 @@ public sealed class DockDragWindowTests
         Assert.Null(field.GetValue(w));
     });
 
-    private static GreetingAcceptanceTests.MainWindowFixture Fixture(NotchEdge edge, bool island = true) => new("en", false,
-        s => { s.EnableEdgeDocking = true; s.DockEdge = edge; s.EnableDynamicIslandMode = island; s.Width = 240; s.Height = 40;
-            s.DynamicIslandWidth = 240; s.DynamicIslandHeight = 40;
+    internal static GreetingAcceptanceTests.MainWindowFixture Fixture(NotchEdge edge, bool island = true, int width = 240) => new("en", false,
+        s => { s.EnableEdgeDocking = true; s.DockEdge = edge; s.EnableDynamicIslandMode = island; s.Width = width; s.Height = 40;
+            s.DynamicIslandWidth = width; s.DynamicIslandHeight = 40;
             s.EnableLocalOnlyMode = true; s.AutoCheckUpdates = false; },
         services => services.AddSingleton<IMediaDetectionService>(new FakeMediaDetectionService()));
 
-    private static void Press(MainWindow w)
+    internal static void Press(MainWindow w)
     {
         var e = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
         { RoutedEvent = Mouse.PreviewMouseDownEvent };
         w.NotchBorder.RaiseEvent(e);
         Assert.True(e.Handled);
     }
-    private static Point Center(MainWindow w) => w.NotchBorder.PointToScreen(new Point(w.NotchBorder.ActualWidth / 2, w.NotchBorder.ActualHeight / 2));
-    private static Rect Screen(MainWindow w) => (Rect)typeof(MainWindow).GetProperty("DockScreen", Private)!.GetValue(w)!;
-    private static bool Animating(MainWindow w) => (bool)typeof(MainWindow).GetProperty("_isAnimating", Private)!.GetValue(w)!;
+    internal static Point Center(MainWindow w) => w.NotchBorder.PointToScreen(new Point(w.NotchBorder.ActualWidth / 2, w.NotchBorder.ActualHeight / 2));
+    internal static Rect Screen(MainWindow w) => (Rect)typeof(MainWindow).GetProperty("DockScreen", Private)!.GetValue(w)!;
+    internal static bool Animating(MainWindow w) => (bool)typeof(MainWindow).GetProperty("_isAnimating", Private)!.GetValue(w)!;
     private static NotchTransitionCoordinator Coordinator(MainWindow w) => (NotchTransitionCoordinator)typeof(MainWindow).GetField("_transitionCoordinator", Private)!.GetValue(w)!;
-    private static Point Target(Rect screen, NotchEdge edge) => edge switch
+    internal static Point Target(Rect screen, NotchEdge edge) => edge switch
     {
         NotchEdge.Left => new(screen.Left + 50, screen.Top + screen.Height / 2),
         NotchEdge.Right => new(screen.Right - 50, screen.Top + screen.Height / 2),
         _ => new(screen.Left + screen.Width / 2, screen.Top + 30)
     };
-    private static void AssertCentred(MainWindow w, NotchEdge edge, Rect screen)
+    internal static void AssertCentred(MainWindow w, NotchEdge edge, Rect screen)
     {
         w.UpdateLayout();
         var center = Center(w);

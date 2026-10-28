@@ -77,3 +77,25 @@ proven and no production blur change is claimed.
 The final expanded focused Release run passes **420 tests**, with no failures
 or skips (80 seconds). It also covers stale callbacks from an interrupted
 rendering dispatch: an old callback cannot stop a newer gesture's clock.
+
+## Live shape preview while holding the button
+
+The candidate edge now drives the visible shell before mouse-up. After the
+foreground fade, the shell morphs toward that edge's capsule/badge over 180ms.
+Moving to another candidate retargets from the current painted size/corners;
+moving back to the source restores its shape and foreground while still held.
+Reduced motion previews the same candidate without interpolation.
+
+The page layout and stored edge remain unchanged until release. This avoids
+rebuilding media/clipboard/agent pages during pointer movement. A prediction of
+the post-layout shell origin preserves asymmetric grabs without forcing layout
+on every rendering frame. A side host grows once if needed for a long capsule;
+landing/cancelling restores the normal fixed host bounds. The preview and final
+orientation use matching collapsed corner radii, avoiding a second shape jump.
+
+The focused Release suite now passes **443 tests**, no failures or skips
+(89 seconds). Held-button window tests cover all six edge directions,
+standard/island corners, returning mid-morph, Escape, release mid-morph, long
+capsules and reduced motion. Physical grip checks sample intermediate frames;
+pure post-layout anchoring checks cover 100%, 150% and 200% scale. Snapshots of
+the held preview are in `.tmp/.test-output/live-held-*.png` beside the checkout.

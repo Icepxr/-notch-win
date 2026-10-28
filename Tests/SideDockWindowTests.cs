@@ -113,19 +113,30 @@ public sealed class SideDockWindowTests
 
     private static bool Animating(MainWindow w) => (bool)typeof(MainWindow).GetProperty("_isAnimating", Private)!.GetValue(w)!;
 
-    internal static void Save(FrameworkElement surface, string name, Brush? background = null)
+    internal static BitmapSource Save(FrameworkElement surface, string name, Brush? background = null, Rect? region = null)
     {
         string folder = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../../.test-output"));
         Directory.CreateDirectory(folder);
-        var image = new RenderTargetBitmap((int)Math.Ceiling(surface.ActualWidth), (int)Math.Ceiling(surface.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+        var capture = region ?? new Rect(surface.RenderSize);
+        var image = new RenderTargetBitmap((int)Math.Ceiling(capture.Width), (int)Math.Ceiling(capture.Height), 96, 96, PixelFormats.Pbgra32);
         var drawing = new DrawingVisual();
         using (var dc = drawing.RenderOpen())
         {
-            if (background != null) dc.DrawRectangle(background, null, new Rect(surface.RenderSize));
-            dc.DrawRectangle(new VisualBrush(surface), null, new Rect(surface.RenderSize));
+            var destination = new Rect(0, 0, capture.Width, capture.Height);
+            if (background != null) dc.DrawRectangle(background, null, destination);
+            var brush = new VisualBrush(surface);
+            if (region.HasValue)
+            {
+                brush.ViewboxUnits = BrushMappingMode.Absolute;
+                brush.Viewbox = capture;
+                brush.ViewportUnits = BrushMappingMode.Absolute;
+                brush.Viewport = destination;
+            }
+            dc.DrawRectangle(brush, null, destination);
         }
         image.Render(drawing);
         var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
         using var file = File.Create(Path.Combine(folder, name)); png.Save(file);
+        return image;
     }
 }

@@ -12,8 +12,11 @@ without the new keys loads as `Top`, so nothing changes until you move it.
 - **Ctrl + drag follows your hand.** A 6-DIP threshold rejects small hand
   jitter. The shell follows the grab point on the rendering clock as it shrinks,
   without extra native moves from high-polling mouse messages. Artwork stays
-  visible when moving within the same edge. Its orientation stays
-  stable during the drag; release to dock at the top/left/right. Position,
+  visible when moving within the same edge. While still holding the button,
+  crossing toward either side morphs the capsule into a vertical badge;
+  dragging back to the top restores the capsule. Reversals continue from the
+  current shape and keep the grab point under the cursor. Release to dock at
+  the top/left/right. Position and any remaining
   capsule/badge dimensions and corner radii settle together over 220–420ms,
   depending on travel distance. Foreground content and edge flares fade during
   the axis change, keeping artwork from jumping or stretching. Grab again to
