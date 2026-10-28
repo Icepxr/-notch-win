@@ -49,6 +49,7 @@ public class PerformanceDiagnosticServiceTests
     public void AnomalyDetection_FlagsHeavyFpsDrop()
     {
         var service = PerformanceDiagnosticService.Instance;
+        service.ClearLogs();
         var snapshot = service.SampleSnapshot(
             fps: 15.0,
             hz: 144,
@@ -58,6 +59,11 @@ public class PerformanceDiagnosticServiceTests
 
         Assert.NotNull(snapshot);
         Assert.True(snapshot.HealthLevel == PerformanceHealthLevel.Warning || snapshot.HealthLevel == PerformanceHealthLevel.Critical);
-        Assert.Contains("FPS", snapshot.HealthStatusSummary);
+        // Later checks overwrite the shared one-line summary, so a machine that is
+        // genuinely low on memory would hide this. The logged anomaly is the record.
+        var frameDrop = service.GetRecentLogs().LastOrDefault(entry => entry.Category == "BOTTLENECK-FPS");
+        Assert.NotNull(frameDrop);
+        Assert.Contains("15 FPS", frameDrop!.Message);
+        Assert.Contains("66.6ms", frameDrop.Message);
     }
 }
