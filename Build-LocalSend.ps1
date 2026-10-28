@@ -10,6 +10,9 @@ Push-Location $PSScriptRoot
 try {
     Invoke-DotNet -Arguments @('restore', 'V-Notch.csproj', '--locked-mode')
     Invoke-DotNet -Arguments @('publish', 'V-Notch.csproj', '--no-restore', '-c', 'Release', '-o', 'artifacts/localsend')
+    # GPL-3.0: a distributed binary has to carry its licence and attribution.
+    Copy-Item -LiteralPath 'LICENSE' -Destination 'artifacts/localsend/LICENSE'
+    Copy-Item -LiteralPath 'docs/THIRD_PARTY_NOTICES.md' -Destination 'artifacts/localsend/THIRD_PARTY_NOTICES.md'
     Copy-Item -LiteralPath 'CUSTOM-LOCALSEND.md' -Destination 'artifacts/localsend/LOCALSEND-README.md'
     Copy-Item -LiteralPath 'CustomPreviews' -Destination 'artifacts/localsend' -Recurse -Force
     if (Test-Path -LiteralPath 'CUSTOM-AGENTS.md') {
