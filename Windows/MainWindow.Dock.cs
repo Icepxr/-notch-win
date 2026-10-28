@@ -50,6 +50,10 @@ public partial class MainWindow
     private CornerRadius _dockPreviewFromRadius, _dockPreviewToRadius;
     private TimeSpan _dockPreviewStarted;
     private bool _dockPreviewSettled;
+    private bool _dockAnchorValid, _dockAnchorDirty;
+    private Point _dockAnchorPointer;
+    private int _dockAnchorX, _dockAnchorY;
+    private Transform? _dockShellTransform, _dockContainerTransform;
     internal Func<DockPointerState> DockPointerReader { get; set; } = ReadSystemDockPointer;
 
     private static DockPointerState ReadSystemDockPointer()
@@ -937,6 +941,13 @@ public partial class MainWindow
     private void StartDockDragFrames()
     {
         StopDockDragFrames();
+        _dockAnchorValid = false;
+        _dockAnchorDirty = true;
+        NotchBorder.LayoutUpdated += InvalidateDockAnchor;
+        _dockShellTransform = NotchWrapper.RenderTransform;
+        _dockContainerTransform = NotchContainer.RenderTransform;
+        if (_dockShellTransform is { IsFrozen: false }) _dockShellTransform.Changed += InvalidateDockAnchor;
+        if (_dockContainerTransform is { IsFrozen: false }) _dockContainerTransform.Changed += InvalidateDockAnchor;
         int version = _dockMoveVersion;
         TimeSpan last = TimeSpan.MinValue;
         _dockDragRendering = (_, args) =>
@@ -956,7 +967,14 @@ public partial class MainWindow
     {
         if (_dockDragRendering != null) CompositionTarget.Rendering -= _dockDragRendering;
         _dockDragRendering = null;
+        NotchBorder.LayoutUpdated -= InvalidateDockAnchor;
+        if (_dockShellTransform is { IsFrozen: false }) _dockShellTransform.Changed -= InvalidateDockAnchor;
+        if (_dockContainerTransform is { IsFrozen: false }) _dockContainerTransform.Changed -= InvalidateDockAnchor;
+        _dockShellTransform = _dockContainerTransform = null;
+        _dockAnchorValid = false;
     }
+
+    private void InvalidateDockAnchor(object? sender, EventArgs args) => _dockAnchorDirty = true;
 
     /// <summary>
     /// Capture can be taken away - another window grabs it, or the notch hides
@@ -992,6 +1010,17 @@ public partial class MainWindow
         if (!_isDockDragging || _dockDrag == null) return false;
         var input = DockPointerReader();
         if (input.EscapeDown || !IsVisible) { FinishDockDrag(true); return true; }
+        // A held stationary pointer needs button/escape polling, but no new
+        // screen transforms or DPI queries. Layout/transform changes invalidate
+        // the cached anchor; pending fades and morphs always keep advancing.
+        if (input.LeftDown && _dockAnchorValid && !_dockAnchorDirty && input.Position == _dockAnchorPointer &&
+            _fixedX == _dockAnchorX && _fixedY == _dockAnchorY && NotchBorder.IsArrangeValid &&
+            ReferenceEquals(NotchWrapper.RenderTransform, _dockShellTransform) &&
+            ReferenceEquals(NotchContainer.RenderTransform, _dockContainerTransform) &&
+            !_isAnimating && !_isModeTransitioning && !_glassHoverMotion &&
+            ((_dockPreviewTarget == _dockDrag.Target && _dockPreviewSettled) ||
+             (_dockPreviewTarget == null && _dockDrag.Target == _dockDrag.Source && !_dockContentsSuspended)))
+            return true;
         _dockDrag.Update(input.Position);
         StartDockDragMotion();
         UpdateDockDragForeground();
@@ -1011,6 +1040,11 @@ public partial class MainWindow
                 previousPixels, nextPixels, _dockGrabFraction, DockEdge));
         }
         else MoveDockHost(DockDragSession.HostPosition(input.Position, localOrigin, previousPixels, _dockGrabFraction));
+        _dockAnchorPointer = input.Position;
+        _dockAnchorX = _fixedX;
+        _dockAnchorY = _fixedY;
+        _dockAnchorDirty = false;
+        _dockAnchorValid = true;
         return true;
     }
 

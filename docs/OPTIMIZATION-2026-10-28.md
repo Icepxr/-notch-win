@@ -60,3 +60,42 @@ Reproduce the focused checks on Windows with:
 ```powershell
 pwsh -File scripts/Test-Optimization.ps1
 ```
+
+## Follow-up: reuse unchanged frame work
+
+Stationary held-pointer frames now skip repeated screen transforms/DPI queries
+once their geometry is stable. Pointer release/Escape still get checked, and
+pending fades/morphs continue advancing. Layout changes, mutable transform
+changes, a replaced transform, and externally changed host bounds invalidate or
+bypass the saved anchor. Layout/transform observers exist only for the drag and
+detach when it ends. This does not change the live shape preview or snap zones.
+
+Glass clipping keeps at most four frozen silhouettes and four unit-curve tables
+per calling thread, avoiding global curve-table locking and rebuilds for a
+small interleaved working set. Keys use effective clamped radii and the existing
+circular-arc tolerance. Animated frame histories are not retained; older entries
+are evicted. This trades a small bounded graphics cache for less repeated work.
+
+Component probes, before/after on this machine:
+
+| Probe | Before | After |
+|---|---:|---:|
+| Stationary injected pointer, top/left | about 6.0–6.1 us/tick | about 0.05–0.54 us/tick |
+| Managed allocation, stationary injected pointer | about 384 B/tick | under 1 B/tick in the probe |
+| Four interleaved clip requests | about 16.8 us/call | about 0.03–0.07 us/call |
+| Managed allocation, interleaved clip requests | about 7,590 B/call | under 1 B/call in the probe |
+
+The small fractional allocation averages include probe overhead. A separate
+warmed 400-call regression checks zero managed allocation for clip-cache hits.
+These are hot-path probes with an injected pointer and a four-shape working
+set, not physical display FPS or whole-app CPU/RAM measurements. One-off new
+silhouettes still need geometry creation. Raw reports and TRX results are in
+`artifacts/frame-reuse/`.
+
+Correctness checks compare 120 rendered images against the preserved clipping
+implementation at 96/144/192 DPI, exercise bounded eviction and concurrent
+consumers, and verify re-anchoring after scale/layout/transform replacement.
+The broader full-suite findings from 26 October remain tracked separately.
+
+The final expanded focused Release run passes **469 tests**, with no failures
+or skips (94 seconds), including the existing held-button live-preview checks.

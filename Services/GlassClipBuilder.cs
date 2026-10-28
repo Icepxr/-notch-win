@@ -6,19 +6,22 @@ namespace VNotch.Services;
 internal static class GlassClipBuilder
 {
     // The shell, hover glow and material host request the same silhouette in
-    // one layout pass. Share the frozen resource without retaining old frames.
+    // one layout pass. A bounded four-entry cache also handles interleaved
+    // shells/materials without retaining an animation's full frame history.
     [ThreadStatic] private static StreamGeometry? _lastClip;
     [ThreadStatic] private static Size _lastClipSize;
     [ThreadStatic] private static CornerRadius _lastClipRadius;
     [ThreadStatic] private static double _lastClipPower;
+    [ThreadStatic] private static ClipEntry[]? _clips;
+    [ThreadStatic] private static int _nextClip;
+    private readonly record struct ClipEntry(Size Size, CornerRadius Radius, double Power, StreamGeometry Geometry);
     private const int CornerSegments = 64;
     private static readonly double[] _unitCos = CreateUnitTrig(useSin: false);
     private static readonly double[] _unitSin = CreateUnitTrig(useSin: true);
 
-    private static double _cachedPower = double.NaN;
-    private static double[] _cachedPowCos = System.Array.Empty<double>();
-    private static double[] _cachedPowSin = System.Array.Empty<double>();
-    private static readonly object _lutLock = new();
+    [ThreadStatic] private static CurveEntry[]? _curves;
+    [ThreadStatic] private static int _nextCurve;
+    private readonly record struct CurveEntry(double Power, double[] Cos, double[] Sin);
 
     private static double[] CreateUnitTrig(bool useSin)
     {
@@ -33,24 +36,23 @@ internal static class GlassClipBuilder
 
     private static (double[] PowCos, double[] PowSin) GetUnitCurve(double power)
     {
-        lock (_lutLock)
+        var curves = _curves ??= new CurveEntry[4];
+        foreach (var curve in curves)
         {
-            if (Math.Abs(power - _cachedPower) < 1e-6 && _cachedPowCos.Length == CornerSegments)
-                return (_cachedPowCos, _cachedPowSin);
-
-            double exp = 2.0 / power;
-            var powCos = new double[CornerSegments];
-            var powSin = new double[CornerSegments];
-            for (int i = 1; i < CornerSegments; i++)
-            {
-                powCos[i] = Math.Pow(_unitCos[i], exp);
-                powSin[i] = Math.Pow(_unitSin[i], exp);
-            }
-            _cachedPower = power;
-            _cachedPowCos = powCos;
-            _cachedPowSin = powSin;
-            return (powCos, powSin);
+            if (curve.Cos != null && Math.Abs(power - curve.Power) < 1e-6)
+                return (curve.Cos, curve.Sin);
         }
+        double exp = 2.0 / power;
+        var powCos = new double[CornerSegments];
+        var powSin = new double[CornerSegments];
+        for (int i = 1; i < CornerSegments; i++)
+        {
+            powCos[i] = Math.Pow(_unitCos[i], exp);
+            powSin[i] = Math.Pow(_unitSin[i], exp);
+        }
+        curves[_nextCurve] = new CurveEntry(power, powCos, powSin);
+        _nextCurve = (_nextCurve + 1) % curves.Length;
+        return (powCos, powSin);
     }
 
     public static StreamGeometry? CreateClip(Size size, CornerRadius radius, double powerFactor = 2)
@@ -59,15 +61,25 @@ internal static class GlassClipBuilder
         double h = size.Height;
         if (!double.IsFinite(w) || !double.IsFinite(h) || w <= 0 || h <= 0) return null;
         double power = double.IsFinite(powerFactor) ? Math.Max(1.05, powerFactor) : 2;
-        if (_lastClip != null && size == _lastClipSize && radius == _lastClipRadius && power == _lastClipPower)
-            return _lastClip;
-
         // Keep the notch silhouette inside its bounds during animated resizing.
         double maxRadius = Math.Min(w, h) / 2;
         double topLeft = ClampRadius(radius.TopLeft, maxRadius);
         double topRight = ClampRadius(radius.TopRight, maxRadius);
         double bottomRight = ClampRadius(radius.BottomRight, maxRadius);
         double bottomLeft = ClampRadius(radius.BottomLeft, maxRadius);
+        radius = new CornerRadius(topLeft, topRight, bottomRight, bottomLeft);
+        if (Math.Abs(power - 2) < .01) power = 2; // The same circular arc path.
+        if (_lastClip != null && size == _lastClipSize && radius == _lastClipRadius && power == _lastClipPower)
+            return _lastClip;
+        var clips = _clips ??= new ClipEntry[4];
+        foreach (var clip in clips)
+        {
+            if (clip.Geometry != null && clip.Size == size && clip.Radius == radius && clip.Power == power)
+            {
+                RememberLast(size, radius, power, clip.Geometry);
+                return clip.Geometry;
+            }
+        }
 
         var (powCos, powSin) = Math.Abs(power - 2) >= 0.01
             ? GetUnitCurve(power)
@@ -87,11 +99,18 @@ internal static class GlassClipBuilder
             AddCorner(context, new Point(topLeft, 0), new Point(topLeft, topLeft), 3, topLeft, power, powCos, powSin);
         }
         geometry.Freeze();
+        clips[_nextClip] = new ClipEntry(size, radius, power, geometry);
+        _nextClip = (_nextClip + 1) % clips.Length;
+        RememberLast(size, radius, power, geometry);
+        return geometry;
+    }
+
+    private static void RememberLast(Size size, CornerRadius radius, double power, StreamGeometry geometry)
+    {
         _lastClipSize = size;
         _lastClipRadius = radius;
         _lastClipPower = power;
         _lastClip = geometry;
-        return geometry;
     }
 
     private static double ClampRadius(double radius, double maxRadius) =>
