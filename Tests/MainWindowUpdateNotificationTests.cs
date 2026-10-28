@@ -27,14 +27,14 @@ public sealed class MainWindowUpdateNotificationTests
         var check = (Task)Invoke(window, "CheckForUpdatesAsync")!;
         service.Requests[0].SetResult(NewRelease("9.5.1"));
         await check;
-        await WpfFrameWaiter.UntilAsync(() => Field<UiScheduledTimer?>(window, "_updatePulseTimer")?.IsEnabled == true, "update notification appeared", ct);
+        await WpfFrameWaiter.UntilAsync(() => window.UpdateIconBrush.HasAnimatedProperties, "update notification appeared", ct);
         Assert.True(Field<bool>(window, "_isUpdateAvailable"));
         Assert.Equal(Visibility.Visible, window.UpdateNotificationButton.Visibility);
         Assert.Contains("9.5.1", window.UpdateNotificationButton.Tag.ToString());
         Invoke(window, "ShowUpdateNotification");
-        Set(window, "_updatePulseStartedAtUtc", DateTime.UtcNow.AddMilliseconds(-1500));
-        Invoke(window, "UpdatePulseTimer_Tick", null, EventArgs.Empty);
-        Assert.InRange(window.UpdateIconBrush.Color.R, 250, 255);
+        // The pulse is a colour animation now. Watch it drive the icon away from
+        // its green base toward white instead of ticking a timer by hand.
+        await WpfFrameWaiter.UntilAsync(() => window.UpdateIconBrush.Color.R > 48, "update icon pulses toward white", ct);
         Invoke(window, "UpdateNotification_MouseEnter", window, new MouseEventArgs(Mouse.PrimaryDevice, 0));
         await WpfFrameWaiter.UntilAsync(() => window.UpdateInlineTooltip.Opacity == 1, "update tooltip shown", ct);
         Assert.True(Field<bool>(window, "_isUpdateTooltipOpen"));
@@ -48,10 +48,11 @@ public sealed class MainWindowUpdateNotificationTests
         await currentCheck;
         await WpfFrameWaiter.UntilAsync(() => window.UpdateNotificationButton.Visibility == Visibility.Collapsed, "current version clears notification", ct);
         Assert.Null(Field<UpdateInfo?>(window, "_availableUpdate"));
-        Assert.False(Field<UiScheduledTimer>(window, "_updatePulseTimer").IsEnabled);
+        Assert.False(window.UpdateIconBrush.HasAnimatedProperties);
         Assert.False(window.UpdateNotificationButton.IsHitTestVisible);
         Invoke(window, "ShowUpdateNotification");
-        Invoke(window, "UpdatePulseTimer_Tick", null, EventArgs.Empty);
+        Invoke(window, "StartUpdatePulseAnimation");
+        Assert.False(window.UpdateIconBrush.HasAnimatedProperties);
         Assert.Equal(Color.FromRgb(48, 209, 88), window.UpdateIconBrush.Color);
         Assert.Equal(0, service.InstallCalls);
     });
@@ -104,7 +105,7 @@ public sealed class MainWindowUpdateNotificationTests
         Invoke(window, "ShowUpdateInlineTooltip");
         Invoke(window, "HideUpdateNotification");
         Invoke(window, "ShowUpdateNotification");
-        await WpfFrameWaiter.UntilAsync(() => Field<UiScheduledTimer?>(window, "_updatePulseTimer")?.IsEnabled == true, "latest update survives interrupted hide", ct);
+        await WpfFrameWaiter.UntilAsync(() => window.UpdateIconBrush.HasAnimatedProperties, "latest update survives interrupted hide", ct);
         Assert.Equal(Visibility.Visible, window.UpdateNotificationButton.Visibility);
         Assert.True(window.UpdateNotificationButton.IsHitTestVisible);
         Assert.Equal(1, window.UpdateNotificationButton.Opacity);

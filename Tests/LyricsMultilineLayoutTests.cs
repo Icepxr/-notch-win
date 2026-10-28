@@ -124,11 +124,14 @@ public sealed class LyricsMultilineLayoutTests
             XNamespace ui = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
             XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
             var resources = source.Descendants(ui + "Window.Resources").Single();
+            // The window's resources are wrapped in a ResourceDictionary so that
+            // shared dictionaries can be merged; the keyed entries live inside it.
+            var entries = resources.Elements(ui + "ResourceDictionary").SingleOrDefault() ?? resources;
             var host = new XElement(ui + "Grid",
                 new XAttribute(XNamespace.Xmlns + "x", x),
                 new XAttribute(XNamespace.Xmlns + "svc", "clr-namespace:VNotch.Services;assembly=V-Notch"),
                 new XElement(ui + "Grid.Resources",
-                    resources.Elements().Where(e => (string?)e.Attribute(x + "Key") is "MainSystemFont" or "SubtitleText")));
+                    entries.Elements().Where(e => (string?)e.Attribute(x + "Key") is "MainSystemFont" or "SubtitleText")));
             foreach (string name in new[] { "LyricTextA", "LyricTextB" })
                 host.Add(new XElement(source.Descendants(ui + "TextBlock").Single(e => (string?)e.Attribute(x + "Name") == name)));
             var grid = (Grid)XamlReader.Parse(host.ToString());

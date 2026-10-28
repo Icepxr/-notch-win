@@ -70,12 +70,14 @@ public sealed class MusicVisualizerAudioPipelineTests
                 32 => BitConverter.GetBytes((int)(sample * 2147483648d)),
                 _ => BitConverter.GetBytes((double)sample)
             };
-            Assert.Equal(sample, (float)Invoke("ReadSampleAsFloat", bytes, 0, format)!, 5);
+            Assert.Equal(sample, (float)Invoke("ReadSampleAsFloat", bytes, 0, floating, bits)!, 5);
         }
+        Assert.Equal(floating, (bool)Invoke("IsFloatLikeFormat", format)!);
         if (bits == 32 && floating)
         {
             var extensible = new WaveFormatExtensible(44100, 32, 1);
-            Assert.Equal(.5f, (float)Invoke("ReadSampleAsFloat", BitConverter.GetBytes(.5f), 0, extensible)!, 5);
+            Assert.True((bool)Invoke("IsFloatLikeFormat", extensible)!);
+            Assert.Equal(.5f, (float)Invoke("ReadSampleAsFloat", BitConverter.GetBytes(.5f), 0, true, 32)!, 5);
         }
     });
 

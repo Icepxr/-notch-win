@@ -1353,10 +1353,7 @@ namespace VNotch.Controls
         {
             lock (_lockObj)
             {
-                bool isFloatLike = waveFormat.Encoding == WaveFormatEncoding.IeeeFloat ||
-                    (waveFormat.Encoding == WaveFormatEncoding.Extensible &&
-                     waveFormat is WaveFormatExtensible extensible &&
-                     extensible.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT);
+                bool isFloatLike = IsFloatLikeFormat(waveFormat);
                 int bitsPerSample = waveFormat.BitsPerSample;
                 int bytesPerSample = bitsPerSample / 8;
                 if (bytesPerSample <= 0)
@@ -1725,6 +1722,12 @@ namespace VNotch.Controls
                 targets[i] = (float)Math.Clamp(enhanced, 0.0, 1.0);
             }
         }
+
+        private static bool IsFloatLikeFormat(WaveFormat waveFormat) =>
+            waveFormat.Encoding == WaveFormatEncoding.IeeeFloat ||
+            (waveFormat.Encoding == WaveFormatEncoding.Extensible &&
+             waveFormat is WaveFormatExtensible extensible &&
+             extensible.SubFormat == AudioMediaSubtypes.MEDIASUBTYPE_IEEE_FLOAT);
 
         private static float ReadSampleAsFloat(byte[] buffer, int offset, bool isFloatLike, int bitsPerSample)
         {

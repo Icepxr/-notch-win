@@ -64,7 +64,15 @@ public sealed class MainWindowSettingsIntegrationTests
                 Assert.Equal(Visibility.Visible, window.ClockViewDigitalClock.Visibility);
                 Assert.False(applied.ShowBatteryIndicator);
                 typeof(SettingsWindow).GetMethod("RevertLivePreviewIfNeeded", flags)!.Invoke(settings, null);
-                Assert.True(original.ValueEquals((NotchSettings)field.GetValue(window)!));
+                var reverted = (NotchSettings)field.GetValue(window)!;
+                // Opening the window materialises the user's custom glass slot, so
+                // the owner keeps it after a cancel. It must be a faithful copy of
+                // the live configuration, and everything else must come back as it was.
+                Assert.NotNull(reverted.LiquidGlassCustom);
+                Assert.True(reverted.LiquidGlassCustom!.ValueEquals(reverted.LiquidGlass ?? new LiquidGlassConfig()));
+                var baseline = original.Clone();
+                baseline.LiquidGlassCustom = reverted.LiquidGlassCustom.Clone();
+                Assert.True(baseline.ValueEquals(reverted));
             }
             catch (Exception ex) { failure = ex; }
             finally

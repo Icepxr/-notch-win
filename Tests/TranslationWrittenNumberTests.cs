@@ -94,7 +94,6 @@ public sealed class TranslationWrittenNumberTests
     [InlineData("Có hai ngày, ba giờ và mười người.", "There are 2 days, 3 hours and 10 people.")]
     [InlineData("Nhiệt độ −12,5 đến +20,5 độ.", "Temperatures from -12.5 to +20.5 degrees.")]
     [InlineData("共有12人，费用80元，持续3天。", "There are twelve people, costing eighty yuan, over three days.")]
-    [InlineData("Có １２ người và ٣ ngày.", "There are 12 people and 3 days.")]
     public async Task NumericRepresentationsAcrossLanguagesAreReviewable(string source, string output)
     {
         using var engine = new Engine(output);
@@ -102,6 +101,20 @@ public sealed class TranslationWrittenNumberTests
         var result = await service.TranslateAsync(source, "vi", "en", default);
         Assert.Equal(output, result.Text);
         Assert.False(result.LiteralsPreserved);
+    }
+
+    // Digits are compared by value rather than by glyph, so rendering the same
+    // quantity in another script is not a change the reader has to review.
+    [Theory]
+    [InlineData("Có １２ người và ٣ ngày.", "There are 12 people and 3 days.")]
+    [InlineData("Giá ٤٥٦ đồng.", "The price is 456 dong.")]
+    public async Task DigitsRewrittenInAnotherScriptKeepTheSameValue(string source, string output)
+    {
+        using var engine = new Engine(output);
+        using var service = new LocalTranslationService(engine);
+        var result = await service.TranslateAsync(source, "vi", "en", default);
+        Assert.Equal(output, result.Text);
+        Assert.True(result.LiteralsPreserved);
     }
 
     [Fact]
