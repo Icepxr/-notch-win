@@ -7,7 +7,7 @@ $notchSuites = @(
     'OptimizationRegressionTests','SecondPassOptimizationTests','HotPathRegressionTests',
     'LocalSendWindowTests.Pending','ElasticSliderPresentationTests','AgentDashboardTests',
     'AgentMonitorTests','LocalSendTests','ProgressEngineTests','NotchRevealMotionTests',
-    'DockDrag','DockGestureTests','SettingsHitTargetTests','TopPomodoroTests',
+    'DockDrag','DockMotionPerformanceTests','OverlayWindowControllerTests','DockGestureTests','SettingsHitTargetTests','TopPomodoroTests',
     'PomodoroControllerTests','TimerColumnTests','SideDockWindowTests','NotchScrollChromeTests',
     'Countdown','MainWindowTimerInteractionTests','MediaColumnLayoutTests',
     'ClipboardTrayRegressionTests','MainWindowGesturePresentationTests','HoverDetectionServiceTests',
@@ -33,7 +33,7 @@ try {
     if (!(Test-Path -LiteralPath $notchReport)) { throw 'No test report was produced.' }
     [xml]$notchTrx = Get-Content -LiteralPath $notchReport -Raw
     $notchCounts = $notchTrx.TestRun.ResultSummary.Counters
-    if ([int]$notchCounts.executed -lt 406 -or [int]$notchCounts.failed -ne 0 -or [int]$notchCounts.passed -ne [int]$notchCounts.executed) {
+    if ([int]$notchCounts.executed -lt 420 -or [int]$notchCounts.failed -ne 0 -or [int]$notchCounts.passed -ne [int]$notchCounts.executed) {
         throw 'Some optimization regressions were missing, skipped or failed.'
     }
     Write-Output "$($notchCounts.passed) optimization regressions passed. Full-suite findings are documented separately."

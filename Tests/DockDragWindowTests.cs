@@ -345,6 +345,95 @@ public sealed class DockDragWindowTests
         Assert.Equal(Visibility.Visible, w.MusicCompactContent.Visibility);
     });
 
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void HidingDuringADragOrLandingCannotLeaveMoveHooksOrInvisibleContent(bool landing)
+        => SharedStaTestRunner.RunAsync(async ct =>
+    {
+        await using var fixture = Fixture(NotchEdge.Top);
+        var w = fixture.Window; w.Show();
+        await WpfFrameWaiter.UntilAsync(() => !Animating(w), "startup", ct);
+        var screen = Screen(w);
+        var input = new DockPointerState(Center(w), true, true, false);
+        w.DockPointerReader = () => input;
+        if (landing)
+        {
+            w.MoveDockTo(NotchEdge.Left);
+            await WpfFrameWaiter.UntilAsync(() => w.NotchBorder.ActualWidth is > 70 and < 210, "landing is mid-flight", ct);
+            Assert.Equal(Visibility.Collapsed, w.NotchLiveContent.Visibility);
+        }
+        else
+        {
+            Press(w);
+            Assert.NotNull(typeof(MainWindow).GetField("_dockDragRendering", Private)!.GetValue(w));
+            input = input with { Position = Target(screen, NotchEdge.Left) };
+            await WpfFrameWaiter.UntilAsync(() => (Center(w) - input.Position).Length < 2, "drag is active", ct);
+        }
+        w.Hide();
+        // Rendering may cease entirely for a hidden/occluded overlay. Its
+        // low-frequency watchdog still has to end the physical gesture.
+        await Task.Delay(300, ct);
+        Assert.False(w.IsDockMoveInProgress);
+        Assert.Null(typeof(MainWindow).GetField("_dockDragRendering", Private)!.GetValue(w));
+        Assert.Null(typeof(MainWindow).GetField("_dockLandingRendering", Private)!.GetValue(w));
+        Assert.False(((DispatcherTimer)typeof(MainWindow).GetField("_dockDragTimer", Private)!.GetValue(w)!).IsEnabled);
+        Assert.Equal(Visibility.Visible, w.NotchLiveContent.Visibility);
+        input = input with { LeftDown = false, ControlDown = false };
+        w.Show();
+        await WpfFrameWaiter.NextAsync(ct);
+        AssertCentred(w, landing ? NotchEdge.Left : NotchEdge.Top, screen);
+        Assert.Equal(1, w.NotchLiveContent.Opacity);
+    });
+
+    [Theory]
+    [InlineData(NotchEdge.Top)] [InlineData(NotchEdge.Left)] [InlineData(NotchEdge.Right)]
+    public void ADragWithinTheSameEdgeKeepsItsArtworkVisible(NotchEdge edge)
+        => SharedStaTestRunner.RunAsync(async ct =>
+    {
+        await using var fixture = Fixture(edge);
+        var w = fixture.Window;
+        await NotchRevealMotionTests.StartMusic(w, ct);
+        var screen = Screen(w);
+        var input = new DockPointerState(Center(w), true, true, false);
+        w.DockPointerReader = () => input;
+        Press(w);
+        input = input with { Position = Target(screen, edge) + (edge == NotchEdge.Top ? new Vector(80, 0) : new Vector(0, 80)) };
+        await WpfFrameWaiter.UntilAsync(() => (Center(w) - input.Position).Length < 2, "same edge follows", ct);
+        Assert.Equal(Visibility.Visible, w.NotchLiveContent.Visibility);
+        Assert.Equal(1, w.NotchLiveContent.Opacity);
+        input = input with { LeftDown = false, ControlDown = false };
+        typeof(MainWindow).GetMethod("EndDockDrag", Private)!.Invoke(w, null);
+        Assert.Equal(Visibility.Visible, w.NotchLiveContent.Visibility);
+        Assert.Equal(1, w.NotchLiveContent.Opacity);
+        await WpfFrameWaiter.UntilAsync(() => !w.IsDockMoveInProgress, "same edge settles", ct);
+        AssertCentred(w, edge, screen);
+        Assert.Equal(1, w.NotchLiveContent.Opacity);
+        Assert.Null(typeof(MainWindow).GetField("_dockDragRendering", Private)!.GetValue(w));
+    });
+
+    [Fact]
+    public void AQueuedOldRenderingCallbackCannotCancelANewerLanding()
+        => SharedStaTestRunner.RunAsync(async ct =>
+    {
+        await using var fixture = Fixture(NotchEdge.Top);
+        var w = fixture.Window; w.Show();
+        w.DockPointerReader = () => new DockPointerState(new Point(500, 400), false, false, false);
+        await WpfFrameWaiter.UntilAsync(() => !Animating(w), "startup", ct);
+        w.MoveDockTo(NotchEdge.Left);
+        await WpfFrameWaiter.UntilAsync(() => w.NotchBorder.ActualWidth is > 70 and < 210, "first landing", ct);
+        var field = typeof(MainWindow).GetField("_dockLandingRendering", Private)!;
+        var oldCallback = (EventHandler)field.GetValue(w)!;
+        w.MoveDockTo(NotchEdge.Right);
+        var currentCallback = field.GetValue(w);
+        Assert.NotNull(currentCallback);
+        oldCallback(null, EventArgs.Empty);
+        Assert.Same(currentCallback, field.GetValue(w));
+        Assert.True(w.IsDockMoveInProgress);
+        await WpfFrameWaiter.UntilAsync(() => !w.IsDockMoveInProgress, "latest landing completes", ct);
+        AssertCentred(w, NotchEdge.Right, Screen(w));
+        Assert.Null(field.GetValue(w));
+    });
+
     private static GreetingAcceptanceTests.MainWindowFixture Fixture(NotchEdge edge, bool island = true) => new("en", false,
         s => { s.EnableEdgeDocking = true; s.DockEdge = edge; s.EnableDynamicIslandMode = island; s.Width = 240; s.Height = 40;
             s.DynamicIslandWidth = 240; s.DynamicIslandHeight = 40;

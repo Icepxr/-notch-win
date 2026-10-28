@@ -126,7 +126,11 @@ public sealed class OverlayWindowController : IDisposable
     {
         _state.FixedX = newX;
         _state.FixedY = newY;
-        ApplyFixedBounds();
+        // A drag changes position, not the layered rendering surface. Sending
+        // size on every move needlessly goes through WPF's native size path.
+        if (_state.Hwnd != IntPtr.Zero && !SetWindowPos(_state.Hwnd, IntPtr.Zero,
+            newX, newY, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE))
+            RuntimeLog.Warn("OVERLAY-POSITION", $"Failed to move the overlay; Win32 error {Marshal.GetLastWin32Error()}");
     }
 
     public void ResetToCenteredTop(double widthDip, double heightDip)

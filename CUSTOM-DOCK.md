@@ -10,7 +10,9 @@ without the new keys loads as `Top`, so nothing changes until you move it.
   mouse movement and stays collapsed while Ctrl is held. The cursor over the
   pill becomes a move cursor. Active text editors retain their Ctrl shortcuts.
 - **Ctrl + drag follows your hand.** A 6-DIP threshold rejects small hand
-  jitter. The shell follows the grab point as it shrinks. Its orientation stays
+  jitter. The shell follows the grab point on the rendering clock as it shrinks,
+  without extra native moves from high-polling mouse messages. Artwork stays
+  visible when moving within the same edge. Its orientation stays
   stable during the drag; release to dock at the top/left/right. Position,
   capsule/badge dimensions and corner radii settle together over 220–420ms,
   depending on travel distance. Foreground content and edge flares fade during

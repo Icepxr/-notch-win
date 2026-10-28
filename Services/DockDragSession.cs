@@ -49,12 +49,19 @@ public sealed class DockDragSession
         => new(pointer.X - shellInHostPixels.X - shellPixels.Width * grabFraction.X,
             pointer.Y - shellInHostPixels.Y - shellPixels.Height * grabFraction.Y);
 
-    // Zero velocity and acceleration at both ends. The host and shell use
-    // this same clock, so changing axes cannot get ahead of the landing.
+    private const double LandingStiffness = 7.5;
+    private static readonly double LandingTail = Math.Exp(-LandingStiffness);
+
+    // A critically damped response gets moving promptly, then settles without
+    // a bounce. Correct the truncated tail so both endpoint velocities are
+    // zero and the final native pixel does not receive a positional kick.
     public static double LandingEase(double progress)
     {
         double t = Math.Clamp(progress, 0, 1);
-        return t * t * t * (t * (t * 6 - 15) + 10);
+        double normalization = 1 - (1 + LandingStiffness) * LandingTail;
+        double response = (1 - (1 + LandingStiffness * t) * Math.Exp(-LandingStiffness * t)) / normalization;
+        double endVelocity = LandingStiffness * LandingStiffness * LandingTail / normalization;
+        return Math.Clamp(response - endVelocity * t * t * t * (t - 1), 0, 1);
     }
 
     public static double LandingMilliseconds(double distanceDip)

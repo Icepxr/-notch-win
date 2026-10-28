@@ -140,7 +140,10 @@ public partial class MainWindow
 
     private void NotchWrapper_MouseMove(object sender, MouseEventArgs e)
     {
-        if (e.LeftButton == MouseButtonState.Pressed && ContinueDockDrag())
+        // The rendering callback consumes the latest physical pointer once
+        // per frame. Mouse messages must not issue extra native moves between
+        // frames (high-polling mice can otherwise drive hundreds of them).
+        if (_isDockDragging && e.LeftButton == MouseButtonState.Pressed)
         {
             e.Handled = true;
             return;

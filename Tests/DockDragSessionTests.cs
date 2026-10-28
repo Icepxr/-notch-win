@@ -59,14 +59,16 @@ public sealed class DockDragSessionTests
     public void LandingEasesOutWithoutOvershooting()
     {
         double previous = 0;
-        for (int frame = 0; frame <= 20; frame++)
-        { double t = DockDragSession.LandingEase(frame / 20d); Assert.InRange(t, previous, 1); previous = t; }
+        for (int frame = 0; frame <= 1000; frame++)
+        { double t = DockDragSession.LandingEase(frame / 1000d); Assert.InRange(t, previous, 1); previous = t; }
         Assert.Equal(0, DockDragSession.LandingEase(-1));
         Assert.Equal(1, DockDragSession.LandingEase(2));
-        // Both velocity and acceleration settle at the join with pointer
-        // tracking and at rest, rather than starting with a positional kick.
+        // Prompt response instead of spending the first frames barely moving;
+        // the shell should be nearly settled by the midpoint of its duration.
+        Assert.InRange(DockDragSession.LandingEase(.2), .4, .6);
+        Assert.InRange(DockDragSession.LandingEase(.5), .85, .95);
         const double step = .001;
-        Assert.InRange(DockDragSession.LandingEase(step) / step, 0, .001);
+        Assert.InRange(DockDragSession.LandingEase(step) / step, 0, .04);
         Assert.InRange((1 - DockDragSession.LandingEase(1 - step)) / step, 0, .001);
     }
 
