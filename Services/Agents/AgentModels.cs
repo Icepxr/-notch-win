@@ -16,6 +16,21 @@ internal sealed record AgentRecord(string Id, DateTimeOffset At, string Model, l
     internal long Total => Input + Output;
 }
 internal sealed record AgentSession(string Provider, string Name, string Project, string State, DateTimeOffset Updated);
+internal readonly record struct AgentUsageTotals(long Input, long Output, long Cached)
+{
+    internal long Total => Input + Output;
+    internal static AgentUsageTotals Sum(IReadOnlyList<AgentRecord> records)
+    {
+        long input = 0, output = 0, cached = 0;
+        foreach (var record in records)
+        {
+            input = checked(input + record.Input);
+            output = checked(output + record.Output);
+            cached = checked(cached + record.Cached);
+        }
+        return new(input, output, cached);
+    }
+}
 internal sealed record AgentProvider(string Name, IReadOnlyList<AgentRecord> Records, IReadOnlyList<AgentSession> Sessions,
     AgentAccount Account, bool Partial)
 {

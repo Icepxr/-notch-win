@@ -24,7 +24,7 @@ public sealed class LocalSendWindowTests
         public event Action<IReadOnlyList<LocalSendDevice>>? DevicesChanged;
         public bool Disposed;
         public Func<IProgress<LocalSendProgress>, CancellationToken, Task<LocalSendResult>> Reply = (_, _) => Task.FromResult(new LocalSendResult(1, 0));
-        public void Emit() => DevicesChanged?.Invoke([Ipad]);
+        public void Emit(IReadOnlyList<LocalSendDevice>? devices = null) => DevicesChanged?.Invoke(devices ?? [Ipad]);
         public Task ScanAsync(CancellationToken cancellation) => Task.CompletedTask;
         public Task<LocalSendDevice> FindAsync(IPAddress address, int port, CancellationToken cancellation) => Task.FromResult(Ipad);
         public Task<LocalSendResult> SendAsync(LocalSendDevice device, IReadOnlyList<LocalSendFile> files, string? pin, IProgress<LocalSendProgress> progress, CancellationToken cancellation) => Reply(progress, cancellation);
@@ -133,5 +133,31 @@ public sealed class LocalSendWindowTests
             Assert.Equal(Visibility.Collapsed, Part<Button>(window, "CancelTransfer").Visibility);
         }
         finally { window.Close(); }
+    });
+
+    [Theory]
+    [InlineData(false)] [InlineData(true)]
+    public void PendingDeviceChangesReplayTheNewestSnapshotWhenTransferEnds(bool cancel) => SharedStaTestRunner.RunAsync(async () =>
+    {
+        var session = new Session(); var window = new LocalSendWindow(Files, session, false);
+        var completed = new TaskCompletionSource<LocalSendResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        session.Reply = (_, token) => completed.Task.WaitAsync(token);
+        try
+        {
+            session.Emit(); await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+            var devices = Part<ListBox>(window, "Devices"); devices.SelectedIndex = 0;
+            Click(window, "Send");
+            var second = Ipad with { Alias = "Another iPad", Address = IPAddress.Parse("192.168.1.25") };
+            session.Emit([Ipad, second]); await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+            var renamed = Ipad with { Alias = "Renamed iPad" };
+            session.Emit([renamed, second]); await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
+            Assert.Single(devices.Items);
+            if (cancel) Click(window, "CancelTransfer"); else completed.SetResult(new(1, 0));
+            for (int i = 0; i < 100 && !devices.IsEnabled; i++) await Task.Delay(10);
+            Assert.True(devices.IsEnabled);
+            Assert.Equal(2, devices.Items.Count);
+            Assert.Equal("Renamed iPad", ((LocalSendDevice)devices.SelectedItem).Alias);
+        }
+        finally { completed.TrySetResult(new(1, 0)); window.Close(); }
     });
 }

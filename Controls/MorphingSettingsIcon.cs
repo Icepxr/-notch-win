@@ -19,7 +19,8 @@ public class MorphingSettingsIcon : FrameworkElement
     private Point[][] _from = Array.Empty<Point[]>();
     private Point[][] _to = Array.Empty<Point[]>();
     private Point[] _collapseCenters = Array.Empty<Point>();
-    private Point[][] _framePoints = Array.Empty<Point[]>();
+    private PathFigure[] _frameFigures = Array.Empty<PathFigure>();
+    private PointCollection[] _frameContours = Array.Empty<PointCollection>();
     private PathGeometry _morphGeometry = new() { FillRule = FillRule.Nonzero };
     private GeometryGroup? _progressGeometry;
     private Transform _renderTransform = Transform.Identity;
@@ -102,15 +103,19 @@ public class MorphingSettingsIcon : FrameworkElement
             _from = Sample(previous);
             _to = Sample(normalized);
             _collapseCenters = new Point[Math.Max(_from.Length, _to.Length)];
-            _framePoints = new Point[_collapseCenters.Length][];
+            _frameFigures = new PathFigure[_collapseCenters.Length];
+            _frameContours = new PointCollection[_collapseCenters.Length];
             _morphGeometry = new PathGeometry { FillRule = FillRule.Nonzero };
             for (int i = 0; i < _collapseCenters.Length; i++)
             {
                 var segment = new PolyLineSegment { IsStroked = false };
-                _framePoints[i] = new Point[Samples - 1];
-                segment.Points = new PointCollection(_framePoints[i]);
+                var pointsForFrame = new PointCollection(Samples - 1);
+                for (int j = 1; j < Samples; j++) pointsForFrame.Add(default);
+                segment.Points = pointsForFrame;
                 var figure = new PathFigure { IsFilled = true, IsClosed = true };
                 figure.Segments.Add(segment);
+                _frameFigures[i] = figure;
+                _frameContours[i] = pointsForFrame;
                 _morphGeometry.Figures.Add(figure);
                 if (i < _from.Length && i < _to.Length) continue;
                 var points = i < _from.Length ? _from[i] : _to[i];
@@ -237,31 +242,25 @@ public class MorphingSettingsIcon : FrameworkElement
         }
         else
         {
-            var stream = new StreamGeometry { FillRule = FillRule.Nonzero };
-            using (var ctx = stream.Open())
+            // Retain the contour objects. Serializing a fresh StreamGeometry
+            // every frame allocates growing buffers even with reused points.
+            int count = _frameFigures.Length;
+            for (int i = 0; i < count; i++)
             {
-                int count = _morphGeometry.Figures.Count;
-                for (int i = 0; i < count; i++)
+                var source = i < _from.Length ? _from[i] : null;
+                var destination = i < _to.Length ? _to[i] : null;
+                var center = _collapseCenters[i];
+                var points = _frameContours[i];
+                for (int j = 0; j < Samples; j++)
                 {
-                    var source = i < _from.Length ? _from[i] : null;
-                    var destination = i < _to.Length ? _to[i] : null;
-                    var center = _collapseCenters[i];
-                    var points = _framePoints[i];
-                    Point startPoint = default;
-                    for (int j = 0; j < Samples; j++)
-                    {
-                        var a = source?[j] ?? center;
-                        var b = destination?[j] ?? center;
-                        Point point = a + (b - a) * progress;
-                        if (j == 0) startPoint = point;
-                        else points[j - 1] = point;
-                    }
-                    ctx.BeginFigure(startPoint, isFilled: true, isClosed: true);
-                    ctx.PolyLineTo(points, isStroked: false, isSmoothJoin: false);
+                    var a = source?[j] ?? center;
+                    var b = destination?[j] ?? center;
+                    Point point = a + (b - a) * progress;
+                    if (j == 0) _frameFigures[i].StartPoint = point;
+                    else points[j - 1] = point;
                 }
             }
-            stream.Freeze();
-            _display = stream;
+            _display = _morphGeometry;
         }
         // RenderSize is authoritative even before the deferred SizeChanged callback.
         // Keep the normalized 56-unit geometry inside the current layout slot.

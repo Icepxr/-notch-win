@@ -29,8 +29,8 @@ internal sealed class AgentMonitor(Func<CancellationToken> permission, string? h
         {
             cancellation.ThrowIfCancellationRequested();
             string root = Path.Combine(provider == "Codex" ? codexRoot : claudeRoot, provider == "Codex" ? "sessions" : "projects");
-            var files = Files(root, "*.jsonl").Where(f => f.LastWriteTimeUtc >= from.UtcDateTime).OrderByDescending(f => f.LastWriteTimeUtc).Take(65).ToArray();
-            bool partial = files.Length > 64; var records = new List<AgentRecord>(); var sessions = new List<AgentSession>(); AgentAccount? logged = null;
+            var files = RecentFiles(Files(root, "*.jsonl"), from.UtcDateTime, 65, cancellation);
+            bool partial = files.Count > 64; var records = new List<AgentRecord>(); var sessions = new List<AgentSession>(); AgentAccount? logged = null;
             foreach (var file in files.Take(64))
             {
                 cancellation.ThrowIfCancellationRequested(); seen.Add(file.FullName);
@@ -64,15 +64,47 @@ internal sealed class AgentMonitor(Func<CancellationToken> permission, string? h
         foreach (string key in _cache.Keys.Where(key => !seen.Contains(key)).ToArray()) _cache.Remove(key);
         return new(providers, now);
     }
+    internal static IReadOnlyList<FileInfo> RecentFiles(IEnumerable<FileInfo> files, DateTime fromUtc, int limit, CancellationToken cancellation)
+    {
+        if (limit <= 0) return [];
+        // Keep only the newest bounded candidates, preserving enumeration order
+        // for equal timestamps. Never retain thousands of older FileInfo objects.
+        var newest = new PriorityQueue<FileInfo, (DateTime Write, long Order)>();
+        long order = 0;
+        foreach (var file in files)
+        {
+            cancellation.ThrowIfCancellationRequested();
+            DateTime write = file.LastWriteTimeUtc;
+            long sequence = order++;
+            if (write < fromUtc) continue;
+            if (newest.Count < limit) newest.Enqueue(file, (write, -sequence));
+            else newest.EnqueueDequeue(file, (write, -sequence));
+        }
+        return newest.UnorderedItems.OrderByDescending(item => item.Priority.Write).ThenByDescending(item => item.Priority.Order)
+            .Select(item => item.Element).ToArray();
+    }
+
     private static IEnumerable<FileInfo> Files(string root, string pattern, bool recursive = true)
     {
+        IEnumerator<FileInfo> iterator;
         try
         {
-            if (!Directory.Exists(root) || (File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0) return [];
-            return new DirectoryInfo(root).EnumerateFiles(pattern, new EnumerationOptions { RecurseSubdirectories = recursive, MaxRecursionDepth = 6,
-                IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint }).Take(10000).ToArray();
+            if (!Directory.Exists(root) || (File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0) yield break;
+            iterator = new DirectoryInfo(root).EnumerateFiles(pattern, new EnumerationOptions { RecurseSubdirectories = recursive, MaxRecursionDepth = 6,
+                IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint }).GetEnumerator();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return []; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { yield break; }
+        using (iterator)
+        {
+            for (int i = 0; i < 10000; i++)
+            {
+                bool moved;
+                try { moved = iterator.MoveNext(); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { yield break; }
+                if (!moved) yield break;
+                yield return iterator.Current;
+            }
+        }
     }
     public async Task RefreshAccountsAsync(CancellationToken cancellation)
     {

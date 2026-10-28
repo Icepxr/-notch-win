@@ -68,9 +68,14 @@ public partial class ClipboardTray : UserControl, IDisposable
             Cards.Margin.Left + Cards.Margin.Right, navigationClearance,
             DefaultCardWidth, DefaultCardGap, _authoredHeaderHeight.Value);
 
-        var panel = new FrameworkElementFactory(typeof(VirtualizingStackPanel));
-        panel.SetValue(VirtualizingStackPanel.OrientationProperty, layout.Panel);
-        Cards.ItemsPanel = new ItemsPanelTemplate(panel);
+        ref var panelTemplate = ref (vertical ? ref _columnItemsPanel : ref _rowItemsPanel);
+        if (panelTemplate == null)
+        {
+            var panel = new FrameworkElementFactory(typeof(VirtualizingStackPanel));
+            panel.SetValue(VirtualizingStackPanel.OrientationProperty, layout.Panel);
+            panelTemplate = new ItemsPanelTemplate(panel);
+        }
+        if (!ReferenceEquals(Cards.ItemsPanel, panelTemplate)) Cards.ItemsPanel = panelTemplate;
 
         ScrollViewer.SetHorizontalScrollBarVisibility(Cards, layout.HorizontalScroll);
         ScrollViewer.SetVerticalScrollBarVisibility(Cards, layout.VerticalScroll);
@@ -113,6 +118,7 @@ public partial class ClipboardTray : UserControl, IDisposable
     }
 
     private BindingBase? _authoredNavigationWidth;
+    private ItemsPanelTemplate? _rowItemsPanel, _columnItemsPanel;
     private GridLength? _authoredHeaderHeight;
 
     public static readonly DependencyProperty NavigationWidthProperty = DependencyProperty.Register(

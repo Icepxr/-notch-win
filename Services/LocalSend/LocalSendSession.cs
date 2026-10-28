@@ -19,6 +19,7 @@ internal sealed class LocalSendSession : ILocalSendSession
     private readonly SemaphoreSlim _startGate = new(1), _connections = new(8);
     private readonly object _gate = new();
     private readonly Dictionary<string, (LocalSendDevice Device, long Seen)> _devices = new();
+    private bool _devicesChanged = true;
     private readonly List<Task> _workers = [];
     private TcpListener? _listener;
     private UdpClient? _udp;
@@ -71,6 +72,7 @@ internal sealed class LocalSendSession : ILocalSendSession
                 }
             }
             await AnnounceAsync(linked.Token);
+            lock (_gate) _devicesChanged = true; // An explicit rescan requests a fresh publication.
         }
         finally { _startGate.Release(); }
     }
@@ -105,8 +107,31 @@ internal sealed class LocalSendSession : ILocalSendSession
         if (device == null || device.Fingerprint.Equals(_identity.Fingerprint, StringComparison.OrdinalIgnoreCase)) return;
         lock (_gate)
         {
-            if (_devices.Count >= 64 && !_devices.ContainsKey(device.Key)) return;
-            _devices[device.Key] = (device, Environment.TickCount64);
+            if (_disposed) return;
+            string key = device.Key;
+            bool known = _devices.TryGetValue(key, out var previous);
+            if (_devices.Count >= 64 && !known) return;
+            if (!known || previous.Device != device) _devicesChanged = true;
+            _devices[key] = (known && previous.Device == device ? previous.Device : device, Environment.TickCount64);
+        }
+    }
+
+    internal IReadOnlyList<LocalSendDevice>? TakeChangedDeviceSnapshot(long now)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return null;
+            List<string>? expired = null;
+            foreach (var pair in _devices)
+                if (now - pair.Value.Seen > 25000) (expired ??= []).Add(pair.Key);
+            if (expired != null)
+            {
+                foreach (string key in expired) _devices.Remove(key);
+                _devicesChanged = true;
+            }
+            if (!_devicesChanged) return null;
+            _devicesChanged = false;
+            return _devices.Values.Select(p => p.Device).OrderBy(d => d.Alias, StringComparer.OrdinalIgnoreCase).ToArray();
         }
     }
 
@@ -124,13 +149,7 @@ internal sealed class LocalSendSession : ILocalSendSession
         while (!cancellation.IsCancellationRequested)
         {
             await Task.Delay(1000, cancellation);
-            IReadOnlyList<LocalSendDevice> snapshot;
-            lock (_gate)
-            {
-                foreach (string key in _devices.Where(p => Environment.TickCount64 - p.Value.Seen > 25000).Select(p => p.Key).ToArray()) _devices.Remove(key);
-                snapshot = _devices.Values.Select(p => p.Device).OrderBy(d => d.Alias, StringComparer.OrdinalIgnoreCase).ToArray();
-            }
-            DevicesChanged?.Invoke(snapshot);
+            if (TakeChangedDeviceSnapshot(Environment.TickCount64) is { } snapshot) DevicesChanged?.Invoke(snapshot);
             if (++ticks % 4 == 0) try { await AnnounceAsync(cancellation); } catch (IOException) { }
         }
     }
@@ -211,6 +230,7 @@ internal sealed class LocalSendSession : ILocalSendSession
                 var device = LocalSendProtocol.ReadDevice(JsonSerializer.SerializeToUtf8Bytes(node), address);
                 if (device == null) continue;
                 Remember(device);
+                lock (_gate) _devicesChanged = true; // A manual connection must restore the complete discovered list.
                 return device;
             }
             catch (Exception ex) when (ex is HttpRequestException or JsonException or IOException or OperationCanceledException or InvalidOperationException)

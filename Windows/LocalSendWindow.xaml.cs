@@ -15,6 +15,7 @@ internal partial class LocalSendWindow : Window
     private CancellationTokenSource? _operation;
     private bool _busy, _closed, _updatingDevices;
     private LocalSendDevice? _manualDevice;
+    private IReadOnlyList<LocalSendDevice>? _pendingDevices;
     private readonly bool _startDiscovery;
     private readonly Func<bool> _networkAllowed;
     internal LocalSendWindow(IReadOnlyList<LocalSendFile> files, ILocalSendSession session, bool startDiscovery = true, Func<bool>? networkAllowed = null)
@@ -46,18 +47,24 @@ internal partial class LocalSendWindow : Window
         if (_closed || Dispatcher.HasShutdownStarted) return;
         Dispatcher.BeginInvoke(() =>
         {
-            if (_closed || _busy) return;
-            string? selected = (Devices.SelectedItem as LocalSendDevice)?.Key;
-            var list = devices.ToList();
-            if (_manualDevice != null && list.All(d => d.Key != _manualDevice.Key)) list.Insert(0, _manualDevice);
-            _updatingDevices = true;
-            try { Devices.ItemsSource = list; Devices.SelectedItem = list.FirstOrDefault(d => d.Key == selected); }
-            finally { _updatingDevices = false; }
-            Send.IsEnabled = Devices.SelectedItem is LocalSendDevice;
-            if ((Devices.SelectedItem as LocalSendDevice)?.Key != selected) { ReceiverPin.Clear(); PinPanel.Visibility = Visibility.Collapsed; }
-            EmptyDevices.Text = "No nearby devices yet. Open LocalSend on your iPad, or connect by IP below.";
-            EmptyDevices.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+            if (_closed) return;
+            if (_busy) { _pendingDevices = devices; return; }
+            ApplyDevices(devices);
         });
+    }
+    private void ApplyDevices(IReadOnlyList<LocalSendDevice> devices)
+    {
+        _pendingDevices = null;
+        string? selected = (Devices.SelectedItem as LocalSendDevice)?.Key;
+        var list = devices.ToList();
+        if (_manualDevice != null && list.All(d => d.Key != _manualDevice.Key)) list.Insert(0, _manualDevice);
+        _updatingDevices = true;
+        try { Devices.ItemsSource = list; Devices.SelectedItem = list.FirstOrDefault(d => d.Key == selected); }
+        finally { _updatingDevices = false; }
+        Send.IsEnabled = Devices.SelectedItem is LocalSendDevice;
+        if ((Devices.SelectedItem as LocalSendDevice)?.Key != selected) { ReceiverPin.Clear(); PinPanel.Visibility = Visibility.Collapsed; }
+        EmptyDevices.Text = "No nearby devices yet. Open LocalSend on your iPad, or connect by IP below.";
+        EmptyDevices.Visibility = list.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
     private void Devices_Changed(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
     {
@@ -71,6 +78,7 @@ internal partial class LocalSendWindow : Window
         IpAddress.IsEnabled = !busy; DevicePort.IsEnabled = !busy; ReceiverPin.IsEnabled = !busy;
         Send.IsEnabled = !busy && Devices.SelectedItem is LocalSendDevice;
         CancelTransfer.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        if (!busy && _pendingDevices is { } devices) ApplyDevices(devices);
     }
     private void SetError(Exception exception)
     {
@@ -151,7 +159,7 @@ internal partial class LocalSendWindow : Window
     }
     private void Window_Closed(object? sender, EventArgs e)
     {
-        _closed = true; _lifetime.Cancel(); _session.DevicesChanged -= DevicesChanged; _session.Dispose();
+        _closed = true; _pendingDevices = null; _lifetime.Cancel(); _session.DevicesChanged -= DevicesChanged; _session.Dispose();
         _lifetime.Dispose();
     }
     private static string FormatBytes(long bytes) => bytes >= 1073741824 ? $"{bytes / 1073741824d:0.#} GB" : bytes >= 1048576 ? $"{bytes / 1048576d:0.#} MB" : bytes >= 1024 ? $"{bytes / 1024d:0.#} KB" : $"{bytes} bytes";

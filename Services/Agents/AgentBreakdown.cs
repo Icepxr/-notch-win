@@ -8,10 +8,18 @@ internal sealed record AgentModelUsage(string Name, long Input, long Output, lon
 internal sealed record AgentActivityBucket(DateTime Start, DateTime End, long Tokens, int Responses);
 internal static class AgentBreakdown
 {
-    internal static IReadOnlyList<AgentModelUsage> Models(AgentProvider provider) => provider.Records
-        .GroupBy(r => string.IsNullOrWhiteSpace(r.Model) ? "Unspecified model" : r.Model)
-        .Select(g => new AgentModelUsage(g.Key, g.Sum(r => r.Input), g.Sum(r => r.Output), g.Sum(r => r.Cached), g.Count()))
-        .OrderByDescending(m => m.Total).ThenBy(m => m.Name, StringComparer.Ordinal).ToArray();
+    internal static IReadOnlyList<AgentModelUsage> Models(AgentProvider provider)
+    {
+        var models = new Dictionary<string, (long Input, long Output, long Cached, int Count)>(StringComparer.Ordinal);
+        foreach (var record in provider.Records)
+        {
+            string name = string.IsNullOrWhiteSpace(record.Model) ? "Unspecified model" : record.Model;
+            var totals = models.GetValueOrDefault(name);
+            models[name] = (checked(totals.Input + record.Input), checked(totals.Output + record.Output), checked(totals.Cached + record.Cached), totals.Count + 1);
+        }
+        return models.Select(m => new AgentModelUsage(m.Key, m.Value.Input, m.Value.Output, m.Value.Cached, m.Value.Count))
+            .OrderByDescending(m => m.Total).ThenBy(m => m.Name, StringComparer.Ordinal).ToArray();
+    }
 
     internal static IReadOnlyList<AgentActivityBucket> Activity(AgentProvider provider, int days, DateTimeOffset now)
     {
