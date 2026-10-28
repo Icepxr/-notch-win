@@ -935,6 +935,17 @@ namespace VNotch.Controls
 
             drawingContext.PushOpacity(_currentOpacity + (1 - _currentOpacity) * _iconMix);
 
+            // A side badge has no room for the horizontal play/pause morph.
+            // Keep its waveform circular through playback feedback instead
+            // of folding five linear bars over the artwork.
+            if (Radial)
+            {
+                DrawRing(drawingContext, width, height, ActiveBrush);
+                drawingContext.Pop();
+                _hasRenderedBars = false;
+                return;
+            }
+
             // Blend the final short section into rounded bars. Switching from
             // sharp polygons to rounded, per-bar gradients in one frame pops.
             double morphOpacity = Math.Clamp(_iconMix / 0.18, 0, 1);
@@ -952,20 +963,6 @@ namespace VNotch.Controls
             }
             drawingContext.PushOpacity(1 - morphOpacity);
             var gradientBrush = GetBarGradientBrush();
-
-            if (Radial)
-            {
-                DrawRing(drawingContext, width, height, ActiveBrush);
-                drawingContext.Pop();
-                drawingContext.Pop();
-                _hasRenderedBars = false;
-                _renderedWidth = width;
-                _renderedHeight = height;
-                _renderedOpacity = _currentOpacity;
-                _renderedDpi = dpi;
-                _renderedBaseColor = _cachedGradientBaseColor;
-                return;
-            }
 
             double radius = snappedW * CornerRadiusRatio;
             for (int i = 0; i < BarCount; i++)
@@ -986,17 +983,15 @@ namespace VNotch.Controls
         }
 
         /// <summary>How many bars stand around the ring.</summary>
-        private const int RingBarCount = 28;
+        private const int RingBarCount = 24;
 
         /// <summary>The ring sits in the gap between the artwork and the badge.</summary>
-        private const double RingInnerRadiusRatio = .60;
+        private const double RingInnerRadiusRatio = .70;
 
-        // The travel between quiet and loud is what makes a ring read as a
-        // waveform rather than a dotted border, so most of the annulus is
-        // given to it and the resting length is just enough to stay visible.
-        private const double RingMaxBarRatio = .185;
-        private const double RingMinBarRatio = .03;
-        private const double RingBarWidthRatio = .062;
+        // Restrained travel leaves a clear gap around the artwork even at peaks.
+        private const double RingMaxBarRatio = .09;
+        private const double RingMinBarRatio = .0225;
+        private const double RingBarWidthRatio = .03;
 
         private static RotateTransform[]? _ringRotations;
 
@@ -1048,19 +1043,27 @@ namespace VNotch.Controls
         private Point? _ringCentre;
 
         /// <summary>
-        /// The level for one place on the ring. Walking round, the five bars
-        /// are read out and then back, which puts the same value opposite
-        /// itself and leaves the ring symmetric about its vertical axis.
+        /// Read the five bands out and back twice around the circumference,
+        /// keeping diametrically opposite bars equal and the centre stable.
         /// </summary>
         private double RingLevel(int index)
         {
-            int span = RingBarCount / 2;
-            int step = index < span ? index : RingBarCount - index - 1;
-            double position = span <= 1 ? 0 : (double)step * (BarCount - 1) / (span - 1);
+            // Diametrically opposite bars share a level. Blend the band detail
+            // with overall energy so one peak cannot turn the ring into a lump.
+            int half = RingBarCount / 2;
+            int quarter = half / 2;
+            int phase = index % half;
+            int step = phase <= quarter ? phase : half - phase;
+            double position = (double)step * (BarCount - 1) / quarter;
             int low = (int)position;
             int high = Math.Min(BarCount - 1, low + 1);
             double blend = position - low;
-            return _drawHeights[low] * (1 - blend) + _drawHeights[high] * blend;
+            blend = blend * blend * (3 - 2 * blend);
+            double energy = 0;
+            for (int i = 0; i < BarCount; i++) energy += _drawHeights[i];
+            energy /= BarCount;
+            double detail = _drawHeights[low] * (1 - blend) + _drawHeights[high] * blend;
+            return energy * .65 + detail * .35;
         }
 
         private static RotateTransform[] BuildRingRotations()
